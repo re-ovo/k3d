@@ -51,7 +51,7 @@ android {
 }
 
 dependencies {
-
+    implementation(project(":k3d"))
     implementation(libs.core.ktx)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.activity.compose)
