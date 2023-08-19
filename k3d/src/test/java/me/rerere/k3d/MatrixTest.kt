@@ -46,7 +46,7 @@ class MatrixTest {
             0f, 0f, 0f, 1f
         )
         )
-        assertEquals(matrix * matrix.inverse(), Matrix4.IDENTITY)
+        assertEquals(matrix * matrix.inverse(), Matrix4.identity())
         assertEquals(matrix.inverse().inverse(), matrix)
     }
 }
