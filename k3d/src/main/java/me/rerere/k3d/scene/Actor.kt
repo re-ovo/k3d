@@ -8,7 +8,6 @@ import me.rerere.k3d.util.math.transform.rotationMatrix
 import me.rerere.k3d.util.math.transform.scaleMatrix
 import me.rerere.k3d.util.math.transform.translationMatrix
 
-// 所有的场景元素都继承自Actor
 open class Actor {
     private val position = Vec3(0f, 0f, 0f)
     private val translation = Vec3(0f, 0f, 0f)
@@ -24,7 +23,7 @@ open class Actor {
      *
      * You usually don't need to call this method manually
      */
-    fun updateWorldMatrix() {
+    open fun updateWorldMatrix() {
         this._worldMatrix = translationMatrix(position.x, position.y, position.z) *
                 rotationMatrix(rotation.x, rotation.y, rotation.z) *
                 scaleMatrix(scale.x, scale.y, scale.z)
