@@ -1,5 +1,6 @@
 package me.rerere.k3d.util
 
+import android.opengl.GLES20
 import android.opengl.GLES30
 
 /**
@@ -9,7 +10,7 @@ import android.opengl.GLES30
  * @param source shader source
  */
 fun createShader(type: Int, source: String): Int {
-    val shader = GLES30.glCreateShader(type)
+    val shader = GLES20.glCreateShader(type)
     GLES30.glShaderSource(shader, source)
     GLES30.glCompileShader(shader)
     val status = IntArray(1)
@@ -29,7 +30,7 @@ fun createShader(type: Int, source: String): Int {
  * @param fragmentShader fragment shader
  */
 fun createProgram(vertexShader: Int, fragmentShader: Int): Int {
-    val program = GLES30.glCreateProgram()
+    val program = GLES20.glCreateProgram()
     GLES30.glAttachShader(program, vertexShader)
     GLES30.glAttachShader(program, fragmentShader)
     GLES30.glLinkProgram(program)
