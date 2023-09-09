@@ -1,6 +1,6 @@
 package me.rerere.k3d.scene
 
-class ActorGroup : Actor() {
+open class ActorGroup : Actor() {
     private val children = mutableListOf<Actor>()
 
     fun addChild(actor: Actor) {

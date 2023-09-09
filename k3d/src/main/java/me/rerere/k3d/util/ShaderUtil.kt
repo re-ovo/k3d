@@ -42,15 +42,3 @@ fun createProgram(vertexShader: Int, fragmentShader: Int): Int {
     }
     return program
 }
-
-/**
- * Create program from shader source
- *
- * @param vertexShaderSource vertex shader source
- * @param fragmentShaderSource fragment shader source
- */
-fun createProgram(vertexShaderSource: String, fragmentShaderSource: String): Int {
-    val vertexShader = createShader(GLES30.GL_VERTEX_SHADER, vertexShaderSource)
-    val fragmentShader = createShader(GLES30.GL_FRAGMENT_SHADER, fragmentShaderSource)
-    return createProgram(vertexShader, fragmentShader)
-}
