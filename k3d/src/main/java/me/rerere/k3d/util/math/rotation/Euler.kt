@@ -50,7 +50,7 @@ class Euler(
         this.z = z
     }
 
-    override var dirty: Boolean = true
+    override var dirty: Boolean = false
 }
 
 /**

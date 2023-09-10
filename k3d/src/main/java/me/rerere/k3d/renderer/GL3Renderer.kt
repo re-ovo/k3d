@@ -1,9 +1,10 @@
 package me.rerere.k3d.renderer
 
+import me.rerere.k3d.renderer.ctx.GLContext
 import me.rerere.k3d.scene.Scene
 import me.rerere.k3d.scene.camera.Camera
 
-class GL3Renderer  : Renderer {
+class GL3Renderer(private val ctx: GLContext)  : Renderer {
     override var viewportSize: ViewportSize = ViewportSize(0, 0)
 
     override fun resize(width: Int, height: Int) {

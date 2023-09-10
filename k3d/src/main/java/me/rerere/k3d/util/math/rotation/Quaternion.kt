@@ -23,7 +23,7 @@ class Quaternion(
         this.w = other.w
     }
 
-    override var dirty: Boolean = true
+    override var dirty: Boolean = false
 
     companion object {
         fun identity(): Quaternion {

@@ -24,7 +24,7 @@ class Vec3(
             markDirty()
         }
 
-    override var dirty: Boolean = true
+    override var dirty: Boolean = false
 
     operator fun plus(other: Vec3): Vec3 {
         return Vec3(x + other.x, y + other.y, z + other.z)
