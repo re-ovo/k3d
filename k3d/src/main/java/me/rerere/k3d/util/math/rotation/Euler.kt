@@ -1,5 +1,7 @@
 package me.rerere.k3d.util.math.rotation
 
+import me.rerere.k3d.util.Dirty
+
 /**
  * [Euler angle](https://en.wikipedia.org/wiki/Euler_angles)
  *
@@ -15,17 +17,40 @@ package me.rerere.k3d.util.math.rotation
  * @property z z angle in radians
  * @property order rotation order
  */
-data class Euler(
-    var x: Float = 0f,
-    var y: Float = 0f,
-    var z: Float = 0f,
-    var order: RotationOrder = RotationOrder.XYZ
-) {
+class Euler(
+    x: Float = 0f,
+    y: Float = 0f,
+    z: Float = 0f,
+    order: RotationOrder = RotationOrder.XYZ
+): Dirty {
+    var x: Float = x
+        set(value) {
+            field = value
+            this.markDirty()
+        }
+    var y: Float = y
+        set(value) {
+            field = value
+            this.markDirty()
+        }
+    var z: Float = z
+        set(value) {
+            field = value
+            this.markDirty()
+        }
+    var order: RotationOrder = order
+        set(value) {
+            field = value
+            this.markDirty()
+        }
+
     fun set(x: Float, y: Float, z: Float) {
         this.x = x
         this.y = y
         this.z = z
     }
+
+    override var dirty: Boolean = true
 }
 
 /**

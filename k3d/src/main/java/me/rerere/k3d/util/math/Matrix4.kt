@@ -29,6 +29,20 @@ class Matrix4(private vararg val data: Float) {
         return Matrix4(*result)
     }
 
+    fun applyMatrix4(other: Matrix4): Matrix4 {
+        val result = FloatArray(16)
+        for (i in 0..3) {
+            for (j in 0..3) {
+                result[i * 4 + j] = 0f
+                for (k in 0..3) {
+                    result[i * 4 + j] += other.data[i * 4 + k] * this.data[k * 4 + j]
+                }
+            }
+        }
+        System.arraycopy(result, 0, this.data, 0, 16)
+        return this
+    }
+
     fun transpose(): Matrix4 {
         val result = FloatArray(16)
         for (i in 0..3) {

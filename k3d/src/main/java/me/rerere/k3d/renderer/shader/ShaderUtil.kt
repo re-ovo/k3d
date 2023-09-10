@@ -1,4 +1,4 @@
-package me.rerere.k3d.util
+package me.rerere.k3d.renderer.shader
 
 import android.opengl.GLES20
 import android.opengl.GLES30
