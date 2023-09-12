@@ -41,27 +41,28 @@ private val PROGRAM = ShaderProgram(
     """.trimIndent()
 )
 
-private val vao = VertexArray().apply {
-    setIndices(listOf(0, 1, 2, 0, 2, 3))
-    setAttribute(
-        Attribute(
-            name = "aPos",
-            itemSize = 3,
-            type = DataType.FLOAT,
-            normalized = false,
-            data = FloatBuffer.wrap(floatArrayOf( // rectangle
-                -0.5f, 0.5f, 0f,
-                0.5f, 0.5f, 0f,
-                0.5f, -0.5f, 0f,
-                -0.5f, -0.5f, 0f
-            ))
-        )
-    )
-}
-
 class GL3Renderer : Renderer {
     private val resourceManager = GL3ResourceManager()
     override var viewportSize: ViewportSize = ViewportSize(0, 0)
+    private val vao = VertexArray().apply {
+        setIndices(listOf(0, 1, 2, 0, 2, 3))
+        setAttribute(
+            Attribute(
+                name = "aPos",
+                itemSize = 3,
+                type = DataType.FLOAT,
+                normalized = false,
+                data = FloatBuffer.wrap(
+                    floatArrayOf( // rectangle
+                        -0.5f, 0.5f, 0f,
+                        0.5f, 0.5f, 0f,
+                        0.5f, -0.5f, 0f,
+                        -0.5f, -0.5f, 0f
+                    )
+                )
+            )
+        )
+    }
 
     override fun dispose() {
         this.resourceManager.dispose()
@@ -69,6 +70,24 @@ class GL3Renderer : Renderer {
 
     override fun resize(width: Int, height: Int) {
         viewportSize = ViewportSize(width, height)
+    }
+
+    fun moveTest() {
+        vao.getAttribute("aPos")?.apply {
+            (data as FloatBuffer).let { buf ->
+                buf.position(0)
+                buf.put(
+                    floatArrayOf( // rectangle
+                        -0.5f, 0.5f, 0f,
+                        0.5f, 0.5f, 0f,
+                        0.5f, -0.5f, 0f,
+                        -0.5f, -0.2f, 0f
+                    )
+                )
+                buf.rewind()
+            }
+            markDirty()
+        }
     }
 
     override fun render(scene: Scene, camera: Camera) {
@@ -130,60 +149,61 @@ internal class GL3ResourceManager : Disposable {
 
     fun getProgram(program: ShaderProgram): Int? = programs[program]
 
-    fun createVertexArray(program: ShaderProgram, vertexArray: VertexArray): Result<Int> = runCatching {
-        require(!vertexArrays.containsKey(vertexArray)) { "VertexArray already exists" }
+    fun createVertexArray(program: ShaderProgram, vertexArray: VertexArray): Result<Int> =
+        runCatching {
+            require(!vertexArrays.containsKey(vertexArray)) { "VertexArray already exists" }
 
-        val programId = programs[program] ?: throw IllegalStateException("Program not found")
-        val vao = genVertexArray().getOrThrow()
-        vertexArrays[vertexArray] = vao
+            val programId = programs[program] ?: throw IllegalStateException("Program not found")
+            val vao = genVertexArray().getOrThrow()
+            vertexArrays[vertexArray] = vao
 
 
-        GLES30.glBindVertexArray(vao)
-        vertexArray.getAttributes().forEach { attribute ->
-            // Create buffer for attribute
-            val vbo = genBuffer().getOrThrow()
-            vertexArraysAttributesBuffer[attribute] = vbo
-            GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vbo)
-            GLES30.glBufferData(
-                GLES30.GL_ARRAY_BUFFER,
-                attribute.data.capacity() * attribute.type.size,
-                attribute.data,
-                GLES30.GL_STATIC_DRAW
-            )
-
-            // Set attribute
-            val location = GLES30.glGetAttribLocation(programId, attribute.name)
-            if (location != -1) {
-                GLES30.glEnableVertexAttribArray(location)
-                GLES30.glVertexAttribPointer(
-                    location,
-                    attribute.itemSize,
-                    attribute.type.value,
-                    attribute.normalized,
-                    0,
-                    0
+            GLES30.glBindVertexArray(vao)
+            vertexArray.getAttributes().forEach { attribute ->
+                // Create buffer for attribute
+                val vbo = genBuffer().getOrThrow()
+                vertexArraysAttributesBuffer[attribute] = vbo
+                GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vbo)
+                GLES30.glBufferData(
+                    GLES30.GL_ARRAY_BUFFER,
+                    attribute.data.capacity() * attribute.type.size,
+                    attribute.data,
+                    GLES30.GL_STATIC_DRAW
                 )
-                println("location: $location")
-            } else {
-                println("location not found for ${attribute.name}")
+
+                // Set attribute
+                val location = GLES30.glGetAttribLocation(programId, attribute.name)
+                if (location != -1) {
+                    GLES30.glEnableVertexAttribArray(location)
+                    GLES30.glVertexAttribPointer(
+                        location,
+                        attribute.itemSize,
+                        attribute.type.value,
+                        attribute.normalized,
+                        0,
+                        0
+                    )
+                    println("location: $location")
+                } else {
+                    println("location not found for ${attribute.name}")
+                }
             }
+            // set indices if exists
+            vertexArray.getIndices()?.let { indices ->
+                val buffer = genBuffer().getOrThrow()
+                vertexArraysIndicesBuffer[vertexArray] = buffer
+                GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, buffer)
+                GLES30.glBufferData(
+                    GLES30.GL_ELEMENT_ARRAY_BUFFER,
+                    indices.size * 4,
+                    IntBuffer.wrap(indices.toIntArray()),
+                    GLES30.GL_STATIC_DRAW
+                )
+                println("indices buffer: $buffer")
+            }
+            GLES30.glBindVertexArray(0)
+            vao
         }
-        // set indices if exists
-        vertexArray.getIndices()?.let { indices ->
-            val buffer = genBuffer().getOrThrow()
-            vertexArraysIndicesBuffer[vertexArray] = buffer
-            GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, buffer)
-            GLES30.glBufferData(
-                GLES30.GL_ELEMENT_ARRAY_BUFFER,
-                indices.size * 4,
-                IntBuffer.wrap(indices.toIntArray()),
-                GLES30.GL_STATIC_DRAW
-            )
-            println("indices buffer: $buffer")
-        }
-        GLES30.glBindVertexArray(0)
-        vao
-    }
 
     fun updateVertexArray(vertexArray: VertexArray) {
         val vao = vertexArrays[vertexArray] ?: return
@@ -191,12 +211,18 @@ internal class GL3ResourceManager : Disposable {
         vertexArray.getAttributes().forEach { attribute ->
             attribute.cleanIfDirty { // update attribute buffer if dirty
                 val vbo = vertexArraysAttributesBuffer[attribute] ?: return@forEach
+                println("update attribute buffer: $vbo")
                 GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vbo)
-                GLES30.glBufferData(
+                println("size: ${attribute.data.capacity() * attribute.type.size}")
+                println(attribute.data.capacity())
+                GLES30.glBufferSubData(
                     GLES30.GL_ARRAY_BUFFER,
+                    0,
                     attribute.data.capacity() * attribute.type.size,
                     attribute.data,
-                    GLES30.GL_STATIC_DRAW
+//                    FloatBuffer.wrap(
+//                        (attribute.data as FloatBuffer).array()
+//                    )
                 )
             }
         }

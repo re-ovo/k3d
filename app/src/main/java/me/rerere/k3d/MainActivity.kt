@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
@@ -37,6 +38,8 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
 class MainActivity : ComponentActivity() {
+    private val secondRender = K3dRenderer(Shape.Rectangle)
+
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -45,7 +48,18 @@ class MainActivity : ComponentActivity() {
             K3dTheme {
                 Scaffold(
                     topBar = {
-                        TopAppBar(title = { Text("K3D Demo") })
+                        TopAppBar(
+                            title = { Text("K3D Demo") },
+                            actions = {
+                                TextButton(
+                                    onClick = {
+                                        secondRender._render.moveTest()
+                                    }
+                                ) {
+                                    Text("Move")
+                                }
+                            }
+                        )
                     }
                 ) {
                     Column(
@@ -78,7 +92,7 @@ class MainActivity : ComponentActivity() {
                                 factory = { ctx ->
                                     GLSurfaceView(ctx).apply {
                                         setEGLContextClientVersion(3)
-                                        setRenderer(K3dRenderer(Shape.Rectangle))
+                                        setRenderer(secondRender)
 
                                         layoutParams = LinearLayout.LayoutParams(
                                             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -114,7 +128,7 @@ enum class Shape {
 }
 
 class K3dRenderer(private val shape: Shape) : Renderer {
-    private val _render = GL3Renderer()
+    val _render = GL3Renderer()
     private val _dummyScene = Scene()
     private val _camera = DummyCamera
 
