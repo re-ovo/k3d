@@ -1,4 +1,4 @@
-package me.rerere.k3d.renderer.wrapper
+package me.rerere.k3d.renderer.resource
 
 import java.nio.Buffer
 

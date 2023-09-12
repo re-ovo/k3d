@@ -9,7 +9,7 @@ import android.opengl.GLES30
  * @param type shader type (GLES30.GL_VERTEX_SHADER or GLES30.GL_FRAGMENT_SHADER)
  * @param source shader source
  */
-fun createShader(type: Int, source: String): Int {
+internal fun createShader(type: Int, source: String): Result<Int> {
     val shader = GLES20.glCreateShader(type)
     GLES30.glShaderSource(shader, source)
     GLES30.glCompileShader(shader)
@@ -18,9 +18,9 @@ fun createShader(type: Int, source: String): Int {
     if (status[0] == 0) {
         val log = GLES30.glGetShaderInfoLog(shader)
         GLES30.glDeleteShader(shader)
-        throw RuntimeException("Shader compile failed: $log")
+        return Result.failure(RuntimeException("Shader compile failed: $log"))
     }
-    return shader
+    return Result.success(shader)
 }
 
 /**
@@ -29,7 +29,7 @@ fun createShader(type: Int, source: String): Int {
  * @param vertexShader vertex shader
  * @param fragmentShader fragment shader
  */
-fun createProgram(vertexShader: Int, fragmentShader: Int): Int {
+internal fun createProgram(vertexShader: Int, fragmentShader: Int): Result<Int> {
     val program = GLES20.glCreateProgram()
     GLES30.glAttachShader(program, vertexShader)
     GLES30.glAttachShader(program, fragmentShader)
@@ -39,7 +39,7 @@ fun createProgram(vertexShader: Int, fragmentShader: Int): Int {
     if (status[0] == 0) {
         val log = GLES30.glGetProgramInfoLog(program)
         GLES30.glDeleteProgram(program)
-        throw RuntimeException("Program link failed: $log")
+        return Result.failure(RuntimeException("Program link failed: $log"))
     }
-    return program
+    return Result.success(program)
 }
