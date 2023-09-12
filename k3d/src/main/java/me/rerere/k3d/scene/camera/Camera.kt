@@ -8,3 +8,13 @@ abstract class Camera : Actor() {
 
     abstract fun getViewMatrix(): Matrix4
 }
+
+object DummyCamera : Camera() {
+    override fun getProjectionMatrix(): Matrix4 {
+        return Matrix4.identity()
+    }
+
+    override fun getViewMatrix(): Matrix4 {
+        return Matrix4.identity()
+    }
+}

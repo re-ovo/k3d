@@ -9,7 +9,7 @@ import android.opengl.GLES30
  * @param type shader type (GLES30.GL_VERTEX_SHADER or GLES30.GL_FRAGMENT_SHADER)
  * @param source shader source
  */
-internal fun createShader(type: Int, source: String): Result<Int> {
+fun createShader(type: Int, source: String): Result<Int> {
     val shader = GLES20.glCreateShader(type)
     GLES30.glShaderSource(shader, source)
     GLES30.glCompileShader(shader)
@@ -29,7 +29,7 @@ internal fun createShader(type: Int, source: String): Result<Int> {
  * @param vertexShader vertex shader
  * @param fragmentShader fragment shader
  */
-internal fun createProgram(vertexShader: Int, fragmentShader: Int): Result<Int> {
+fun createProgram(vertexShader: Int, fragmentShader: Int): Result<Int> {
     val program = GLES20.glCreateProgram()
     GLES30.glAttachShader(program, vertexShader)
     GLES30.glAttachShader(program, fragmentShader)
@@ -42,4 +42,24 @@ internal fun createProgram(vertexShader: Int, fragmentShader: Int): Result<Int> 
         return Result.failure(RuntimeException("Program link failed: $log"))
     }
     return Result.success(program)
+}
+
+/**
+ * Create vertex array (VAO)
+ *
+ * @return VAO id
+ */
+fun genVertexArray(): Result<Int> {
+    val vao = IntArray(1)
+    GLES30.glGenVertexArrays(1, vao, 0)
+    return Result.success(vao[0])
+}
+
+/**
+ * Create buffer (VBO)
+ */
+fun genBuffer(): Result<Int> {
+    val buffer = IntArray(1)
+    GLES30.glGenBuffers(1, buffer, 0)
+    return Result.success(buffer[0])
 }
