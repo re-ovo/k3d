@@ -3,6 +3,22 @@ package me.rerere.k3d.util.math.rotation
 import me.rerere.k3d.util.Dirty
 import kotlin.math.sqrt
 
+/**
+ * Represents a quaternion in 3D space.
+ *
+ * A quaternion is a mathematical concept used to represent rotations in 3D space. It consists of four components: x, y, z, and w.
+ * The x, y, and z components represent the imaginary part of the quaternion, while the w component represents the real part.
+ *
+ * Quaternions are commonly used in computer graphics and game development to represent rotations, as they provide a compact
+ * and efficient way to interpolate between different orientations.
+ *
+ * The most important advantage of quaternions over other representations of rotations (such as Euler angles) is that they do not suffer from gimbal lock.
+ *
+ * @param x The x component of the quaternion (default value is 0).
+ * @param y The y component of the quaternion (default value is 0).
+ * @param z The z component of the quaternion (default value is 0).
+ * @param w The w component of the quaternion (default value is 1).
+ */
 class Quaternion(
     x: Float = 0f,
     y: Float = 0f,
