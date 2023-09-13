@@ -2,6 +2,7 @@ package me.rerere.k3d.renderer
 
 import android.opengl.GLES20
 import android.opengl.GLES30
+import me.rerere.k3d.helper.FpsHelper
 import me.rerere.k3d.renderer.resource.Attribute
 import me.rerere.k3d.renderer.resource.DataType
 import me.rerere.k3d.renderer.resource.VertexArray
@@ -17,6 +18,7 @@ import me.rerere.k3d.util.cleanIfDirty
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import java.util.IdentityHashMap
+import kotlin.time.Duration.Companion.seconds
 
 private val PROGRAM = ShaderProgram(
     vertexShader = """
@@ -44,6 +46,7 @@ private val PROGRAM = ShaderProgram(
 class GLES3Renderer : Renderer {
     private val resourceManager = GL3ResourceManager()
     override var viewportSize: ViewportSize = ViewportSize(0, 0)
+
     private val vao = VertexArray().apply {
         setIndices(listOf(0, 1, 2, 0, 2, 3))
         setAttribute(
