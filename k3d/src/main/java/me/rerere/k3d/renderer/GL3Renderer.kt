@@ -2,6 +2,7 @@ package me.rerere.k3d.renderer
 
 import android.opengl.GLES20
 import android.opengl.GLES30
+import me.rerere.k3d.K3D
 import me.rerere.k3d.renderer.resource.Attribute
 import me.rerere.k3d.renderer.resource.DataType
 import me.rerere.k3d.renderer.resource.VertexArray
@@ -105,7 +106,10 @@ class GL3Renderer : Renderer {
 }
 
 internal class GL3ResourceManager : Disposable {
+    // program(shaders) related resources
     private val programs = IdentityHashMap<ShaderProgram, Int>()
+
+    // vao related resources
     private val vertexArrays = IdentityHashMap<VertexArray, Int>()
     private val vertexArraysAttributesBuffer = IdentityHashMap<Attribute, Int>()
     private val vertexArraysIndicesBuffer = IdentityHashMap<VertexArray, Int>()
@@ -183,9 +187,8 @@ internal class GL3ResourceManager : Disposable {
                         0,
                         0
                     )
-                    println("location: $location")
                 } else {
-                    println("location not found for ${attribute.name}")
+                    K3D.logger.warn("location not found for ${attribute.name}")
                 }
             }
             // set indices if exists
@@ -199,7 +202,6 @@ internal class GL3ResourceManager : Disposable {
                     IntBuffer.wrap(indices.toIntArray()),
                     GLES30.GL_STATIC_DRAW
                 )
-                println("indices buffer: $buffer")
             }
             GLES30.glBindVertexArray(0)
             vao
@@ -211,18 +213,12 @@ internal class GL3ResourceManager : Disposable {
         vertexArray.getAttributes().forEach { attribute ->
             attribute.cleanIfDirty { // update attribute buffer if dirty
                 val vbo = vertexArraysAttributesBuffer[attribute] ?: return@forEach
-                println("update attribute buffer: $vbo")
                 GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vbo)
-                println("size: ${attribute.data.capacity() * attribute.type.size}")
-                println(attribute.data.capacity())
                 GLES30.glBufferSubData(
                     GLES30.GL_ARRAY_BUFFER,
                     0,
                     attribute.data.capacity() * attribute.type.size,
                     attribute.data,
-//                    FloatBuffer.wrap(
-//                        (attribute.data as FloatBuffer).array()
-//                    )
                 )
             }
         }

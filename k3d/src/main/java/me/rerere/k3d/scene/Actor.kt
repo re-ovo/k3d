@@ -21,4 +21,6 @@ open class Actor {
     private var _worldMatrix = Matrix4.identity()
     val worldMatrix: Matrix4
         get() = _worldMatrix
+
+    open fun tick(deltaTime: Float) {}
 }
