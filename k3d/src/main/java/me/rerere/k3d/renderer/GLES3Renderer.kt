@@ -7,6 +7,7 @@ import me.rerere.k3d.renderer.resource.Attribute
 import me.rerere.k3d.renderer.resource.DataType
 import me.rerere.k3d.renderer.resource.VertexArray
 import me.rerere.k3d.renderer.shader.ShaderProgram
+import me.rerere.k3d.renderer.shader.Uniform
 import me.rerere.k3d.renderer.shader.createProgram
 import me.rerere.k3d.renderer.shader.createShader
 import me.rerere.k3d.renderer.shader.genBuffer
@@ -25,11 +26,12 @@ private val PROGRAM = ShaderProgram(
         #version 300 es
         
         in vec3 aPos;
+        uniform vec3 u_color;
         out vec4 vertexColor;
         
         void main() {
             gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
-            vertexColor = vec4(clamp(aPos, 0.0, 1.0), 1.0);
+            vertexColor = vec4(clamp(aPos, 0.0, 1.0) * u_color, 1.0);
         }
     """.trimIndent(),
     fragmentShader = """
@@ -93,6 +95,7 @@ class GLES3Renderer : Renderer {
         }
     }
 
+    private val colorUniform = Uniform.Vec3("u_color", 0f, 1f, 0f)
     override fun render(scene: Scene, camera: Camera) {
         GLES30.glClearColor(0f, 0f, 0f, 1f)
         GLES30.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
@@ -100,6 +103,8 @@ class GLES3Renderer : Renderer {
         GLES30.glViewport(0, 0, viewportSize.width, viewportSize.height)
 
         resourceManager.useProgram(PROGRAM) {
+            resourceManager.useUniform(this, colorUniform)
+
             resourceManager.useVertexArray(this, vao) {
                 GLES30.glDrawElements(GLES30.GL_TRIANGLES, 6, GLES30.GL_UNSIGNED_INT, 0)
             }
@@ -133,6 +138,42 @@ internal class GL3ResourceManager : Disposable {
         GLES30.glBindVertexArray(vao)
         scope()
         GLES30.glBindVertexArray(0)
+    }
+
+    fun useUniform(program: ShaderProgram, uniform: Uniform) {
+        val programId = getProgram(program) ?: return
+        when (uniform) {
+            is Uniform.Float -> {
+                val location = GLES30.glGetUniformLocation(programId, uniform.name)
+                if (location != -1) {
+                    GLES30.glUniform1f(location, uniform.value)
+                }
+            }
+            is Uniform.Int -> {
+                val location = GLES30.glGetUniformLocation(programId, uniform.name)
+                if (location != -1) {
+                    GLES30.glUniform1i(location, uniform.value)
+                }
+            }
+            is Uniform.Vec3 -> {
+                val location = GLES30.glGetUniformLocation(programId, uniform.name)
+                if (location != -1) {
+                    GLES30.glUniform3f(location, uniform.x, uniform.y, uniform.z)
+                }
+            }
+            is Uniform.Vec4 -> {
+                val location = GLES30.glGetUniformLocation(programId, uniform.name)
+                if (location != -1) {
+                    GLES30.glUniform4f(location, uniform.x, uniform.y, uniform.z, uniform.w)
+                }
+            }
+            is Uniform.Mat4 -> {
+                val location = GLES30.glGetUniformLocation(programId, uniform.name)
+                if (location != -1) {
+                    GLES30.glUniformMatrix4fv(location, 1, false, uniform.value, 0)
+                }
+            }
+        }
     }
 
     fun createProgram(program: ShaderProgram): Result<Int> = runCatching {
