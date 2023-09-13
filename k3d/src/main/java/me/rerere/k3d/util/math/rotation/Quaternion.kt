@@ -4,11 +4,33 @@ import me.rerere.k3d.util.Dirty
 import kotlin.math.sqrt
 
 class Quaternion(
-    var x: Float = 0f,
-    var y: Float = 0f,
-    var z: Float = 0f,
-    var w: Float = 1f
-): Dirty {
+    x: Float = 0f,
+    y: Float = 0f,
+    z: Float = 0f,
+    w: Float = 1f
+) : Dirty {
+    override var dirty: Boolean = false
+    var x = x
+        set(value) {
+            field = value
+            markDirty()
+        }
+    var y = y
+        set(value) {
+            field = value
+            markDirty()
+        }
+    var z = z
+        set(value) {
+            field = value
+            markDirty()
+        }
+    var w = w
+        set(value) {
+            field = value
+            markDirty()
+        }
+
     fun set(x: Float, y: Float, z: Float, w: Float) {
         this.x = x
         this.y = y
@@ -21,14 +43,6 @@ class Quaternion(
         this.y = other.y
         this.z = other.z
         this.w = other.w
-    }
-
-    override var dirty: Boolean = false
-
-    companion object {
-        fun identity(): Quaternion {
-            return Quaternion()
-        }
     }
 
     fun copy(): Quaternion {
@@ -60,5 +74,12 @@ class Quaternion(
         y /= length
         z /= length
         w /= length
+    }
+
+    companion object {
+        @JvmStatic
+        fun identity(): Quaternion {
+            return Quaternion()
+        }
     }
 }
