@@ -1,11 +1,9 @@
 package me.rerere.k3d
 
 import android.content.Context
-import android.opengl.GLES30
 import android.opengl.GLSurfaceView
 import android.opengl.GLSurfaceView.Renderer
 import android.os.Bundle
-import android.os.SystemClock
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.widget.LinearLayout
@@ -23,17 +21,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
-import me.rerere.k3d.renderer.GL3Renderer
-import me.rerere.k3d.renderer.shader.createProgram
-import me.rerere.k3d.renderer.shader.createShader
-import me.rerere.k3d.renderer.shader.genBuffer
-import me.rerere.k3d.renderer.shader.genVertexArray
+import me.rerere.k3d.renderer.GLES3Renderer
 import me.rerere.k3d.scene.Scene
-import me.rerere.k3d.scene.camera.Camera
 import me.rerere.k3d.scene.camera.DummyCamera
 import me.rerere.k3d.ui.theme.K3dTheme
-import java.nio.FloatBuffer
-import java.nio.IntBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -128,7 +119,7 @@ enum class Shape {
 }
 
 class K3dRenderer(private val shape: Shape) : Renderer {
-    val _render = GL3Renderer()
+    val _render = GLES3Renderer()
     private val _dummyScene = Scene()
     private val _camera = DummyCamera
 

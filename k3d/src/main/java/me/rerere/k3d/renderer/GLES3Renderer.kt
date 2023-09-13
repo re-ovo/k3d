@@ -2,7 +2,6 @@ package me.rerere.k3d.renderer
 
 import android.opengl.GLES20
 import android.opengl.GLES30
-import me.rerere.k3d.K3D
 import me.rerere.k3d.renderer.resource.Attribute
 import me.rerere.k3d.renderer.resource.DataType
 import me.rerere.k3d.renderer.resource.VertexArray
@@ -42,7 +41,7 @@ private val PROGRAM = ShaderProgram(
     """.trimIndent()
 )
 
-class GL3Renderer : Renderer {
+class GLES3Renderer : Renderer {
     private val resourceManager = GL3ResourceManager()
     override var viewportSize: ViewportSize = ViewportSize(0, 0)
     private val vao = VertexArray().apply {
@@ -188,7 +187,7 @@ internal class GL3ResourceManager : Disposable {
                         0
                     )
                 } else {
-                    K3D.logger.warn("location not found for ${attribute.name}")
+                    println("location not found for ${attribute.name}")
                 }
             }
             // set indices if exists

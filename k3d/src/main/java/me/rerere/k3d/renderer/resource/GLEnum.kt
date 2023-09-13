@@ -2,6 +2,12 @@ package me.rerere.k3d.renderer.resource
 
 import android.opengl.GLES20
 
+/**
+ * OpenGL ES Data Type
+ *
+ * @property value OpenGL ES Data Type
+ * @property size Size of one item in bytes
+ */
 enum class DataType(
     val value: Int,
     val size: Int

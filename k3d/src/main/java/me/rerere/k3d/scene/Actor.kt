@@ -9,7 +9,7 @@ import me.rerere.k3d.util.math.transform.rotationMatrix
 import me.rerere.k3d.util.math.transform.scaleMatrix
 import me.rerere.k3d.util.math.transform.translationMatrix
 
-open class Actor {
+abstract class Actor {
     val position = Vec3(0f, 0f, 0f)
     val rotation = Quaternion(0f, 0f, 0f, 1f)
     val scale = Vec3(1f, 1f, 1f)
