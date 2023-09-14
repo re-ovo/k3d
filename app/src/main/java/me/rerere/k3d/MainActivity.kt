@@ -152,7 +152,6 @@ class K3dRenderer(private val shape: Shape) : Renderer {
     }
 
     override fun onDrawFrame(gl: GL10) {
-        println("Draw frame")
         _render.render(_dummyScene, _camera)
     }
 }

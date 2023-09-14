@@ -14,4 +14,4 @@ internal fun Int.reverseBytes(): Int {
             (this and 0xFF000000.toInt() ushr 24)
 }
 
-private val GsonInstance by lazy { Gson() }
+internal val GsonInstance by lazy { Gson() }
