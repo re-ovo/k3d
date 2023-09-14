@@ -54,7 +54,7 @@ class MainActivity : ComponentActivity() {
                                 TextButton(
                                     onClick = {
                                         GltfLoader.load(
-                                            inputStream = resources.openRawResource(R.raw.sofa_combination)
+                                            inputStream = assets.open("sofa_combination.glb")
                                         )
                                     }
                                 ) {
