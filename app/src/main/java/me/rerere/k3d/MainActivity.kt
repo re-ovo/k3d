@@ -6,18 +6,21 @@ import android.opengl.GLSurfaceView.Renderer
 import android.os.Bundle
 import android.util.AttributeSet
 import android.view.MotionEvent
+import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
@@ -32,80 +35,85 @@ import javax.microedition.khronos.opengles.GL10
 class MainActivity : ComponentActivity() {
     private val secondRender = K3dRenderer(Shape.Rectangle)
 
-    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         super.onCreate(savedInstanceState)
         setContent {
             K3dTheme {
-                Scaffold(
-                    topBar = {
-                        TopAppBar(
-                            title = { Text("K3D Demo") },
-                            actions = {
-                                TextButton(
-                                    onClick = {
-                                        secondRender._render.moveTest()
-                                    }
-                                ) {
-                                    Text("Move")
-                                }
+                Home()
+            }
+        }
+    }
 
-                                TextButton(
-                                    onClick = {
-                                        GltfLoader.load(
-                                            inputStream = assets.open("sofa_combination.glb")
-                                        )
-                                    }
-                                ) {
-                                    Text("Load")
-                                }
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun Home() {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("K3D Demo") },
+                    actions = {
+                        TextButton(
+                            onClick = {
+                                secondRender._render.moveTest()
                             }
-                        )
+                        ) {
+                            Text("Move")
+                        }
+
+                        TextButton(
+                            onClick = {
+                                GltfLoader.load(
+                                    inputStream = assets.open("sofa_combination.glb")
+                                )
+                            }
+                        ) {
+                            Text("Load")
+                        }
                     }
+                )
+            }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(it)
+            ) {
+                Box(
+                    modifier = Modifier.weight(1f).fillMaxWidth()
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(it)
-                    ) {
-                        Box(
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            AndroidView(
-                                factory = { ctx ->
-                                    GLSurfaceView(ctx).apply {
-                                        setEGLContextClientVersion(3)
-                                        setRenderer(K3dRenderer(Shape.Triangle))
+                    AndroidView(
+                        factory = { ctx ->
+                            GLSurfaceView(ctx).apply {
+                                setEGLContextClientVersion(3)
+                                setRenderer(K3dRenderer(Shape.Triangle))
 
-                                        layoutParams = LinearLayout.LayoutParams(
-                                            LinearLayout.LayoutParams.MATCH_PARENT,
-                                            LinearLayout.LayoutParams.MATCH_PARENT
-                                        )
-                                    }
-                                },
-                                modifier = Modifier.matchParentSize()
-                            )
-                        }
-                        Box(
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            AndroidView(
-                                factory = { ctx ->
-                                    GLSurfaceView(ctx).apply {
-                                        setEGLContextClientVersion(3)
-                                        setRenderer(secondRender)
+                                layoutParams = ViewGroup.LayoutParams(
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ViewGroup.LayoutParams.MATCH_PARENT
+                                )
+                            }
+                        },
+                        modifier = Modifier.matchParentSize()
+                    )
+                }
+                Box(
+                    modifier = Modifier.weight(1f).fillMaxWidth()
+                ) {
+                    AndroidView(
+                        factory = { ctx ->
+                            GLSurfaceView(ctx).apply {
+                                setEGLContextClientVersion(3)
+                                setRenderer(secondRender)
 
-                                        layoutParams = LinearLayout.LayoutParams(
-                                            LinearLayout.LayoutParams.MATCH_PARENT,
-                                            LinearLayout.LayoutParams.MATCH_PARENT
-                                        )
-                                    }
-                                },
-                                modifier = Modifier.matchParentSize()
-                            )
-                        }
-                    }
+                                layoutParams = LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.MATCH_PARENT,
+                                    LinearLayout.LayoutParams.MATCH_PARENT
+                                )
+                            }
+                        },
+                        modifier = Modifier.matchParentSize()
+                    )
                 }
             }
         }
@@ -144,6 +152,7 @@ class K3dRenderer(private val shape: Shape) : Renderer {
     }
 
     override fun onDrawFrame(gl: GL10) {
+        println("Draw frame")
         _render.render(_dummyScene, _camera)
     }
 }
