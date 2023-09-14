@@ -131,7 +131,21 @@ internal data class Gltf(
      */
     data class Material(
         val name: String,
-        // TODO
+        val pbrMetallicRoughness: MaterialPbrMetallicRoughness,
+    )
+
+    data class MaterialPbrMetallicRoughness(
+        val baseColorFactor: List<Float>,
+        val metallicFactor: Float,
+        val roughnessFactor: Float,
+        val baseColorTexture: Texture?,
+        val metallicRoughnessTexture: Texture?,
+    )
+
+    data class MaterialTexture(
+        val index: Int,
+        val texCoord: Int,
+        val scale: Float?,
     )
 
     data class Mesh(
