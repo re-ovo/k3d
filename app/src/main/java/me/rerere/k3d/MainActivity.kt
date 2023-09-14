@@ -21,6 +21,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
+import me.rerere.k3d.loader.GltfLoader
 import me.rerere.k3d.renderer.GLES3Renderer
 import me.rerere.k3d.scene.Scene
 import me.rerere.k3d.scene.camera.DummyCamera
@@ -48,6 +49,16 @@ class MainActivity : ComponentActivity() {
                                     }
                                 ) {
                                     Text("Move")
+                                }
+
+                                TextButton(
+                                    onClick = {
+                                        GltfLoader.load(
+                                            inputStream = resources.openRawResource(R.raw.sofa_combination)
+                                        )
+                                    }
+                                ) {
+                                    Text("Load")
                                 }
                             }
                         )
