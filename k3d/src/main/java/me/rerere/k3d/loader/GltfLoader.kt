@@ -126,6 +126,9 @@ internal data class Gltf(
         val bufferView: Int?,
     )
 
+    /**
+     * [Material](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#materials-overview)
+     */
     data class Material(
         val name: String,
         // TODO
