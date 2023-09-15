@@ -13,7 +13,11 @@ import me.rerere.k3d.renderer.shader.createShader
 import me.rerere.k3d.renderer.shader.genBuffer
 import me.rerere.k3d.renderer.shader.genVertexArray
 import me.rerere.k3d.scene.Scene
+import me.rerere.k3d.scene.actor.Mesh
 import me.rerere.k3d.scene.camera.Camera
+import me.rerere.k3d.scene.material.RawShaderMaterial
+import me.rerere.k3d.scene.material.ShaderMaterial
+import me.rerere.k3d.scene.traverse
 import me.rerere.k3d.util.Disposable
 import me.rerere.k3d.util.cleanIfDirty
 import java.nio.FloatBuffer
@@ -49,25 +53,25 @@ class GLES3Renderer : Renderer {
     private val resourceManager = GL3ResourceManager()
     override var viewportSize: ViewportSize = ViewportSize(0, 0)
 
-    private val vao = VertexArray().apply {
-        setIndices(listOf(0, 1, 2, 0, 2, 3))
-        setAttribute(
-            Attribute(
-                name = "aPos",
-                itemSize = 3,
-                type = DataType.FLOAT,
-                normalized = false,
-                data = FloatBuffer.wrap(
-                    floatArrayOf( // rectangle
-                        -0.5f, 0.5f, 0f,
-                        0.5f, 0.5f, 0f,
-                        0.5f, -0.5f, 0f,
-                        -0.5f, -0.5f, 0f
-                    )
-                )
-            )
-        )
-    }
+//    private val vao = VertexArray().apply {
+//        setIndices(listOf(0, 1, 2, 0, 2, 3))
+//        setAttribute(
+//            Attribute(
+//                name = "aPos",
+//                itemSize = 3,
+//                type = DataType.FLOAT,
+//                normalized = false,
+//                data = FloatBuffer.wrap(
+//                    floatArrayOf( // rectangle
+//                        -0.5f, 0.5f, 0f,
+//                        0.5f, 0.5f, 0f,
+//                        0.5f, -0.5f, 0f,
+//                        -0.5f, -0.5f, 0f
+//                    )
+//                )
+//            )
+//        )
+//    }
 
     override fun dispose() {
         this.resourceManager.dispose()
@@ -77,36 +81,55 @@ class GLES3Renderer : Renderer {
         viewportSize = ViewportSize(width, height)
     }
 
-    fun moveTest() {
-        vao.getAttribute("aPos")?.apply {
-            (data as FloatBuffer).let { buf ->
-                buf.position(0)
-                buf.put(
-                    floatArrayOf( // rectangle
-                        -0.5f, 0.5f, 0f,
-                        0.5f, 0.5f, 0f,
-                        0.5f, -0.5f, 0f,
-                        -0.5f, -0.2f, 0f
-                    )
-                )
-                buf.rewind()
-            }
-            markDirty()
-        }
-    }
+    private val worldMatrixUniform = Uniform.Mat4("u_worldMatrix", FloatArray(16), true)
+    private val viewMatrixUniform = Uniform.Mat4("u_viewMatrix", FloatArray(16), true)
+    private val projectionMatrixUniform = Uniform.Mat4("u_projectionMatrix", FloatArray(16), true)
 
-    private val colorUniform = Uniform.Vec3("u_color", 0f, 1f, 0f)
     override fun render(scene: Scene, camera: Camera) {
         GLES30.glClearColor(0f, 0f, 0f, 1f)
         GLES30.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
 
         GLES30.glViewport(0, 0, viewportSize.width, viewportSize.height)
 
-        resourceManager.useProgram(PROGRAM) {
-            resourceManager.useUniform(this, colorUniform)
+        scene.traverse { actor ->
+            if (actor is Mesh) {
+                resourceManager.useProgram(actor.material.program) {
+                    if (actor.material is ShaderMaterial) {
+                        actor.material.uniforms.forEach { uniform ->
+                            resourceManager.useUniform(actor.material.program, uniform)
+                        }
 
-            resourceManager.useVertexArray(this, vao) {
-                GLES30.glDrawElements(GLES30.GL_TRIANGLES, 6, GLES30.GL_UNSIGNED_INT, 0)
+                        // Apply built-in uniforms
+                        resourceManager.useUniform(
+                            actor.material.program,
+                            worldMatrixUniform.apply {
+                                value = actor.worldMatrix.data
+                            }
+                        )
+                        resourceManager.useUniform(
+                            actor.material.program,
+                            viewMatrixUniform.apply {
+                                value = camera.worldMatrixInverse.data
+                            }
+                        )
+                        resourceManager.useUniform(
+                            actor.material.program,
+                            projectionMatrixUniform.apply {
+                                value = camera.projectionMatrix.data
+                            }
+                        )
+                    } else {
+                        // Raw shader material
+                        actor.material.uniforms.forEach { uniform ->
+                            resourceManager.useUniform(actor.material.program, uniform)
+                        }
+                    }
+
+
+//                    resourceManager.useVertexArray(this, vao) {
+//                        GLES30.glDrawElements(GLES30.GL_TRIANGLES, 6, GLES30.GL_UNSIGNED_INT, 0)
+//                    }
+                }
             }
         }
     }
@@ -143,34 +166,38 @@ internal class GL3ResourceManager : Disposable {
     fun useUniform(program: ShaderProgram, uniform: Uniform) {
         val programId = getProgram(program) ?: return
         when (uniform) {
-            is Uniform.Float -> {
+            is Uniform.Float1 -> {
                 val location = GLES30.glGetUniformLocation(programId, uniform.name)
                 if (location != -1) {
                     GLES30.glUniform1f(location, uniform.value)
                 }
             }
-            is Uniform.Int -> {
+
+            is Uniform.Int1 -> {
                 val location = GLES30.glGetUniformLocation(programId, uniform.name)
                 if (location != -1) {
                     GLES30.glUniform1i(location, uniform.value)
                 }
             }
-            is Uniform.Vec3 -> {
+
+            is Uniform.Vec3f -> {
                 val location = GLES30.glGetUniformLocation(programId, uniform.name)
                 if (location != -1) {
                     GLES30.glUniform3f(location, uniform.x, uniform.y, uniform.z)
                 }
             }
-            is Uniform.Vec4 -> {
+
+            is Uniform.Vec4f -> {
                 val location = GLES30.glGetUniformLocation(programId, uniform.name)
                 if (location != -1) {
                     GLES30.glUniform4f(location, uniform.x, uniform.y, uniform.z, uniform.w)
                 }
             }
+
             is Uniform.Mat4 -> {
                 val location = GLES30.glGetUniformLocation(programId, uniform.name)
                 if (location != -1) {
-                    GLES30.glUniformMatrix4fv(location, 1, false, uniform.value, 0)
+                    GLES30.glUniformMatrix4fv(location, 1, uniform.transpose, uniform.value, 0)
                 }
             }
         }
@@ -203,7 +230,6 @@ internal class GL3ResourceManager : Disposable {
             val programId = programs[program] ?: throw IllegalStateException("Program not found")
             val vao = genVertexArray().getOrThrow()
             vertexArrays[vertexArray] = vao
-
 
             GLES30.glBindVertexArray(vao)
             vertexArray.getAttributes().forEach { attribute ->

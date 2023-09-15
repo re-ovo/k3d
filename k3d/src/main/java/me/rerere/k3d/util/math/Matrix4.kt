@@ -1,6 +1,9 @@
 package me.rerere.k3d.util.math
 
-class Matrix4(private vararg val data: Float) {
+/**
+ * Represents a 4x4 matrix in 3D space.
+ */
+class Matrix4(vararg val data: Float) {
     init {
         if (data.size != 16) {
             throw IllegalArgumentException("Matrix4 must have 16 elements")
@@ -14,6 +17,13 @@ class Matrix4(private vararg val data: Float) {
             0f, 0f, 1f, 0f,
             0f, 0f, 0f, 1f
         )
+    }
+
+    fun setData(data: FloatArray) {
+        if (data.size != 16) {
+            throw IllegalArgumentException("Matrix4 must have 16 elements")
+        }
+        System.arraycopy(data, 0, this.data, 0, 16)
     }
 
     operator fun times(other: Matrix4): Matrix4 {
@@ -181,13 +191,6 @@ class Matrix4(private vararg val data: Float) {
 
         return Matrix4(*inv)
     }
-
-    fun toOpenGLData() = floatArrayOf(
-        data[0], data[4], data[8], data[12],
-        data[1], data[5], data[9], data[13],
-        data[2], data[6], data[10], data[14],
-        data[3], data[7], data[11], data[15]
-    )
 
     override fun equals(other: Any?): Boolean {
         if (other !is Matrix4) {

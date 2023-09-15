@@ -1,6 +1,7 @@
 package me.rerere.k3d.util.math.rotation
 
 import me.rerere.k3d.util.Dirty
+import me.rerere.k3d.util.math.Matrix4
 import kotlin.math.sqrt
 
 /**
@@ -69,12 +70,6 @@ class Quaternion(
         return Quaternion(-x, -y, -z, w)
     }
 
-    fun selfConjugate() {
-        x = -x
-        y = -y
-        z = -z
-    }
-
     fun length(): Float {
         return sqrt(x * x + y * y + z * z + w * w)
     }
@@ -84,12 +79,22 @@ class Quaternion(
         return Quaternion(x / length, y / length, z / length, w / length)
     }
 
-    fun selfNormalize() {
-        val length = length()
-        x /= length
-        y /= length
-        z /= length
-        w /= length
+    fun toMatrix4(): Matrix4 {
+        val xx = x * x
+        val xy = x * y
+        val xz = x * z
+        val xw = x * w
+        val yy = y * y
+        val yz = y * z
+        val yw = y * w
+        val zz = z * z
+        val zw = z * w
+        return Matrix4(
+            1f - 2f * (yy + zz), 2f * (xy - zw), 2f * (xz + yw), 0f,
+            2f * (xy + zw), 1f - 2f * (xx + zz), 2f * (yz - xw), 0f,
+            2f * (xz - yw), 2f * (yz + xw), 1f - 2f * (xx + yy), 0f,
+            0f, 0f, 0f, 1f
+        )
     }
 
     companion object {

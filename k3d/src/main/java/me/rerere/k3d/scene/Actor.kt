@@ -26,6 +26,21 @@ abstract class Actor {
     val worldMatrix: Matrix4
         get() = _worldMatrix
 
+    open fun updateMatrix() {
+        _localMatrix = scaleMatrix(scale).applyMatrix4(rotation.toMatrix4()).applyMatrix4(translationMatrix(position))
+        _worldMatrix = parent?.worldMatrix?.times(_localMatrix) ?: _localMatrix
+    }
+
+    /**
+     * The tick function will be called every frame
+     *
+     * Note that the tick function was called every frame, so it's not recommended to do heavy work
+     * in this function, also you need to handle the deltaTime, because the frame rate may be different
+     * on different devices and different scenes
+     *
+     * @param deltaTime the time between two frames
+     *
+     */
     open fun tick(deltaTime: Float) {}
 
     override fun hashCode(): Int {

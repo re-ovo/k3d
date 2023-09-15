@@ -2,16 +2,15 @@ package me.rerere.k3d
 
 import android.content.Context
 import android.opengl.GLSurfaceView
-import android.opengl.GLSurfaceView.Renderer
 import android.os.Bundle
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.ViewGroup
-import android.widget.LinearLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -26,14 +25,17 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
 import me.rerere.k3d.loader.GltfLoader
 import me.rerere.k3d.renderer.GLES3Renderer
+import me.rerere.k3d.renderer.ViewportSize
 import me.rerere.k3d.scene.Scene
-import me.rerere.k3d.scene.camera.DummyCamera
+import me.rerere.k3d.scene.camera.PerspectiveCamera
 import me.rerere.k3d.ui.theme.K3dTheme
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
 class MainActivity : ComponentActivity() {
-    private val secondRender = K3dRenderer(Shape.Rectangle)
+    private val render = GLES3Renderer()
+    private val camera = PerspectiveCamera()
+    private val scene = Scene()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -55,14 +57,6 @@ class MainActivity : ComponentActivity() {
                     actions = {
                         TextButton(
                             onClick = {
-                                secondRender._render.moveTest()
-                            }
-                        ) {
-                            Text("Move")
-                        }
-
-                        TextButton(
-                            onClick = {
                                 GltfLoader.load(
                                     inputStream = assets.open("sofa_combination.glb")
                                 )
@@ -80,14 +74,11 @@ class MainActivity : ComponentActivity() {
                     .padding(it)
             ) {
                 Box(
-                    modifier = Modifier.weight(1f).fillMaxWidth()
+                    modifier = Modifier.aspectRatio(16/9f).fillMaxWidth()
                 ) {
                     AndroidView(
                         factory = { ctx ->
-                            GLSurfaceView(ctx).apply {
-                                setEGLContextClientVersion(3)
-                                setRenderer(K3dRenderer(Shape.Triangle))
-
+                            K3DView(ctx).apply {
                                 layoutParams = ViewGroup.LayoutParams(
                                     ViewGroup.LayoutParams.MATCH_PARENT,
                                     ViewGroup.LayoutParams.MATCH_PARENT
@@ -97,61 +88,32 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.matchParentSize()
                     )
                 }
-                Box(
-                    modifier = Modifier.weight(1f).fillMaxWidth()
-                ) {
-                    AndroidView(
-                        factory = { ctx ->
-                            GLSurfaceView(ctx).apply {
-                                setEGLContextClientVersion(3)
-                                setRenderer(secondRender)
-
-                                layoutParams = LinearLayout.LayoutParams(
-                                    LinearLayout.LayoutParams.MATCH_PARENT,
-                                    LinearLayout.LayoutParams.MATCH_PARENT
-                                )
-                            }
-                        },
-                        modifier = Modifier.matchParentSize()
-                    )
-                }
             }
         }
     }
-}
 
-class K3DView(context: Context?, attrs: AttributeSet?, shape: Shape) :
-    GLSurfaceView(context, attrs) {
-    init {
-        setEGLContextClientVersion(3)
-        setRenderer(K3dRenderer(shape))
-    }
+    inner class K3DView(context: Context?, attrs: AttributeSet? = null) :
+        GLSurfaceView(context, attrs) {
+        init {
+            setEGLContextClientVersion(3)
+            setRenderer(object : Renderer {
+                override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
+                    println("Surface created")
+                }
 
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        return true
-    }
-}
+                override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
+                    println("Surface changed: $width, $height")
+                    render.viewportSize = ViewportSize(width, height)
+                }
 
-enum class Shape {
-    Rectangle,
-    Triangle,
-}
+                override fun onDrawFrame(gl: GL10?) {
+                    render.render(scene, camera)
+                }
+            })
+        }
 
-class K3dRenderer(private val shape: Shape) : Renderer {
-    val _render = GLES3Renderer()
-    private val _dummyScene = Scene()
-    private val _camera = DummyCamera
-
-    override fun onSurfaceCreated(gl: GL10, config: EGLConfig) {
-        println("Surface created")
-    }
-
-    override fun onSurfaceChanged(gl: GL10, width: Int, height: Int) {
-        println("Surface changed: $width, $height")
-        _render.resize(width, height)
-    }
-
-    override fun onDrawFrame(gl: GL10) {
-        _render.render(_dummyScene, _camera)
+        override fun onTouchEvent(event: MotionEvent): Boolean {
+            return true
+        }
     }
 }

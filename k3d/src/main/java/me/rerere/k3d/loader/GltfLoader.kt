@@ -2,6 +2,7 @@ package me.rerere.k3d.loader
 
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import me.rerere.k3d.scene.Scene
 import java.io.DataInputStream
 import java.io.InputStream
 
@@ -75,6 +76,11 @@ object GltfLoader {
         println(gltf)
     }
 }
+
+class GltfLoadResult(
+    val scenes: List<Scene>,
+    val defaultScene: Scene
+)
 
 internal data class Gltf(
     val accessors: List<Accessor>,

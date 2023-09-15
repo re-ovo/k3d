@@ -1,6 +1,7 @@
 package me.rerere.k3d.util.math.transform
 
 import me.rerere.k3d.util.math.Matrix4
+import me.rerere.k3d.util.math.Vec3
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -13,6 +14,10 @@ internal fun translationMatrix(x: Float, y: Float, z: Float): Matrix4 {
     )
 }
 
+internal fun translationMatrix(vec3: Vec3): Matrix4 {
+    return translationMatrix(vec3.x, vec3.y, vec3.z)
+}
+
 internal fun scaleMatrix(x: Float, y: Float, z: Float): Matrix4 {
     return Matrix4(
         x, 0f, 0f, 0f,
@@ -20,6 +25,10 @@ internal fun scaleMatrix(x: Float, y: Float, z: Float): Matrix4 {
         0f, 0f, z, 0f,
         0f, 0f, 0f, 1f
     )
+}
+
+internal fun scaleMatrix(vec3: Vec3): Matrix4 {
+    return scaleMatrix(vec3.x, vec3.y, vec3.z)
 }
 
 internal fun rotationMatrix(x: Float, y: Float, z: Float): Matrix4 {
@@ -35,4 +44,8 @@ internal fun rotationMatrix(x: Float, y: Float, z: Float): Matrix4 {
         cosX * sinY * cosZ + sinX * sinZ, cosX * sinY * sinZ - sinX * cosZ, cosX * cosY, 0f,
         0f, 0f, 0f, 1f
     )
+}
+
+internal fun rotationMatrix(vec3: Vec3): Matrix4 {
+    return rotationMatrix(vec3.x, vec3.y, vec3.z)
 }

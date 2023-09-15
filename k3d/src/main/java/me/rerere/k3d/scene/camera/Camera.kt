@@ -4,17 +4,13 @@ import me.rerere.k3d.scene.Actor
 import me.rerere.k3d.util.math.Matrix4
 
 abstract class Camera : Actor() {
-    abstract fun getProjectionMatrix(): Matrix4
+    val worldMatrixInverse = Matrix4.identity()
+    abstract val projectionMatrix: Matrix4
 
-    abstract fun getViewMatrix(): Matrix4
-}
-
-object DummyCamera : Camera() {
-    override fun getProjectionMatrix(): Matrix4 {
-        return Matrix4.identity()
+    override fun updateMatrix() {
+        super.updateMatrix()
+        worldMatrixInverse.setData(worldMatrix.inverse().data)
     }
 
-    override fun getViewMatrix(): Matrix4 {
-        return Matrix4.identity()
-    }
+    abstract fun updateProjectionMatrix()
 }
