@@ -2,6 +2,8 @@ package me.rerere.k3d.util.math.rotation
 
 import me.rerere.k3d.util.Dirty
 import me.rerere.k3d.util.math.Matrix4
+import kotlin.math.asin
+import kotlin.math.atan2
 import kotlin.math.sqrt
 
 /**
@@ -77,6 +79,30 @@ class Quaternion(
     fun normalize(): Quaternion {
         val length = length()
         return Quaternion(x / length, y / length, z / length, w / length)
+    }
+
+    fun toEuler() : Euler {
+        val euler = Euler()
+        val test = x * y + z * w
+        if (test > 0.499) { // singularity at north pole
+            euler.y = 2 * atan2(x, w)
+            euler.x = (Math.PI / 2f).toFloat()
+            euler.z = 0f
+            return euler
+        } else if (test < -0.499) { // singularity at south pole
+            euler.y = -2 * atan2(x, w)
+            euler.x = (-Math.PI / 2f).toFloat()
+            euler.z = 0f
+            return euler
+        } else {
+            val sqx = x * x
+            val sqy = y * y
+            val sqz = z * z
+            euler.y = atan2(2 * y * w - 2 * x * z, 1 - 2 * sqy - 2 * sqz)
+            euler.x = atan2(2 * x * w - 2 * y * z, 1 - 2 * sqx - 2 * sqz)
+            euler.z = asin(2 * test)
+            return euler
+        }
     }
 
     fun toMatrix4(): Matrix4 {

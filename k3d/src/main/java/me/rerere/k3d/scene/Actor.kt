@@ -10,6 +10,8 @@ import me.rerere.k3d.util.math.transform.scaleMatrix
 import me.rerere.k3d.util.math.transform.translationMatrix
 import java.util.UUID
 
+interface Renderable
+
 abstract class Actor {
     private val _id = UUID.randomUUID()
 

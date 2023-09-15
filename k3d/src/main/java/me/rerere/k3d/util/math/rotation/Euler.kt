@@ -21,7 +21,6 @@ class Euler(
     x: Float = 0f,
     y: Float = 0f,
     z: Float = 0f,
-    order: RotationOrder = RotationOrder.XYZ
 ): Dirty {
     var x: Float = x
         set(value) {
@@ -38,11 +37,6 @@ class Euler(
             field = value
             this.markDirty()
         }
-    var order: RotationOrder = order
-        set(value) {
-            field = value
-            this.markDirty()
-        }
 
     fun set(x: Float, y: Float, z: Float) {
         this.x = x
@@ -51,16 +45,20 @@ class Euler(
     }
 
     override var dirty: Boolean = false
-}
 
-/**
- * Rotation order
- *
- * Different rotation order will cause different rotation result.
- * But I recommend you to use [RotationOrder.XYZ] as it's the most
- *
- * @see Euler
- */
-enum class RotationOrder {
-    XYZ, XZY, YXZ, YZX, ZXY, ZYX
+    fun toQuaternion(): Quaternion {
+        val c1 = kotlin.math.cos(x / 2)
+        val c2 = kotlin.math.cos(y / 2)
+        val c3 = kotlin.math.cos(z / 2)
+        val s1 = kotlin.math.sin(x / 2)
+        val s2 = kotlin.math.sin(y / 2)
+        val s3 = kotlin.math.sin(z / 2)
+
+        return Quaternion(
+            s1 * c2 * c3 + c1 * s2 * s3,
+            c1 * s2 * c3 - s1 * c2 * s3,
+            c1 * c2 * s3 + s1 * s2 * c3,
+            c1 * c2 * c3 - s1 * s2 * s3
+        )
+    }
 }

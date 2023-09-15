@@ -3,6 +3,15 @@ package me.rerere.k3d.renderer.resource
 import me.rerere.k3d.util.Dirty
 import java.nio.Buffer
 
+/**
+ * This class represents a single attribute(such as position, normal, uv, etc.)
+ *
+ * @param name The name of this attribute
+ * @param itemSize The size of each item in this attribute
+ * @param type The data type of this attribute
+ * @param normalized Whether the data should be normalized
+ * @param data The data of this attribute
+ */
 class Attribute(
     val name: String,
     val itemSize: Int,
@@ -13,9 +22,9 @@ class Attribute(
     override var dirty: Boolean = false
 }
 
-class VertexArray {
+internal class VertexArray {
     private val attributes = hashMapOf<String, Attribute>()
-    private var indices: MutableList<Int>? = null
+    private var indices: IntArray? = null
 
     fun setAttribute(attribute: Attribute) {
         attributes[attribute.name] = attribute
@@ -29,11 +38,11 @@ class VertexArray {
         return attributes.values
     }
 
-    fun setIndices(indices: List<Int>) {
-        this.indices = indices.toMutableList()
+    fun setIndices(indices: IntArray) {
+        this.indices = indices
     }
 
-    fun getIndices(): List<Int>? {
+    fun getIndices(): IntArray? {
         return indices
     }
 }

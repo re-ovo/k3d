@@ -27,15 +27,25 @@ import me.rerere.k3d.loader.GltfLoader
 import me.rerere.k3d.renderer.GLES3Renderer
 import me.rerere.k3d.renderer.ViewportSize
 import me.rerere.k3d.scene.Scene
+import me.rerere.k3d.scene.actor.Mesh
 import me.rerere.k3d.scene.camera.PerspectiveCamera
+import me.rerere.k3d.scene.geometry.CubeGeometry
+import me.rerere.k3d.scene.material.StandardMaterial
 import me.rerere.k3d.ui.theme.K3dTheme
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
 class MainActivity : ComponentActivity() {
     private val render = GLES3Renderer()
-    private val camera = PerspectiveCamera()
-    private val scene = Scene()
+    private val camera = PerspectiveCamera().apply {
+        position.z = 5f
+    }
+    private val scene = Scene().apply {
+        addChild(Mesh(
+            CubeGeometry(),
+            StandardMaterial()
+        ))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -104,6 +114,7 @@ class MainActivity : ComponentActivity() {
                 override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
                     println("Surface changed: $width, $height")
                     render.viewportSize = ViewportSize(width, height)
+                    camera.aspect = width.toFloat() / height.toFloat()
                 }
 
                 override fun onDrawFrame(gl: GL10?) {
@@ -112,7 +123,27 @@ class MainActivity : ComponentActivity() {
             })
         }
 
+        private var lastX = 0f
+        private var lastY = 0f
         override fun onTouchEvent(event: MotionEvent): Boolean {
+            when(event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    println("down")
+                    lastX = event.x
+                    lastY = event.y
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val dx = (event.x - lastX) / 100
+                    val dy = (event.y - lastY) / 100
+                    camera.rotateX(dy)
+                    camera.rotateY(dx)
+                    lastX = event.x
+                    lastY = event.y
+                }
+                MotionEvent.ACTION_UP -> {
+                    println("up")
+                }
+            }
             return true
         }
     }

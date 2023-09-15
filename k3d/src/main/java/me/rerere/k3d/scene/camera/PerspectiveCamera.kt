@@ -1,16 +1,38 @@
 package me.rerere.k3d.scene.camera
 
+import me.rerere.k3d.util.Dirty
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.math.rotation.toRadian
 import me.rerere.k3d.util.math.transform.perspectiveMatrix
 import kotlin.math.tan
 
 class PerspectiveCamera(
-    private var fov: Float = 60f,
-    private var aspect: Float = 1f,
-    private var near: Float = 0.1f,
-    private var far: Float = 1000f
+    fov: Float = 60f,
+    aspect: Float = 1f,
+    near: Float = 0.1f,
+    far: Float = 1000f
 ): Camera() {
+    var fov = fov
+        set(value) {
+            field = value
+            updateProjectionMatrix()
+        }
+    var aspect = aspect
+        set(value) {
+            field = value
+            updateProjectionMatrix()
+        }
+    var near = near
+        set(value) {
+            field = value
+            updateProjectionMatrix()
+        }
+    var far = far
+        set(value) {
+            field = value
+            updateProjectionMatrix()
+        }
+
     override val projectionMatrix: Matrix4 = Matrix4.identity()
 
     override fun updateProjectionMatrix() {
@@ -31,6 +53,7 @@ class PerspectiveCamera(
     }
 
     init {
+        updateMatrix()
         updateProjectionMatrix()
     }
 }

@@ -91,7 +91,25 @@ class GLES3Renderer : Renderer {
 
         GLES30.glViewport(0, 0, viewportSize.width, viewportSize.height)
 
+        GLES30.glEnable(GLES30.GL_DEPTH_TEST)
+        GLES30.glEnable(GLES30.GL_CULL_FACE)
+
+        if (camera.position.dirty || camera.rotation.dirty) {
+            println("update camera matrix")
+            camera.updateMatrix()
+            println(camera.rotation.toMatrix4().toString())
+            camera.position.markClean()
+            camera.rotation.markClean()
+        }
+
         scene.traverse { actor ->
+            if (actor.position.dirty || actor.rotation.dirty || actor.scale.dirty) {
+                actor.updateMatrix()
+                actor.position.markClean()
+                actor.rotation.markClean()
+                actor.scale.markClean()
+            }
+
             if (actor is Mesh) {
                 resourceManager.useProgram(actor.material.program) {
                     if (actor.material is ShaderMaterial) {
@@ -110,6 +128,7 @@ class GLES3Renderer : Renderer {
                             actor.material.program,
                             viewMatrixUniform.apply {
                                 value = camera.worldMatrixInverse.data
+                                // println(camera.worldMatrixInverse.toString())
                             }
                         )
                         resourceManager.useUniform(
@@ -123,6 +142,14 @@ class GLES3Renderer : Renderer {
                         actor.material.uniforms.forEach { uniform ->
                             resourceManager.useUniform(actor.material.program, uniform)
                         }
+                    }
+
+                    resourceManager.useVertexArray(this, actor.geometry.vao) {
+                        val indices = actor.geometry.getIndices()
+                        val count =
+                            indices?.size ?: actor.geometry.getAttribute("a_pos")?.data?.capacity()
+                            ?: 0
+                        GLES30.glDrawElements(GLES30.GL_TRIANGLES, count, GLES30.GL_UNSIGNED_INT, 0)
                     }
 
 
@@ -268,7 +295,7 @@ internal class GL3ResourceManager : Disposable {
                 GLES30.glBufferData(
                     GLES30.GL_ELEMENT_ARRAY_BUFFER,
                     indices.size * 4,
-                    IntBuffer.wrap(indices.toIntArray()),
+                    IntBuffer.wrap(indices),
                     GLES30.GL_STATIC_DRAW
                 )
             }

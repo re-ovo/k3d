@@ -12,8 +12,3 @@ open class ShaderMaterial(
     program: ShaderProgram,
     uniforms: Set<Uniform>
 ) : RawShaderMaterial(program, uniforms)
-
-class BasicMaterial : ShaderMaterial(
-    program = ShaderProgram("TODO", "TODO"),
-    uniforms = setOf()
-)

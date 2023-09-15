@@ -1,13 +1,11 @@
 package me.rerere.k3d.scene.actor
 
 import me.rerere.k3d.scene.Actor
-import me.rerere.k3d.scene.geometry.Geometry
+import me.rerere.k3d.scene.Renderable
+import me.rerere.k3d.scene.geometry.BufferGeometry
 import me.rerere.k3d.scene.material.RawShaderMaterial
-import me.rerere.k3d.scene.material.ShaderMaterial
 
 class Mesh(
-    val geometry: Geometry,
+    val geometry: BufferGeometry,
     val material: RawShaderMaterial
-) : Actor() {
-
-}
+) : Actor(), Renderable
