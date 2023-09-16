@@ -30,6 +30,12 @@ abstract class Actor {
     open fun updateMatrix() {
         _localMatrix = scaleMatrix(scale).applyMatrix4(rotation.toMatrix4()).applyMatrix4(translationMatrix(position))
         _worldMatrix = parent?.worldMatrix?.times(_localMatrix) ?: _localMatrix
+
+        if(this is ActorGroup) {
+            getChildren().forEach {
+                it.updateMatrix()
+            }
+        }
     }
 
     /**

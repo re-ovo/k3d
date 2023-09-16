@@ -17,6 +17,18 @@ class Matrix4(vararg val data: Float) {
             0f, 0f, 1f, 0f,
             0f, 0f, 0f, 1f
         )
+
+        fun fromColumnMajor(data: FloatArray): Matrix4 {
+            if (data.size != 16) {
+                throw IllegalArgumentException("Matrix4 must have 16 elements")
+            }
+            return Matrix4(
+                data[0], data[4], data[8], data[12],
+                data[1], data[5], data[9], data[13],
+                data[2], data[6], data[10], data[14],
+                data[3], data[7], data[11], data[15]
+            )
+        }
     }
 
     fun set(data: FloatArray) {
@@ -28,6 +40,14 @@ class Matrix4(vararg val data: Float) {
 
     fun set(other: Matrix4) {
         System.arraycopy(other.data, 0, this.data, 0, 16)
+    }
+
+    operator fun get(row: Int, col: Int): Float {
+        return this.data[row * 4 + col]
+    }
+
+    operator fun set(row: Int, col: Int, value: Float) {
+        this.data[row * 4 + col] = value
     }
 
     operator fun times(other: Matrix4): Matrix4 {
@@ -194,6 +214,10 @@ class Matrix4(vararg val data: Float) {
         }
 
         return Matrix4(*inv)
+    }
+
+    fun copy(): Matrix4 {
+        return Matrix4(*this.data)
     }
 
     override fun equals(other: Any?): Boolean {

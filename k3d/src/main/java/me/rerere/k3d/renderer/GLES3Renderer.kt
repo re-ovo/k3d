@@ -53,14 +53,13 @@ class GLES3Renderer : Renderer {
         scene.traverse { actor ->
             if (actor.position.dirty || actor.rotation.dirty || actor.scale.dirty) {
                 actor.updateMatrix()
+
                 actor.position.markClean()
                 actor.rotation.markClean()
                 actor.scale.markClean()
             }
 
             if (actor is Primitive) {
-                // println("render $actor")
-
                 resourceManager.useProgram(actor.material.program) {
                     if (actor.material is ShaderMaterial) {
                         actor.material.uniforms.forEach { uniform ->

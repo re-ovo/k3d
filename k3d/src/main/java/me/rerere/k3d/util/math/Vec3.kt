@@ -33,6 +33,13 @@ class Vec3(
         return this
     }
 
+    fun set(other: Vec3): Vec3 {
+        this.x = other.x
+        this.y = other.y
+        this.z = other.z
+        return this
+    }
+
     operator fun plus(other: Vec3): Vec3 {
         return Vec3(x + other.x, y + other.y, z + other.z)
     }
@@ -79,6 +86,12 @@ class Vec3(
 
     operator fun times(other: Float): Vec3 {
         return Vec3(x * other, y * other, z * other)
+    }
+
+    operator fun timesAssign(other: Float) {
+        x *= other
+        y *= other
+        z *= other
     }
 
     fun selfTimes(other: Float): Vec3 {

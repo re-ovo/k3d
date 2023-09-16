@@ -10,6 +10,8 @@ import me.rerere.k3d.scene.Scene
 import me.rerere.k3d.scene.actor.Primitive
 import me.rerere.k3d.scene.geometry.BufferGeometry
 import me.rerere.k3d.scene.material.StandardMaterial
+import me.rerere.k3d.util.math.Matrix4
+import me.rerere.k3d.util.math.transform.setModelMatrix
 import java.io.DataInputStream
 import java.io.InputStream
 import java.nio.Buffer
@@ -146,6 +148,10 @@ object GltfLoader {
         val gltfNode = gltf.nodes[node]
         val group = ActorGroup().apply {
             name = gltfNode.name
+
+            gltfNode.matrix?.let {
+                setModelMatrix(Matrix4.fromColumnMajor(it.toFloatArray()))
+            }
         }
 
         gltfNode.children?.forEach { childNode ->

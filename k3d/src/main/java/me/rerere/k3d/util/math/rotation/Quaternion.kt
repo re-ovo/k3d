@@ -50,6 +50,54 @@ class Quaternion(
             markDirty()
         }
 
+    companion object {
+        @JvmStatic
+        fun identity(): Quaternion {
+            return Quaternion()
+        }
+
+        // http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
+        @JvmStatic
+        fun fromMatrix(matrix4: Matrix4): Quaternion {
+            val trace = matrix4[0, 0] + matrix4[1, 1] + matrix4[2, 2]
+            return if (trace > 0) {
+                val s = 0.5f / sqrt(trace + 1.0f)
+                Quaternion(
+                    (matrix4[2, 1] - matrix4[1, 2]) * s,
+                    (matrix4[0, 2] - matrix4[2, 0]) * s,
+                    (matrix4[1, 0] - matrix4[0, 1]) * s,
+                    0.25f / s
+                )
+            } else {
+                if (matrix4[0, 0] > matrix4[1, 1] && matrix4[0, 0] > matrix4[2, 2]) {
+                    val s = 2.0f * sqrt(1.0f + matrix4[0, 0] - matrix4[1, 1] - matrix4[2, 2])
+                    Quaternion(
+                        0.25f * s,
+                        (matrix4[0, 1] + matrix4[1, 0]) / s,
+                        (matrix4[0, 2] + matrix4[2, 0]) / s,
+                        (matrix4[2, 1] - matrix4[1, 2]) / s
+                    )
+                } else if (matrix4[1, 1] > matrix4[2, 2]) {
+                    val s = 2.0f * sqrt(1.0f + matrix4[1, 1] - matrix4[0, 0] - matrix4[2, 2])
+                    Quaternion(
+                        (matrix4[0, 1] + matrix4[1, 0]) / s,
+                        0.25f * s,
+                        (matrix4[1, 2] + matrix4[2, 1]) / s,
+                        (matrix4[0, 2] - matrix4[2, 0]) / s
+                    )
+                } else {
+                    val s = 2.0f * sqrt(1.0f + matrix4[2, 2] - matrix4[0, 0] - matrix4[1, 1])
+                    Quaternion(
+                        (matrix4[0, 2] + matrix4[2, 0]) / s,
+                        (matrix4[1, 2] + matrix4[2, 1]) / s,
+                        0.25f * s,
+                        (matrix4[1, 0] - matrix4[0, 1]) / s
+                    )
+                }
+            }
+        }
+    }
+
     fun set(x: Float, y: Float, z: Float, w: Float) {
         this.x = x
         this.y = y
@@ -102,7 +150,7 @@ class Quaternion(
         this.set(newQuaternion)
     }
 
-    fun toEuler() : Euler {
+    fun toEuler(): Euler {
         val euler = Euler()
         val test = x * y + z * w
         if (test > 0.499) { // singularity at north pole
@@ -142,12 +190,5 @@ class Quaternion(
             2f * (xz - yw), 2f * (yz + xw), 1f - 2f * (xx + yy), 0f,
             0f, 0f, 0f, 1f
         )
-    }
-
-    companion object {
-        @JvmStatic
-        fun identity(): Quaternion {
-            return Quaternion()
-        }
     }
 }

@@ -78,7 +78,7 @@ class MainActivity : ComponentActivity() {
                                 val result = GltfLoader.load(
                                     inputStream = assets.open("sofa_combination.glb")
                                 )
-                                println(result.defaultScene)
+                                result.defaultScene.scale *= 0.1f
                                 scene.addChild(result.defaultScene)
                             }
                         ) {
