@@ -94,8 +94,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 Box(
                     modifier = Modifier
-                        .aspectRatio(16 / 9f)
-                        .fillMaxWidth()
+                        .fillMaxSize()
                 ) {
                     AndroidView(
                         factory = { ctx ->

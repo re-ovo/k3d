@@ -56,8 +56,8 @@ class OrbitController(
 
         println("Drag: $dx, $dy")
 
-        camera.yaw += dx * 2f
-        camera.pitch += dy * 2f
+        camera.yaw -= dx * 5f
+        camera.pitch -= dy * 5f
         camera.pitch = camera.pitch.coerceIn(-90f, 90f)
 
         update()
@@ -65,11 +65,11 @@ class OrbitController(
 
     private fun handleZoom(event: MotionEvent) {
         val distance = event.getPointerDistance(0, 1)
-        val delta = distance - lastDistance
+        val delta = -(distance - lastDistance)
         lastDistance = distance
 
         println("Zoom: $delta")
-        this.distance += delta / 100f
+        this.distance += delta / 50f
         this.distance = this.distance.coerceIn(0.1f, 100f)
 
         update()
