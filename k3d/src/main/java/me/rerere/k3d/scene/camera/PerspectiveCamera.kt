@@ -1,6 +1,5 @@
 package me.rerere.k3d.scene.camera
 
-import me.rerere.k3d.util.Dirty
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.math.rotation.toRadian
 import me.rerere.k3d.util.math.transform.perspectiveMatrix
@@ -42,7 +41,7 @@ class PerspectiveCamera(
         val width = height * aspect
         val left = -width / 2
 
-        projectionMatrix.setData(perspectiveMatrix(
+        projectionMatrix.set(perspectiveMatrix(
             left = left,
             right = left + width,
             top = top,

@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
+import me.rerere.k3d.controller.OrbitController
 import me.rerere.k3d.loader.GltfLoader
 import me.rerere.k3d.renderer.GLES3Renderer
 import me.rerere.k3d.renderer.ViewportSize
@@ -32,20 +33,28 @@ import me.rerere.k3d.scene.camera.PerspectiveCamera
 import me.rerere.k3d.scene.geometry.CubeGeometry
 import me.rerere.k3d.scene.material.StandardMaterial
 import me.rerere.k3d.ui.theme.K3dTheme
+import me.rerere.k3d.util.math.Vec3
+import me.rerere.k3d.util.math.rotation.Euler
+import me.rerere.k3d.util.math.rotation.toRadian
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+import kotlin.time.TimeSource
 
 class MainActivity : ComponentActivity() {
     private val render = GLES3Renderer()
     private val camera = PerspectiveCamera().apply {
-        position.z = 5f
+        position.set(0f, 0f, 5f)
+    }
+    private val cube = Mesh(
+        CubeGeometry(),
+        StandardMaterial()
+    ).apply {
+        rotation.set(Euler(0f, 10f.toRadian(), 0f).toQuaternion())
     }
     private val scene = Scene().apply {
-        addChild(Mesh(
-            CubeGeometry(),
-            StandardMaterial()
-        ))
+        addChild(cube)
     }
+    private lateinit var controls: OrbitController
 
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -84,7 +93,9 @@ class MainActivity : ComponentActivity() {
                     .padding(it)
             ) {
                 Box(
-                    modifier = Modifier.aspectRatio(16/9f).fillMaxWidth()
+                    modifier = Modifier
+                        .aspectRatio(16 / 9f)
+                        .fillMaxWidth()
                 ) {
                     AndroidView(
                         factory = { ctx ->
@@ -92,6 +103,12 @@ class MainActivity : ComponentActivity() {
                                 layoutParams = ViewGroup.LayoutParams(
                                     ViewGroup.LayoutParams.MATCH_PARENT,
                                     ViewGroup.LayoutParams.MATCH_PARENT
+                                )
+
+                                controls = OrbitController(
+                                    camera,
+                                    Vec3(),
+                                    this
                                 )
                             }
                         },
@@ -104,6 +121,8 @@ class MainActivity : ComponentActivity() {
 
     inner class K3DView(context: Context?, attrs: AttributeSet? = null) :
         GLSurfaceView(context, attrs) {
+        private var previousTime = TimeSource.Monotonic.markNow()
+
         init {
             setEGLContextClientVersion(3)
             setRenderer(object : Renderer {
@@ -118,32 +137,19 @@ class MainActivity : ComponentActivity() {
                 }
 
                 override fun onDrawFrame(gl: GL10?) {
+                    val deltaTime = previousTime.elapsedNow().inWholeMilliseconds.toFloat() / 1000f
+                    previousTime = TimeSource.Monotonic.markNow()
+
+                    val speed = 360f.toRadian() * deltaTime
+                    //cube.rotation.applyRotation(Euler(0f, speed, 0f).toQuaternion())
+
                     render.render(scene, camera)
                 }
             })
         }
 
-        private var lastX = 0f
-        private var lastY = 0f
         override fun onTouchEvent(event: MotionEvent): Boolean {
-            when(event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    println("down")
-                    lastX = event.x
-                    lastY = event.y
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    val dx = (event.x - lastX) / 100
-                    val dy = (event.y - lastY) / 100
-                    camera.rotateX(dy)
-                    camera.rotateY(dx)
-                    lastX = event.x
-                    lastY = event.y
-                }
-                MotionEvent.ACTION_UP -> {
-                    println("up")
-                }
-            }
+            controls.handleEvent(event)
             return true
         }
     }

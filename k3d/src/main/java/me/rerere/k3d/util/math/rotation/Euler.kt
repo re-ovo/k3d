@@ -1,6 +1,8 @@
 package me.rerere.k3d.util.math.rotation
 
 import me.rerere.k3d.util.Dirty
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
  * [Euler angle](https://en.wikipedia.org/wiki/Euler_angles)
@@ -47,12 +49,12 @@ class Euler(
     override var dirty: Boolean = false
 
     fun toQuaternion(): Quaternion {
-        val c1 = kotlin.math.cos(x / 2)
-        val c2 = kotlin.math.cos(y / 2)
-        val c3 = kotlin.math.cos(z / 2)
-        val s1 = kotlin.math.sin(x / 2)
-        val s2 = kotlin.math.sin(y / 2)
-        val s3 = kotlin.math.sin(z / 2)
+        val c1 = cos(x / 2)
+        val c2 = cos(y / 2)
+        val c3 = cos(z / 2)
+        val s1 = sin(x / 2)
+        val s2 = sin(y / 2)
+        val s3 = sin(z / 2)
 
         return Quaternion(
             s1 * c2 * c3 + c1 * s2 * s3,
@@ -60,5 +62,21 @@ class Euler(
             c1 * c2 * s3 + s1 * s2 * c3,
             c1 * c2 * c3 - s1 * s2 * s3
         )
+    }
+
+    override fun toString(): String {
+        return "Euler(x=$x, y=$y, z=$z)"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if(other !is Euler) return false
+        return x == other.x && y == other.y && z == other.z
+    }
+
+    override fun hashCode(): Int {
+        var result = x.hashCode()
+        result = 31 * result + y.hashCode()
+        result = 31 * result + z.hashCode()
+        return result
     }
 }

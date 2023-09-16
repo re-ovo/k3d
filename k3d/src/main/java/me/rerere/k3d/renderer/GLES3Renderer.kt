@@ -25,53 +25,9 @@ import java.nio.IntBuffer
 import java.util.IdentityHashMap
 import kotlin.time.Duration.Companion.seconds
 
-private val PROGRAM = ShaderProgram(
-    vertexShader = """
-        #version 300 es
-        
-        in vec3 aPos;
-        uniform vec3 u_color;
-        out vec4 vertexColor;
-        
-        void main() {
-            gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
-            vertexColor = vec4(clamp(aPos, 0.0, 1.0) * u_color, 1.0);
-        }
-    """.trimIndent(),
-    fragmentShader = """
-        #version 300 es
-        precision mediump float;
-        in vec4 vertexColor;
-        out vec4 FragColor;
-        void main() {
-            FragColor = vertexColor;
-        }
-    """.trimIndent()
-)
-
 class GLES3Renderer : Renderer {
     private val resourceManager = GL3ResourceManager()
     override var viewportSize: ViewportSize = ViewportSize(0, 0)
-
-//    private val vao = VertexArray().apply {
-//        setIndices(listOf(0, 1, 2, 0, 2, 3))
-//        setAttribute(
-//            Attribute(
-//                name = "aPos",
-//                itemSize = 3,
-//                type = DataType.FLOAT,
-//                normalized = false,
-//                data = FloatBuffer.wrap(
-//                    floatArrayOf( // rectangle
-//                        -0.5f, 0.5f, 0f,
-//                        0.5f, 0.5f, 0f,
-//                        0.5f, -0.5f, 0f,
-//                        -0.5f, -0.5f, 0f
-//                    )
-//                )
-//            )
-//        )
-//    }
 
     override fun dispose() {
         this.resourceManager.dispose()
@@ -94,12 +50,11 @@ class GLES3Renderer : Renderer {
         GLES30.glEnable(GLES30.GL_DEPTH_TEST)
         GLES30.glEnable(GLES30.GL_CULL_FACE)
 
-        if (camera.position.dirty || camera.rotation.dirty) {
+        if (camera.dirty) {
             println("update camera matrix")
             camera.updateMatrix()
-            println(camera.rotation.toMatrix4().toString())
-            camera.position.markClean()
-            camera.rotation.markClean()
+            camera.markClean()
+            println(camera.worldMatrixInverse)
         }
 
         scene.traverse { actor ->

@@ -19,11 +19,15 @@ class Matrix4(vararg val data: Float) {
         )
     }
 
-    fun setData(data: FloatArray) {
+    fun set(data: FloatArray) {
         if (data.size != 16) {
             throw IllegalArgumentException("Matrix4 must have 16 elements")
         }
         System.arraycopy(data, 0, this.data, 0, 16)
+    }
+
+    fun set(other: Matrix4) {
+        System.arraycopy(other.data, 0, this.data, 0, 16)
     }
 
     operator fun times(other: Matrix4): Matrix4 {

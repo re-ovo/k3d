@@ -81,6 +81,27 @@ class Quaternion(
         return Quaternion(x / length, y / length, z / length, w / length)
     }
 
+    operator fun times(other: Quaternion): Quaternion {
+        val x = this.w * other.x + this.x * other.w + this.y * other.z - this.z * other.y
+        val y = this.w * other.y - this.x * other.z + this.y * other.w + this.z * other.x
+        val z = this.w * other.z + this.x * other.y - this.y * other.x + this.z * other.w
+        val w = this.w * other.w - this.x * other.x - this.y * other.y - this.z * other.z
+        return Quaternion(x, y, z, w)
+    }
+
+    operator fun timesAssign(other: Quaternion) {
+        val x = this.w * other.x + this.x * other.w + this.y * other.z - this.z * other.y
+        val y = this.w * other.y - this.x * other.z + this.y * other.w + this.z * other.x
+        val z = this.w * other.z + this.x * other.y - this.y * other.x + this.z * other.w
+        val w = this.w * other.w - this.x * other.x - this.y * other.y - this.z * other.z
+        this.set(x, y, z, w)
+    }
+
+    fun applyRotation(other: Quaternion) {
+        val newQuaternion = other * this
+        this.set(newQuaternion)
+    }
+
     fun toEuler() : Euler {
         val euler = Euler()
         val test = x * y + z * w

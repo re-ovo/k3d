@@ -39,9 +39,9 @@ internal fun rotationMatrix(x: Float, y: Float, z: Float): Matrix4 {
     val cosZ = cos(z)
     val sinZ = sin(z)
     return Matrix4(
-        cosY * cosZ, cosY * sinZ, -sinY, 0f,
-        sinX * sinY * cosZ - cosX * sinZ, sinX * sinY * sinZ + cosX * cosZ, sinX * cosY, 0f,
-        cosX * sinY * cosZ + sinX * sinZ, cosX * sinY * sinZ - sinX * cosZ, cosX * cosY, 0f,
+        cosY * cosZ, sinX * sinY * cosZ - cosX * sinZ, cosX * sinY * cosZ + sinX * sinZ, 0f,
+        cosY * sinZ, sinX * sinY * sinZ + cosX * cosZ, cosX * sinY * sinZ - sinX * cosZ, 0f,
+        -sinY, sinX * cosY, cosX * cosY, 0f,
         0f, 0f, 0f, 1f
     )
 }

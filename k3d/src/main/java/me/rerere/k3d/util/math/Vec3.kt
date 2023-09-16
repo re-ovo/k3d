@@ -26,6 +26,13 @@ class Vec3(
 
     override var dirty: Boolean = false
 
+    fun set(x: Float, y: Float, z: Float): Vec3 {
+        this.x = x
+        this.y = y
+        this.z = z
+        return this
+    }
+
     operator fun plus(other: Vec3): Vec3 {
         return Vec3(x + other.x, y + other.y, z + other.z)
     }
