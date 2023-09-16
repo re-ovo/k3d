@@ -12,6 +12,7 @@ import java.util.UUID
 
 abstract class Actor {
     private val _id = UUID.randomUUID()
+    var name: String = ""
 
     var parent: Actor? = null
     val position = Vec3(0f, 0f, 0f)
@@ -50,5 +51,9 @@ abstract class Actor {
     override fun equals(other: Any?): Boolean {
         if(other !is Actor) return false
         return _id == other._id
+    }
+
+    override fun toString(): String {
+        return "${javaClass.simpleName}(id=$_id, name='$name', parent=${parent?.name}, position=$position, rotation=$rotation, scale=$scale)"
     }
 }

@@ -3,6 +3,7 @@ package me.rerere.k3d.scene.geometry
 import me.rerere.k3d.renderer.resource.Attribute
 import me.rerere.k3d.renderer.resource.DataType
 import java.nio.FloatBuffer
+import java.nio.IntBuffer
 
 class CubeGeometry(
     width: Float = 1f,
@@ -31,11 +32,11 @@ class CubeGeometry(
 
     private fun updateVao() {
         val attribute = this.getAttribute("a_pos") ?: Attribute(
-            "a_pos",
-            3,
-            DataType.FLOAT,
-            false,
-            FloatBuffer.allocate(6 * 3 * 4)
+            name = "a_pos",
+            itemSize = 3,
+            type = DataType.FLOAT,
+            normalized = false,
+            data = FloatBuffer.allocate(6 * 3 * 4)
         )
         val buffer = attribute.data as FloatBuffer
         buffer.apply {
@@ -80,14 +81,14 @@ class CubeGeometry(
             flip()
         }
         attribute.markDirty()
-        setIndices(intArrayOf(
+        setIndices(IntBuffer.wrap(intArrayOf(
             0, 1, 2, 0, 2, 3,    // front
             4, 5, 6, 4, 6, 7,    // back
             8, 9, 10, 8, 10, 11,   // top
             12, 13, 14, 12, 14, 15,   // bottom
             16, 17, 18, 16, 18, 19,   // right
             20, 21, 22, 20, 22, 23,   // left
-        ))
+        )))
         setAttribute(attribute)
     }
 }

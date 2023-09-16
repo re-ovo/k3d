@@ -10,9 +10,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -28,7 +26,7 @@ import me.rerere.k3d.loader.GltfLoader
 import me.rerere.k3d.renderer.GLES3Renderer
 import me.rerere.k3d.renderer.ViewportSize
 import me.rerere.k3d.scene.Scene
-import me.rerere.k3d.scene.actor.Mesh
+import me.rerere.k3d.scene.actor.Primitive
 import me.rerere.k3d.scene.camera.PerspectiveCamera
 import me.rerere.k3d.scene.geometry.CubeGeometry
 import me.rerere.k3d.scene.material.StandardMaterial
@@ -45,14 +43,15 @@ class MainActivity : ComponentActivity() {
     private val camera = PerspectiveCamera().apply {
         position.set(0f, 0f, 5f)
     }
-    private val cube = Mesh(
-        CubeGeometry(),
-        StandardMaterial()
+    private val cube = Primitive(
+        geometry = CubeGeometry(),
+        material = StandardMaterial(),
+        count = 36
     ).apply {
         rotation.set(Euler(0f, 10f.toRadian(), 0f).toQuaternion())
     }
     private val scene = Scene().apply {
-        addChild(cube)
+       // addChild(cube)
     }
     private lateinit var controls: OrbitController
 
@@ -76,9 +75,11 @@ class MainActivity : ComponentActivity() {
                     actions = {
                         TextButton(
                             onClick = {
-                                GltfLoader.load(
+                                val result = GltfLoader.load(
                                     inputStream = assets.open("sofa_combination.glb")
                                 )
+                                println(result.defaultScene)
+                                scene.addChild(result.defaultScene)
                             }
                         ) {
                             Text("Load")

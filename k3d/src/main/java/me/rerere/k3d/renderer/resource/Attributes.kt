@@ -10,6 +10,8 @@ import java.nio.Buffer
  * @param itemSize The size of each item in this attribute
  * @param type The data type of this attribute
  * @param normalized Whether the data should be normalized
+ * @param stride The stride of this attribute
+ * @param offset The offset of this attribute
  * @param data The data of this attribute
  */
 class Attribute(
@@ -17,14 +19,20 @@ class Attribute(
     val itemSize: Int,
     val type: DataType,
     val normalized: Boolean,
+    val stride: Int = 0,
+    val offset: Int = 0,
     val data: Buffer
 ): Dirty {
     override var dirty: Boolean = false
+
+    override fun toString(): String {
+        return "Attribute(name='$name', itemSize=$itemSize, type=$type, normalized=$normalized, stride=$stride, offset=$offset, data=$data)"
+    }
 }
 
 internal class VertexArray {
     private val attributes = hashMapOf<String, Attribute>()
-    private var indices: IntArray? = null
+    private var indices: Buffer? = null
 
     fun setAttribute(attribute: Attribute) {
         attributes[attribute.name] = attribute
@@ -38,11 +46,11 @@ internal class VertexArray {
         return attributes.values
     }
 
-    fun setIndices(indices: IntArray) {
+    fun setIndices(indices: Buffer) {
         this.indices = indices
     }
 
-    fun getIndices(): IntArray? {
+    fun getIndices(): Buffer? {
         return indices
     }
 }

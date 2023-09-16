@@ -2,9 +2,7 @@ package me.rerere.k3d.renderer
 
 import android.opengl.GLES20
 import android.opengl.GLES30
-import me.rerere.k3d.helper.FpsHelper
 import me.rerere.k3d.renderer.resource.Attribute
-import me.rerere.k3d.renderer.resource.DataType
 import me.rerere.k3d.renderer.resource.VertexArray
 import me.rerere.k3d.renderer.shader.ShaderProgram
 import me.rerere.k3d.renderer.shader.Uniform
@@ -13,17 +11,14 @@ import me.rerere.k3d.renderer.shader.createShader
 import me.rerere.k3d.renderer.shader.genBuffer
 import me.rerere.k3d.renderer.shader.genVertexArray
 import me.rerere.k3d.scene.Scene
-import me.rerere.k3d.scene.actor.Mesh
+import me.rerere.k3d.scene.actor.Primitive
 import me.rerere.k3d.scene.camera.Camera
-import me.rerere.k3d.scene.material.RawShaderMaterial
 import me.rerere.k3d.scene.material.ShaderMaterial
 import me.rerere.k3d.scene.traverse
 import me.rerere.k3d.util.Disposable
 import me.rerere.k3d.util.cleanIfDirty
-import java.nio.FloatBuffer
-import java.nio.IntBuffer
+import java.nio.Buffer
 import java.util.IdentityHashMap
-import kotlin.time.Duration.Companion.seconds
 
 class GLES3Renderer : Renderer {
     private val resourceManager = GL3ResourceManager()
@@ -51,10 +46,8 @@ class GLES3Renderer : Renderer {
         GLES30.glEnable(GLES30.GL_CULL_FACE)
 
         if (camera.dirty) {
-            println("update camera matrix")
             camera.updateMatrix()
             camera.markClean()
-            println(camera.worldMatrixInverse)
         }
 
         scene.traverse { actor ->
@@ -65,7 +58,9 @@ class GLES3Renderer : Renderer {
                 actor.scale.markClean()
             }
 
-            if (actor is Mesh) {
+            if (actor is Primitive) {
+                // println("render $actor")
+
                 resourceManager.useProgram(actor.material.program) {
                     if (actor.material is ShaderMaterial) {
                         actor.material.uniforms.forEach { uniform ->
@@ -100,17 +95,21 @@ class GLES3Renderer : Renderer {
                     }
 
                     resourceManager.useVertexArray(this, actor.geometry.vao) {
-                        val indices = actor.geometry.getIndices()
-                        val count =
-                            indices?.size ?: actor.geometry.getAttribute("a_pos")?.data?.capacity()
-                            ?: 0
-                        GLES30.glDrawElements(GLES30.GL_TRIANGLES, count, GLES30.GL_UNSIGNED_INT, 0)
+                        if(actor.geometry.getIndices() == null) {
+                            GLES30.glDrawArrays(
+                                actor.mode.value,
+                                0,
+                                actor.count
+                            )
+                        } else {
+                            GLES30.glDrawElements(
+                                actor.mode.value,
+                                actor.count,
+                                GLES30.GL_UNSIGNED_INT,
+                                0
+                            )
+                        }
                     }
-
-
-//                    resourceManager.useVertexArray(this, vao) {
-//                        GLES30.glDrawElements(GLES30.GL_TRIANGLES, 6, GLES30.GL_UNSIGNED_INT, 0)
-//                    }
                 }
             }
         }
@@ -215,28 +214,30 @@ internal class GL3ResourceManager : Disposable {
 
             GLES30.glBindVertexArray(vao)
             vertexArray.getAttributes().forEach { attribute ->
-                // Create buffer for attribute
-                val vbo = genBuffer().getOrThrow()
-                vertexArraysAttributesBuffer[attribute] = vbo
-                GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vbo)
-                GLES30.glBufferData(
-                    GLES30.GL_ARRAY_BUFFER,
-                    attribute.data.capacity() * attribute.type.size,
-                    attribute.data,
-                    GLES30.GL_STATIC_DRAW
-                )
-
                 // Set attribute
                 val location = GLES30.glGetAttribLocation(programId, attribute.name)
                 if (location != -1) {
+                    // Create buffer for attribute
+                    val vbo = genBuffer().getOrThrow()
+                    vertexArraysAttributesBuffer[attribute] = vbo
+                    GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vbo)
+                    val size = attribute.data.sizeInBytes()
+                    println("[K3D:Resource] stream attribute buffer: ${attribute.data} / size: $size")
+                    GLES30.glBufferData(
+                        GLES30.GL_ARRAY_BUFFER,
+                        size,
+                        attribute.data,
+                        GLES30.GL_STATIC_DRAW
+                    )
+
                     GLES30.glEnableVertexAttribArray(location)
                     GLES30.glVertexAttribPointer(
                         location,
                         attribute.itemSize,
                         attribute.type.value,
                         attribute.normalized,
-                        0,
-                        0
+                        attribute.stride,
+                        attribute.offset
                     )
                 } else {
                     println("location not found for ${attribute.name}")
@@ -245,12 +246,13 @@ internal class GL3ResourceManager : Disposable {
             // set indices if exists
             vertexArray.getIndices()?.let { indices ->
                 val buffer = genBuffer().getOrThrow()
+                println("[K3D:Resource] stream indices buffer: $indices")
                 vertexArraysIndicesBuffer[vertexArray] = buffer
                 GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, buffer)
                 GLES30.glBufferData(
                     GLES30.GL_ELEMENT_ARRAY_BUFFER,
-                    indices.size * 4,
-                    IntBuffer.wrap(indices),
+                    indices.sizeInBytes(),
+                    indices,
                     GLES30.GL_STATIC_DRAW
                 )
             }
@@ -315,5 +317,16 @@ internal class GL3ResourceManager : Disposable {
             GLES30.glDeleteBuffers(1, intArrayOf(it), 0)
         }
         vertexArraysIndicesBuffer.clear()
+    }
+}
+
+private fun Buffer.sizeInBytes(): Int {
+    return this.remaining() * when (this) {
+        is java.nio.ByteBuffer -> 1
+        is java.nio.ShortBuffer -> 2
+        is java.nio.IntBuffer -> 4
+        is java.nio.FloatBuffer -> 4
+        is java.nio.DoubleBuffer -> 8
+        else -> throw IllegalStateException("Unknown buffer type")
     }
 }
