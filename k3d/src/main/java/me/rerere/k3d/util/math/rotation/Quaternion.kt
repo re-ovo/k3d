@@ -191,4 +191,21 @@ class Quaternion(
             0f, 0f, 0f, 1f
         )
     }
+
+    override fun toString(): String {
+        return "Quaternion(x=$x, y=$y, z=$z, w=$w)"
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (other !is Quaternion) return false
+        return x == other.x && y == other.y && z == other.z && w == other.w
+    }
+
+    override fun hashCode(): Int {
+        var result = x.hashCode()
+        result = 31 * result + y.hashCode()
+        result = 31 * result + z.hashCode()
+        result = 31 * result + w.hashCode()
+        return result
+    }
 }
