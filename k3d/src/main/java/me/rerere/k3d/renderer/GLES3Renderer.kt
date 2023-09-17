@@ -363,25 +363,31 @@ internal class GL3ResourceManager : Disposable {
     fun getVertexArray(vertexArray: VertexArray): Int? = vertexArrays[vertexArray]
 
     override fun dispose() {
+        // program
         programs.values.forEach {
             GLES20.glDeleteProgram(it)
         }
         programs.clear()
 
+        // vao
         vertexArrays.values.forEach {
             GLES30.glDeleteVertexArrays(1, intArrayOf(it), 0)
         }
         vertexArrays.clear()
-
         vertexArraysAttributesBuffer.values.forEach {
             GLES30.glDeleteBuffers(1, intArrayOf(it), 0)
         }
         vertexArraysAttributesBuffer.clear()
-
         vertexArraysIndicesBuffer.values.forEach {
             GLES30.glDeleteBuffers(1, intArrayOf(it), 0)
         }
         vertexArraysIndicesBuffer.clear()
+
+        // texture
+        textureBuffers.values.forEach {
+            GLES30.glDeleteTextures(1, intArrayOf(it), 0)
+        }
+        textureBuffers.clear()
     }
 }
 
