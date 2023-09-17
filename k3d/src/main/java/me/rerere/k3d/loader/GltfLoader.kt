@@ -3,6 +3,7 @@ package me.rerere.k3d.loader
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.ColorSpace
 import com.google.gson.JsonObject
 import me.rerere.k3d.renderer.resource.Attribute
 import me.rerere.k3d.renderer.resource.DataType
@@ -234,8 +235,17 @@ object GltfLoader {
                 attributes += textureCoordAccessor(gltf, buffers, primitive.attributes, material.baseColorTextureCoord)
                     .asAttribute(BuiltInAttributeName.TEXCOORD_BASE.attributeName)
 
-                attributes += textureCoordAccessor(gltf, buffers, primitive.attributes, 1)
+                attributes += textureCoordAccessor(gltf, buffers, primitive.attributes, material.normalTextureCoord)
                     .asAttribute(BuiltInAttributeName.TEXCOORD_NORMAL.attributeName)
+
+                attributes += textureCoordAccessor(gltf, buffers, primitive.attributes, material.occulsionTextureCoord)
+                    .asAttribute(BuiltInAttributeName.TEXCOORD_OCCLUSION.attributeName)
+
+                attributes += textureCoordAccessor(gltf, buffers, primitive.attributes, material.metallicRoughnessTextureCoord)
+                    .asAttribute(BuiltInAttributeName.TEXCOORD_ROUGHNESS.attributeName)
+
+                attributes += textureCoordAccessor(gltf, buffers, primitive.attributes, material.metallicRoughnessTextureCoord)
+                    .asAttribute(BuiltInAttributeName.TEXCOORD_METALLIC.attributeName)
             }
 
             val geometry = BufferGeometry().apply {
@@ -247,11 +257,12 @@ object GltfLoader {
                 }
             }
             val material = StandardMaterial().apply {
-                baseColorTexture = materialData?.baseColorTexture?.toTexture2d()
+                baseColorTexture = materialData?.baseColorTexture?.toTexture2d(requireLinear = true)
                 normalTexture = materialData?.normalTexture?.toTexture2d()
 
-                println("baseColorTexture: $baseColorTexture")
-                println("normalTexture: $normalTexture")
+//                occlusionTexture = materialData?.occlusionTexture?.toTexture2d()
+//                roughnessTexture = materialData?.metallicRoughnessTexture?.toTexture2d()
+//                metallicTexture = materialData?.metallicRoughnessTexture?.toTexture2d()
             }
             group.addChild(
                 Primitive(
@@ -266,8 +277,13 @@ object GltfLoader {
         return group
     }
 
-    private fun Texture.toTexture2d(): me.rerere.k3d.renderer.resource.Texture.Texture2D {
+    private fun Texture.toTexture2d(requireLinear: Boolean = false): me.rerere.k3d.renderer.resource.Texture.Texture2D {
         return image.use {
+            if(requireLinear) {
+                // convert to linear color space
+
+            }
+
             me.rerere.k3d.renderer.resource.Texture.Texture2D(
                 data = it.toByteBuffer(),
                 wrapS = wrapS,
@@ -275,7 +291,7 @@ object GltfLoader {
                 minFilter = minFilter,
                 magFilter = magFilter,
                 width = image.width,
-                height = image.height
+                height = image.height,
             )
         }
     }
@@ -365,6 +381,7 @@ object GltfLoader {
             metallicRoughnessTexture = material.pbrMetallicRoughness?.metallicRoughnessTexture?.let {
                 textureOf(gltf, buffers, it.index)
             },
+            metallicRoughnessTextureCoord = material.pbrMetallicRoughness?.metallicRoughnessTexture?.texCoord ?: 0,
             normalTexture = material.normalTexture?.let {
                 textureOf(gltf, buffers, it.index)
             },
@@ -372,6 +389,7 @@ object GltfLoader {
             occlusionTexture = material.occlusionTexture?.let {
                 textureOf(gltf, buffers, it.index)
             },
+            occulsionTextureCoord = material.occlusionTexture?.texCoord ?: 0,
             emissiveFactor = material.emissiveFactor ?: listOf(0f, 0f, 0f),
             emissiveTexture = material.emissiveTexture?.let {
                 textureOf(gltf, buffers, it.index)
@@ -471,9 +489,11 @@ private data class Material(
     val metallicFactor: Float?,
     val roughnessFactor: Float?,
     val metallicRoughnessTexture: Texture?,
+    val metallicRoughnessTextureCoord: Int,
     val normalTexture: Texture?,
     val normalTextureCoord: Int,
     val occlusionTexture: Texture?,
+    val occulsionTextureCoord: Int,
     val emissiveTexture: Texture?,
     val emissiveFactor: List<Float>?,
     val alphaMode: String?,

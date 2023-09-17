@@ -77,7 +77,7 @@ class MainActivity : ComponentActivity() {
                         TextButton(
                             onClick = {
                                 val result = GltfLoader.load(
-                                    inputStream = assets.open("sofa_combination.glb")
+                                    inputStream = assets.open("axe.glb")
                                 )
                                 result.defaultScene.scale.set(0.2f, 0.2f, 0.2f)
                                 scene.addChild(result.defaultScene)

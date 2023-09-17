@@ -125,7 +125,7 @@ class StandardMaterial : ShaderMaterial(StandProgram) {
             }
         }
 
-    var aoTexture: Texture?
+    var occlusionTexture: Texture?
         get() = textures[BuiltInUniformName.TEXTURE_OCCLUSION.uniformName]
         set(value) {
             if (value == null) {
