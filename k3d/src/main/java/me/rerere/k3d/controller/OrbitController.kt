@@ -19,42 +19,31 @@ class OrbitController(
     val element: View,
 ) {
     private var distance = 5f
+    private val handler = MotionHandler { event ->
+        println(event)
 
-    private var lastX = 0f
-    private var lastY = 0f
-    private var lastDistance = 0f
-
-    fun handleEvent(event: MotionEvent) {
-        when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
-                lastX = event.x
-                lastY = event.y
+        when (event) {
+            is ControllerEvent.Rotate -> {
+                handleDrag(event)
             }
-            MotionEvent.ACTION_POINTER_DOWN -> {
-                lastDistance = event.getPointerDistance(0, 1)
+
+            is ControllerEvent.Zoom -> {
+                handleZoom(event)
             }
-            MotionEvent.ACTION_MOVE -> {
-                when(event.pointerCount) {
-                    1 -> {
-                        handleDrag(event)
-                    }
 
-                    2 -> {
-                        handleZoom(event)
-                    }
-                }
-
-                lastX = event.x
-                lastY = event.y
+            is ControllerEvent.Pan -> {
+                // handlePan(event)
             }
         }
     }
 
-    private fun handleDrag(event: MotionEvent) {
-        val dx = (event.x - lastX) / element.height.toFloat()
-        val dy = (event.y - lastY) / element.height.toFloat()
+    fun handleEvent(event: MotionEvent) {
+        handler.handle(event)
+    }
 
-        println("Drag: $dx, $dy")
+    private fun handleDrag(rotate: ControllerEvent.Rotate) {
+        val dx = rotate.deltaX / element.height.toFloat()
+        val dy = rotate.deltaY / element.height.toFloat()
 
         camera.yaw -= dx * 5f
         camera.pitch -= dy * 5f
@@ -63,10 +52,8 @@ class OrbitController(
         update()
     }
 
-    private fun handleZoom(event: MotionEvent) {
-        val distance = event.getPointerDistance(0, 1)
-        val delta = -(distance - lastDistance)
-        lastDistance = distance
+    private fun handleZoom(event: ControllerEvent.Zoom) {
+        val delta = -event.delta
 
         println("Zoom: $delta")
         this.distance += delta / 50f
@@ -75,7 +62,7 @@ class OrbitController(
         update()
     }
 
-    fun update() {
+    private fun update() {
         val x = target.x + distance * cos(camera.pitch) * sin(camera.yaw)
         val y = target.y + distance * sin(-camera.pitch)
         val z = target.z + distance * cos(camera.pitch) * cos(camera.yaw)
