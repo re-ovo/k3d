@@ -23,6 +23,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
 import me.rerere.k3d.controller.OrbitController
 import me.rerere.k3d.loader.GltfLoader
+import me.rerere.k3d.loader.ctx
 import me.rerere.k3d.renderer.GLES3Renderer
 import me.rerere.k3d.renderer.ViewportSize
 import me.rerere.k3d.scene.Scene
@@ -54,6 +55,10 @@ class MainActivity : ComponentActivity() {
        // addChild(cube)
     }
     private lateinit var controls: OrbitController
+
+    init {
+        ctx = this
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, false)

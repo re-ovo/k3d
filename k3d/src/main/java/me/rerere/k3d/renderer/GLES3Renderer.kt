@@ -3,12 +3,14 @@ package me.rerere.k3d.renderer
 import android.opengl.GLES20
 import android.opengl.GLES30
 import me.rerere.k3d.renderer.resource.Attribute
+import me.rerere.k3d.renderer.resource.Texture
 import me.rerere.k3d.renderer.resource.VertexArray
 import me.rerere.k3d.renderer.shader.ShaderProgram
 import me.rerere.k3d.renderer.shader.Uniform
 import me.rerere.k3d.renderer.shader.createProgram
 import me.rerere.k3d.renderer.shader.createShader
 import me.rerere.k3d.renderer.shader.genBuffer
+import me.rerere.k3d.renderer.shader.genTexture
 import me.rerere.k3d.renderer.shader.genVertexArray
 import me.rerere.k3d.scene.Scene
 import me.rerere.k3d.scene.actor.Primitive
@@ -61,40 +63,44 @@ class GLES3Renderer : Renderer {
 
             if (actor is Primitive) {
                 resourceManager.useProgram(actor.material.program) {
-                    if (actor.material is ShaderMaterial) {
-                        actor.material.uniforms.forEach { uniform ->
-                            resourceManager.useUniform(actor.material.program, uniform)
-                        }
+                    // Apply uniforms
+                    actor.material.uniforms.forEach { uniform ->
+                        resourceManager.useUniform(actor.material.program, uniform)
+                    }
 
-                        // Apply built-in uniforms
-                        resourceManager.useUniform(
-                            actor.material.program,
-                            worldMatrixUniform.apply {
-                                value = actor.worldMatrix.data
-                            }
-                        )
-                        resourceManager.useUniform(
-                            actor.material.program,
-                            viewMatrixUniform.apply {
-                                value = camera.worldMatrixInverse.data
-                                // println(camera.worldMatrixInverse.toString())
-                            }
-                        )
-                        resourceManager.useUniform(
-                            actor.material.program,
-                            projectionMatrixUniform.apply {
-                                value = camera.projectionMatrix.data
-                            }
-                        )
-                    } else {
-                        // Raw shader material
-                        actor.material.uniforms.forEach { uniform ->
-                            resourceManager.useUniform(actor.material.program, uniform)
+                    // Apply built-in uniforms
+                    resourceManager.useUniform(
+                        actor.material.program,
+                        worldMatrixUniform.apply {
+                            value = actor.worldMatrix.data
                         }
+                    )
+                    resourceManager.useUniform(
+                        actor.material.program,
+                        viewMatrixUniform.apply {
+                            value = camera.worldMatrixInverse.data
+                        }
+                    )
+                    resourceManager.useUniform(
+                        actor.material.program,
+                        projectionMatrixUniform.apply {
+                            value = camera.projectionMatrix.data
+                        }
+                    )
+
+                    // Apply textures
+                    actor.material.textures.entries.forEachIndexed { index, mutableEntry ->
+                        val (name, texture) = mutableEntry
+                        resourceManager.useTexture(
+                            actor.material.program,
+                            name,
+                            texture,
+                            index
+                        )
                     }
 
                     resourceManager.useVertexArray(this, actor.geometry.vao) {
-                        if(actor.geometry.getIndices() == null) {
+                        if (actor.geometry.getIndices() == null) {
                             GLES30.glDrawArrays(
                                 actor.mode.value,
                                 0,
@@ -123,6 +129,9 @@ internal class GL3ResourceManager : Disposable {
     private val vertexArrays = IdentityHashMap<VertexArray, Int>()
     private val vertexArraysAttributesBuffer = IdentityHashMap<Attribute, Int>()
     private val vertexArraysIndicesBuffer = IdentityHashMap<VertexArray, Int>()
+
+    // texture related resources
+    private val textureBuffers = IdentityHashMap<Texture, Int>()
 
     inline fun useProgram(program: ShaderProgram, scope: ShaderProgram.() -> Unit) {
         val programId = this.getProgram(program) ?: this.createProgram(program)
@@ -183,6 +192,22 @@ internal class GL3ResourceManager : Disposable {
         }
     }
 
+    fun useTexture(program: ShaderProgram, name: String, texture: Texture, index: Int) {
+        val programId = getProgram(program) ?: return
+        val location = GLES30.glGetUniformLocation(programId, name)
+        if (location != -1) {
+            val textureId = getTextureBuffer(texture) ?: createTextureBuffer(texture)
+                .getOrThrow()
+            GLES30.glActiveTexture(GLES30.GL_TEXTURE0 + index)
+            val target = when (texture) {
+                is Texture.Texture2D -> GLES30.GL_TEXTURE_2D
+                is Texture.TextureCube -> GLES30.GL_TEXTURE_CUBE_MAP
+            }
+            GLES30.glBindTexture(target, textureId)
+            GLES30.glUniform1i(location, index)
+        }
+    }
+
     fun createProgram(program: ShaderProgram): Result<Int> = runCatching {
         require(!programs.containsKey(program)) { "Program already exists" }
         val vertexShader = createShader(GLES20.GL_VERTEX_SHADER, program.vertexShader)
@@ -202,6 +227,46 @@ internal class GL3ResourceManager : Disposable {
     }
 
     fun getProgram(program: ShaderProgram): Int? = programs[program]
+
+    fun getTextureBuffer(texture: Texture): Int? = textureBuffers[texture]
+
+    fun createTextureBuffer(texture: Texture): Result<Int> = runCatching {
+        val textureId = genTexture().getOrThrow()
+        textureBuffers[texture] = textureId
+
+        println("[K3D:Resource] create texture buffer: $textureId")
+
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textureId)
+        val target = when (texture) {
+            is Texture.Texture2D -> GLES30.GL_TEXTURE_2D
+            is Texture.TextureCube -> GLES30.GL_TEXTURE_CUBE_MAP
+        }
+        GLES30.glTexParameteri(target, GLES30.GL_TEXTURE_MIN_FILTER, texture.minFilter.value)
+        GLES30.glTexParameteri(target, GLES30.GL_TEXTURE_MAG_FILTER, texture.magFilter.value)
+        GLES30.glTexParameteri(target, GLES30.GL_TEXTURE_WRAP_S, texture.wrapS.value)
+        GLES30.glTexParameteri(target, GLES30.GL_TEXTURE_WRAP_T, texture.wrapT.value)
+        GLES30.glTexImage2D(
+            target,
+            0,
+            GLES30.GL_RGBA,
+            texture.width,
+            texture.height,
+            0,
+            GLES30.GL_RGBA,
+            GLES30.GL_UNSIGNED_BYTE,
+            texture.data
+        )
+        GLES30.glGenerateMipmap(GLES30.GL_TEXTURE_2D)
+        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0)
+
+        textureId
+    }
+
+    fun deleteTextureBuffer(texture: Texture) {
+        val textureId = textureBuffers[texture] ?: return
+        GLES30.glDeleteTextures(1, intArrayOf(textureId), 0)
+        textureBuffers.remove(texture)
+    }
 
     fun createVertexArray(program: ShaderProgram, vertexArray: VertexArray): Result<Int> =
         runCatching {

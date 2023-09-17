@@ -52,10 +52,8 @@ internal class MotionHandler(private val handler: (ControllerEvent) -> Unit) {
                     val x2 = event.getX(2)
                     val y2 = event.getY(2)
 
-                    val deltaX = x0.coerceAtLeast(x1).coerceAtLeast(x2) - x0.coerceAtMost(x1)
-                        .coerceAtMost(x2)
-                    val deltaY = y0.coerceAtLeast(y1).coerceAtLeast(y2) - y0.coerceAtMost(y1)
-                        .coerceAtMost(y2)
+                    val deltaX = (x0 + x1 + x2) / 3 - lastX
+                    val deltaY = (y0 + y1 + y2) / 3 - lastY
 
                     handler(ControllerEvent.Pan(deltaX, deltaY))
                 }

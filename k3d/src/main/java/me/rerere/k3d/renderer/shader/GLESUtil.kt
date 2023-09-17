@@ -63,3 +63,12 @@ internal fun genBuffer(): Result<Int> {
     GLES30.glGenBuffers(1, buffer, 0)
     return Result.success(buffer[0])
 }
+
+/**
+ * Create texture
+ */
+internal fun genTexture(): Result<Int> {
+    val texture = IntArray(1)
+    GLES30.glGenTextures(1, texture, 0)
+    return Result.success(texture[0])
+}

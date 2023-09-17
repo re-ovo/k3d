@@ -1,9 +1,16 @@
 package me.rerere.k3d.loader
 
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.os.Environment
 import com.google.gson.JsonObject
 import me.rerere.k3d.renderer.resource.Attribute
 import me.rerere.k3d.renderer.resource.DataType
 import me.rerere.k3d.renderer.resource.DrawMode
+import me.rerere.k3d.renderer.resource.TextureFilter
+import me.rerere.k3d.renderer.resource.TextureWrap
+import me.rerere.k3d.renderer.shader.BuiltInAttributeName
 import me.rerere.k3d.scene.Actor
 import me.rerere.k3d.scene.ActorGroup
 import me.rerere.k3d.scene.Scene
@@ -19,7 +26,9 @@ import java.nio.ByteBuffer
 import java.util.Stack
 
 private const val GLB_MAGIC = 0x676c5446 // "glTF"
-private const val GLB_VERSION = 0x02000000
+private const val GLB_VERSION = 0x02000000 // 2.0
+
+var ctx: Context? = null
 
 /**
  * glTF Loader
@@ -90,14 +99,11 @@ object GltfLoader {
         println(binChunk)
 
         val gltf = GsonInstance.fromJson(jsonChunk, Gltf::class.java)
-        return parse(
-            gltf = gltf,
-            buffers = buildList {
-                binChunk?.let {
-                    add(it)
-                }
+        return parse(gltf = gltf, buffers = buildList {
+            binChunk?.let {
+                add(it)
             }
-        )
+        })
     }
 
     private fun parse(gltf: Gltf, buffers: List<ByteBuffer>): GltfLoadResult {
@@ -126,8 +132,7 @@ object GltfLoader {
         }
 
         return GltfLoadResult(
-            scenes = scenes,
-            defaultScene = defaultScene
+            scenes = scenes, defaultScene = defaultScene
         )
     }
 
@@ -174,18 +179,19 @@ object GltfLoader {
         }
 
         gltfMesh.primitives.forEach { primitive ->
+            // Attributes
             var positionCount = 0 // if there is no indices, use position count for draw count
             val attributes = primitive.attributes.map { (key: String, accessorIndex: Int) ->
                 when (key) {
                     "POSITION" -> {
                         val accessor = accessorOf(gltf, buffers, accessorIndex)
                         positionCount = accessor.count
-                        accessor.asAttribute("a_pos")
+                        accessor.asAttribute(BuiltInAttributeName.POSITION.attributeName)
                     }
 
                     "NORMAL" -> {
                         val accessor = accessorOf(gltf, buffers, accessorIndex)
-                        accessor.asAttribute("a_normal")
+                        accessor.asAttribute(BuiltInAttributeName.NORMAL.attributeName)
                     }
 
                     else -> {
@@ -193,8 +199,12 @@ object GltfLoader {
                         null
                     }
                 }
-            }
+            }.toMutableList()
+
+            // Draw Mode
             val mode = gltfPrimitiveModeToDrawMode(primitive.mode)
+
+            // Indices
             val indicesAccessor = primitive.indices?.let {
                 accessorOf(gltf, buffers, it)
             }
@@ -206,26 +216,37 @@ object GltfLoader {
                     error("BufferView byteStride > 0 is not supported yet for indices")
                 }
 
-                ((bufferView.buffer
-                    .clear()
-                    .position(bufferView.byteOffset + accessor.byteOffset)
-                    .limit(bufferView.byteOffset + bufferView.byteLength + accessor.byteOffset)) as ByteBuffer)
-                    .slice()
+                bufferView.buffer.sliceSafely(
+                    start = bufferView.byteOffset + accessor.byteOffset,
+                    end = bufferView.byteOffset + bufferView.byteLength + accessor.byteOffset
+                )
             }
 
+            // Material
+            val materialData = primitive.material?.let {
+                materialOf(gltf, buffers, it)
+            }
+            materialData?.let { material ->
+                attributes += textureCoordAccessor(gltf, buffers, primitive.attributes, material.baseColorTextureCoord)
+                    .asAttribute(BuiltInAttributeName.TEXCOORD_BASE.attributeName)
+            }
+
+            val geometry = BufferGeometry().apply {
+                attributes.filterNotNull().forEach { attr ->
+                    setAttribute(attr)
+                }
+                indicesBuffer?.let {
+                    setIndices(it)
+                }
+            }
+            val material = StandardMaterial().apply {
+                baseColorTexture = materialData?.baseColorTexture?.toTexture2d()
+            }
             group.addChild(
                 Primitive(
                     mode = mode,
-                    geometry = BufferGeometry().apply {
-                        attributes.filterNotNull().forEach { attr ->
-                            setAttribute(attr)
-                        }
-
-                        indicesBuffer?.let {
-                            setIndices(it)
-                        }
-                    },
-                    material = StandardMaterial(),
+                    geometry = geometry,
+                    material = material,
                     count = indicesAccessor?.count ?: positionCount
                 )
             )
@@ -234,20 +255,39 @@ object GltfLoader {
         return group
     }
 
+    private fun Texture.toTexture2d(): me.rerere.k3d.renderer.resource.Texture.Texture2D {
+        return image.use {
+            me.rerere.k3d.renderer.resource.Texture.Texture2D(
+                data = it.toByteBuffer(),
+                wrapS = wrapS,
+                wrapT = wrapT,
+                minFilter = minFilter,
+                magFilter = magFilter,
+                width = image.width,
+                height = image.height
+            )
+        }
+    }
+
+    private fun textureCoordAccessor(
+        gltf: Gltf,
+        buffers: List<ByteBuffer>,
+        attributes: Map<String, Int>,
+        coordIndex: Int
+    ): Accessor {
+        val key = "TEXCOORD_$coordIndex"
+        val index = attributes[key] ?: error("No attribute: $key")
+        return accessorOf(gltf, buffers, index)
+    }
+
     private fun Accessor.asAttribute(name: String): Attribute {
         require(bufferView != null) {
             "Accessor bufferView is null, this is not supported yet"
         }
 
-        val buffer = ((
-                bufferView.buffer
-                    .clear()
-                    .position(bufferView.byteOffset)
-                    .limit(
-                        bufferView.byteOffset + bufferView.byteLength
-                    )
-                ) as ByteBuffer)
-            .slice()
+        val buffer = bufferView.buffer.sliceSafely(
+            start = bufferView.byteOffset, end = bufferView.byteOffset + bufferView.byteLength
+        )
 
         return Attribute(
             name = name,
@@ -285,6 +325,88 @@ object GltfLoader {
             byteOffset = accessor.byteOffset ?: 0,
         )
     }
+
+    private fun materialOf(gltf: Gltf, buffers: List<ByteBuffer>, index: Int): Material {
+        val material = gltf.materials[index]
+
+//        val occlusionTexture = material.occlusionTexture?.let {
+//            textureOf(gltf, buffers, it.index)
+//        }
+//        val metallicRoughnessTexture =
+//            material.pbrMetallicRoughness?.metallicRoughnessTexture?.let {
+//                textureOf(gltf, buffers, it.index)
+//            }
+
+        return Material(
+            name = material.name ?: "",
+            alphaMode = material.alphaMode ?: "OPAQUE",
+            alphaCutoff = material.alphaCutoff ?: 0.5f,
+            doubleSided = material.doubleSided ?: false,
+            baseColorFactor = material.pbrMetallicRoughness?.baseColorFactor ?: listOf(
+                1f, 1f, 1f, 1f
+            ),
+            baseColorTexture = material.pbrMetallicRoughness?.baseColorTexture?.let {
+                textureOf(gltf, buffers, it.index)
+            },
+            baseColorTextureCoord = material.pbrMetallicRoughness?.baseColorTexture?.texCoord ?: 0,
+            metallicFactor = material.pbrMetallicRoughness?.metallicFactor ?: 1f,
+            roughnessFactor = material.pbrMetallicRoughness?.roughnessFactor ?: 1f,
+            metallicRoughnessTexture = material.pbrMetallicRoughness?.metallicRoughnessTexture?.let {
+                textureOf(gltf, buffers, it.index)
+            },
+            normalTexture = material.normalTexture?.let {
+                textureOf(gltf, buffers, it.index)
+            },
+            occlusionTexture = material.occlusionTexture?.let {
+                textureOf(gltf, buffers, it.index)
+            },
+            emissiveFactor = material.emissiveFactor ?: listOf(0f, 0f, 0f),
+            emissiveTexture = material.emissiveTexture?.let {
+                textureOf(gltf, buffers, it.index)
+            },
+        )
+    }
+
+    private fun textureOf(gltf: Gltf, buffers: List<ByteBuffer>, index: Int): Texture {
+        val texture = gltf.textures[index]
+        val sampler = gltf.samplers[texture.sampler]
+        return Texture(
+            image = imageOf(gltf, buffers, texture.source),
+            wrapS = TextureWrap.fromValue(sampler.wrapS),
+            wrapT = TextureWrap.fromValue(sampler.wrapT),
+            minFilter = TextureFilter.fromValue(sampler.minFilter),
+            magFilter = TextureFilter.fromValue(sampler.magFilter),
+        )
+    }
+
+    private fun imageOf(gltf: Gltf, buffers: List<ByteBuffer>, index: Int): Bitmap {
+        val image = gltf.images[index]
+
+        if (image.bufferView != null) {
+            val bufferView = bufferViewOf(gltf, buffers, image.bufferView)
+            val buffer = bufferView.buffer.sliceSafely(
+                start = bufferView.byteOffset, end = bufferView.byteOffset + bufferView.byteLength
+            )
+
+            // Convert image to bitmap
+            val bytes = ByteArray(buffer.remaining())
+            buffer.get(bytes)
+            return BitmapFactory.decodeByteArray(bytes, 0, bytes.size).also { bitmap ->
+//                val fileName = "image_${index}.png"
+//                ctx?.getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.let {
+//                    val file = it.resolve(fileName)
+//                    file.outputStream().use { output ->
+//                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
+//                        println("Image saved to: ${file.absolutePath}")
+//                    }
+//                }
+            }
+        } else if (image.uri != null) {
+            error("Unsupported image uri yet (gltf): ${image.uri}")
+        } else {
+            error("Unsupported image (gltf): $image")
+        }
+    }
 }
 
 private fun gltfPrimitiveModeToDrawMode(gltfMode: Int?) =
@@ -320,18 +442,17 @@ private fun gltfAccessorItemSizeOf(type: String): Int {
 }
 
 data class GltfLoadResult(
-    val scenes: List<Scene>,
-    val defaultScene: Scene
+    val scenes: List<Scene>, val defaultScene: Scene
 )
 
-internal data class BufferView(
+private data class BufferView(
     val buffer: ByteBuffer,
     val byteOffset: Int,
     val byteLength: Int,
     val byteStride: Int,
 )
 
-internal data class Accessor(
+private data class Accessor(
     val bufferView: BufferView?,
     val byteOffset: Int,
     val componentType: Int,
@@ -339,7 +460,32 @@ internal data class Accessor(
     val type: String,
 )
 
-internal data class Gltf(
+private data class Material(
+    val name: String,
+    val baseColorFactor: List<Float>?,
+    val baseColorTexture: Texture?,
+    val baseColorTextureCoord: Int,
+    val metallicFactor: Float?,
+    val roughnessFactor: Float?,
+    val metallicRoughnessTexture: Texture?,
+    val normalTexture: Texture?,
+    val occlusionTexture: Texture?,
+    val emissiveTexture: Texture?,
+    val emissiveFactor: List<Float>?,
+    val alphaMode: String?,
+    val alphaCutoff: Float?,
+    val doubleSided: Boolean?,
+)
+
+private data class Texture(
+    val image: Bitmap,
+    val wrapS: TextureWrap,
+    val wrapT: TextureWrap,
+    val minFilter: TextureFilter,
+    val magFilter: TextureFilter,
+)
+
+private data class Gltf(
     val accessors: List<Accessor>,
     val asset: Asset,
     val bufferViews: List<BufferView>,
@@ -364,9 +510,7 @@ internal data class Gltf(
     )
 
     data class Asset(
-        val version: String,
-        val generator: String,
-        val extras: JsonObject?
+        val version: String, val generator: String, val extras: JsonObject?
     )
 
     data class BufferView(
@@ -390,25 +534,33 @@ internal data class Gltf(
     )
 
     /**
-     * [Material](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#materials-overview)
+     * [Material](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#reference-material)
      */
     data class Material(
-        val name: String,
-        val pbrMetallicRoughness: MaterialPbrMetallicRoughness,
+        val name: String?,
+        val pbrMetallicRoughness: MaterialPbrMetallicRoughness?,
+        val normalTexture: TextureInfo?,
+        val occlusionTexture: TextureInfo?,
+        val emissiveTexture: TextureInfo?,
+        val emissiveFactor: List<Float>?,
+        val alphaMode: String?,
+        val alphaCutoff: Float?,
+        val doubleSided: Boolean?,
     )
 
     data class MaterialPbrMetallicRoughness(
-        val baseColorFactor: List<Float>,
-        val metallicFactor: Float,
-        val roughnessFactor: Float,
-        val baseColorTexture: Texture?,
-        val metallicRoughnessTexture: Texture?,
+        val baseColorFactor: List<Float>?,
+        val baseColorTexture: TextureInfo?,
+        val metallicFactor: Float?,
+        val roughnessFactor: Float?,
+        val metallicRoughnessTexture: TextureInfo?,
     )
 
-    data class MaterialTexture(
+    data class TextureInfo(
         val index: Int,
-        val texCoord: Int,
-        val scale: Float?,
+        val texCoord: Int?,
+        val scale: Float?, // for normal texture
+        val strength: Float?, // for occlusion texture
     )
 
     data class Mesh(
