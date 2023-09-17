@@ -3,7 +3,6 @@ package me.rerere.k3d.loader
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.os.Environment
 import com.google.gson.JsonObject
 import me.rerere.k3d.renderer.resource.Attribute
 import me.rerere.k3d.renderer.resource.DataType
@@ -11,9 +10,9 @@ import me.rerere.k3d.renderer.resource.DrawMode
 import me.rerere.k3d.renderer.resource.TextureFilter
 import me.rerere.k3d.renderer.resource.TextureWrap
 import me.rerere.k3d.renderer.shader.BuiltInAttributeName
-import me.rerere.k3d.scene.Actor
-import me.rerere.k3d.scene.ActorGroup
-import me.rerere.k3d.scene.Scene
+import me.rerere.k3d.scene.actor.Actor
+import me.rerere.k3d.scene.actor.ActorGroup
+import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.actor.Primitive
 import me.rerere.k3d.scene.geometry.BufferGeometry
 import me.rerere.k3d.scene.material.StandardMaterial
@@ -194,8 +193,13 @@ object GltfLoader {
                         accessor.asAttribute(BuiltInAttributeName.NORMAL.attributeName)
                     }
 
+                    "TANGENT" -> {
+                        val accessor = accessorOf(gltf, buffers, accessorIndex)
+                        accessor.asAttribute(BuiltInAttributeName.TANGENT.attributeName)
+                    }
+
                     else -> {
-                        // println("Unsupported attribute: $key")
+                        println("Unsupported attribute: $key")
                         null
                     }
                 }
@@ -229,6 +233,9 @@ object GltfLoader {
             materialData?.let { material ->
                 attributes += textureCoordAccessor(gltf, buffers, primitive.attributes, material.baseColorTextureCoord)
                     .asAttribute(BuiltInAttributeName.TEXCOORD_BASE.attributeName)
+
+                attributes += textureCoordAccessor(gltf, buffers, primitive.attributes, 1)
+                    .asAttribute(BuiltInAttributeName.TEXCOORD_NORMAL.attributeName)
             }
 
             val geometry = BufferGeometry().apply {
@@ -241,6 +248,10 @@ object GltfLoader {
             }
             val material = StandardMaterial().apply {
                 baseColorTexture = materialData?.baseColorTexture?.toTexture2d()
+                normalTexture = materialData?.normalTexture?.toTexture2d()
+
+                println("baseColorTexture: $baseColorTexture")
+                println("normalTexture: $normalTexture")
             }
             group.addChild(
                 Primitive(
@@ -357,6 +368,7 @@ object GltfLoader {
             normalTexture = material.normalTexture?.let {
                 textureOf(gltf, buffers, it.index)
             },
+            normalTextureCoord = material.normalTexture?.texCoord ?: 0,
             occlusionTexture = material.occlusionTexture?.let {
                 textureOf(gltf, buffers, it.index)
             },
@@ -391,16 +403,7 @@ object GltfLoader {
             // Convert image to bitmap
             val bytes = ByteArray(buffer.remaining())
             buffer.get(bytes)
-            return BitmapFactory.decodeByteArray(bytes, 0, bytes.size).also { bitmap ->
-//                val fileName = "image_${index}.png"
-//                ctx?.getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.let {
-//                    val file = it.resolve(fileName)
-//                    file.outputStream().use { output ->
-//                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
-//                        println("Image saved to: ${file.absolutePath}")
-//                    }
-//                }
-            }
+            return BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
         } else if (image.uri != null) {
             error("Unsupported image uri yet (gltf): ${image.uri}")
         } else {
@@ -469,6 +472,7 @@ private data class Material(
     val roughnessFactor: Float?,
     val metallicRoughnessTexture: Texture?,
     val normalTexture: Texture?,
+    val normalTextureCoord: Int,
     val occlusionTexture: Texture?,
     val emissiveTexture: Texture?,
     val emissiveFactor: List<Float>?,

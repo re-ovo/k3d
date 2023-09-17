@@ -1,4 +1,4 @@
-package me.rerere.k3d.scene
+package me.rerere.k3d.scene.actor
 
 import java.util.Stack
 

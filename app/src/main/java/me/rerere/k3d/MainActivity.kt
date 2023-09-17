@@ -23,11 +23,10 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
 import me.rerere.k3d.controller.OrbitController
 import me.rerere.k3d.loader.GltfLoader
-import me.rerere.k3d.loader.ctx
 import me.rerere.k3d.renderer.GLES3Renderer
 import me.rerere.k3d.renderer.GLESAutoConfigChooser
 import me.rerere.k3d.renderer.ViewportSize
-import me.rerere.k3d.scene.Scene
+import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.actor.Primitive
 import me.rerere.k3d.scene.camera.PerspectiveCamera
 import me.rerere.k3d.scene.geometry.CubeGeometry

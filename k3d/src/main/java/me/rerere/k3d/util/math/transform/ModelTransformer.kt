@@ -1,6 +1,6 @@
 package me.rerere.k3d.util.math.transform
 
-import me.rerere.k3d.scene.Actor
+import me.rerere.k3d.scene.actor.Actor
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.rotation.Quaternion

@@ -1,4 +1,4 @@
-package me.rerere.k3d.scene
+package me.rerere.k3d.scene.actor
 
 class Scene : ActorGroup() {
     // private val lights = mutableListOf<Light>()

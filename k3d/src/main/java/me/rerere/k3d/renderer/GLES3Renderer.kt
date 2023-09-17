@@ -12,11 +12,10 @@ import me.rerere.k3d.renderer.shader.createShader
 import me.rerere.k3d.renderer.shader.genBuffer
 import me.rerere.k3d.renderer.shader.genTexture
 import me.rerere.k3d.renderer.shader.genVertexArray
-import me.rerere.k3d.scene.Scene
+import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.actor.Primitive
 import me.rerere.k3d.scene.camera.Camera
-import me.rerere.k3d.scene.material.ShaderMaterial
-import me.rerere.k3d.scene.traverse
+import me.rerere.k3d.scene.actor.traverse
 import me.rerere.k3d.util.Disposable
 import me.rerere.k3d.util.cleanIfDirty
 import java.nio.Buffer

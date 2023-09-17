@@ -9,7 +9,7 @@ class PerspectiveCamera(
     fov: Float = 60f,
     aspect: Float = 1f,
     near: Float = 0.1f,
-    far: Float = 100f
+    far: Float = 500f
 ): Camera() {
     var fov = fov
         set(value) {

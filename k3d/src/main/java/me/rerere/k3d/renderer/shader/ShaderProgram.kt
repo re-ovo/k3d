@@ -38,7 +38,7 @@ enum class BuiltInUniformName(val uniformName: String) {
     TEXTURE_METALLIC("u_textureMetallic"),
     TEXTURE_ROUGHNESS("u_textureRoughness"),
     TEXTURE_OCCLUSION("u_textureOcclusion"),
-    TEXTURE_EMISIVE("u_textureEmisive"),
+    TEXTURE_EMISSIVE("u_textureEmissive"),
 
     CAMERA_POSITION("u_cameraPosition"),
 }
