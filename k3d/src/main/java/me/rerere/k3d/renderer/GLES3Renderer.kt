@@ -195,16 +195,17 @@ internal class GL3ResourceManager : Disposable {
     fun useTexture(program: ShaderProgram, name: String, texture: Texture, index: Int) {
         val programId = getProgram(program) ?: return
         val location = GLES30.glGetUniformLocation(programId, name)
+        val internalIndex = index + 1 // 0 is reserved for default texture
         if (location != -1) {
             val textureId = getTextureBuffer(texture) ?: createTextureBuffer(texture)
                 .getOrThrow()
-            GLES30.glActiveTexture(GLES30.GL_TEXTURE0 + index)
+            GLES30.glActiveTexture(GLES30.GL_TEXTURE0 + internalIndex)
             val target = when (texture) {
                 is Texture.Texture2D -> GLES30.GL_TEXTURE_2D
                 is Texture.TextureCube -> GLES30.GL_TEXTURE_CUBE_MAP
             }
             GLES30.glBindTexture(target, textureId)
-            GLES30.glUniform1i(location, index)
+            GLES30.glUniform1i(location, internalIndex)
         }
     }
 
@@ -236,15 +237,11 @@ internal class GL3ResourceManager : Disposable {
 
         println("[K3D:Resource] create texture buffer: $textureId")
 
-        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, textureId)
         val target = when (texture) {
             is Texture.Texture2D -> GLES30.GL_TEXTURE_2D
             is Texture.TextureCube -> GLES30.GL_TEXTURE_CUBE_MAP
         }
-        GLES30.glTexParameteri(target, GLES30.GL_TEXTURE_MIN_FILTER, texture.minFilter.value)
-        GLES30.glTexParameteri(target, GLES30.GL_TEXTURE_MAG_FILTER, texture.magFilter.value)
-        GLES30.glTexParameteri(target, GLES30.GL_TEXTURE_WRAP_S, texture.wrapS.value)
-        GLES30.glTexParameteri(target, GLES30.GL_TEXTURE_WRAP_T, texture.wrapT.value)
+        GLES30.glBindTexture(target, textureId)
         GLES30.glTexImage2D(
             target,
             0,
@@ -256,8 +253,12 @@ internal class GL3ResourceManager : Disposable {
             GLES30.GL_UNSIGNED_BYTE,
             texture.data
         )
-        GLES30.glGenerateMipmap(GLES30.GL_TEXTURE_2D)
-        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, 0)
+        GLES30.glGenerateMipmap(target)
+        GLES30.glTexParameteri(target, GLES30.GL_TEXTURE_MIN_FILTER, texture.minFilter.value)
+        GLES30.glTexParameteri(target, GLES30.GL_TEXTURE_MAG_FILTER, texture.magFilter.value)
+        GLES30.glTexParameteri(target, GLES30.GL_TEXTURE_WRAP_S, texture.wrapS.value)
+        GLES30.glTexParameteri(target, GLES30.GL_TEXTURE_WRAP_T, texture.wrapT.value)
+        GLES30.glBindTexture(target, 0)
 
         textureId
     }

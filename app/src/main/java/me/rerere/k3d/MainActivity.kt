@@ -25,6 +25,7 @@ import me.rerere.k3d.controller.OrbitController
 import me.rerere.k3d.loader.GltfLoader
 import me.rerere.k3d.loader.ctx
 import me.rerere.k3d.renderer.GLES3Renderer
+import me.rerere.k3d.renderer.GLESAutoConfigChooser
 import me.rerere.k3d.renderer.ViewportSize
 import me.rerere.k3d.scene.Scene
 import me.rerere.k3d.scene.actor.Primitive
@@ -56,10 +57,6 @@ class MainActivity : ComponentActivity() {
     }
     private lateinit var controls: OrbitController
 
-    init {
-        ctx = this
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         super.onCreate(savedInstanceState)
@@ -83,7 +80,7 @@ class MainActivity : ComponentActivity() {
                                 val result = GltfLoader.load(
                                     inputStream = assets.open("sofa_combination.glb")
                                 )
-                                result.defaultScene.scale *= 0.1f
+                                result.defaultScene.scale.set(0.2f, 0.2f, 0.2f)
                                 scene.addChild(result.defaultScene)
                             }
                         ) {
@@ -130,6 +127,8 @@ class MainActivity : ComponentActivity() {
 
         init {
             setEGLContextClientVersion(3)
+            setEGLConfigChooser(GLESAutoConfigChooser)
+
             setRenderer(object : Renderer {
                 override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
                     println("Surface created")
