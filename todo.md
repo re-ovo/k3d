@@ -9,7 +9,6 @@
 - [ ] 灯光系统
 - [ ] Shadow Map
 - [ ] 内置形状(Cube, Plane, etc), 内置Primitive(Mesh, Line, Point)
-- [ ] 内存优化，尽可能减少copy
+- [ ] 内存优化，尽可能减少copy，支持调用`Primitive#gpuOnly`，将数据从CPU拷贝到GPU后自动释放CPU内存
 - [ ] 优化渲染流程, 尽可能减少状态切换
 - [ ] Animation
-
