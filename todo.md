@@ -1,5 +1,6 @@
 # ToDo List
 - [ ] 完成 ao/roughness/metallic 的支持
+- [ ] 颜色管理，sRGB -> Linear in shader -> output sRGB
 - [ ] GLTF Loader支持路径加载(文件夹模式), 目前只支持二进制glb
 - [ ] 将name从attribute和uniform中拆出来，方便复用
 - [ ] Shader GLSL预处理: 自动添加内置attribute/uniform, include支持

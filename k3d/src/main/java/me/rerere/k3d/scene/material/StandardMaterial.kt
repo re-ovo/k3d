@@ -80,6 +80,12 @@ private val StandProgram = ShaderProgram(
             #else
                 fragColor = vec4(normal * 0.5 + 0.5, 1.0);
             #endif
+            
+            // HDR tone mapping
+            fragColor.rgb = fragColor.rgb / (fragColor.rgb + vec3(1.0));
+            
+            // Gamma correction (2.2)
+            fragColor.rgb = pow(fragColor.rgb, vec3(1.0/2.2));
         }
     """.trimIndent()
 )

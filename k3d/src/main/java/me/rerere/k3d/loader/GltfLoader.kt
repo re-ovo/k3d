@@ -1,9 +1,7 @@
 package me.rerere.k3d.loader
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.ColorSpace
 import com.google.gson.JsonObject
 import me.rerere.k3d.renderer.resource.Attribute
 import me.rerere.k3d.renderer.resource.DataType
@@ -13,8 +11,8 @@ import me.rerere.k3d.renderer.resource.TextureWrap
 import me.rerere.k3d.renderer.shader.BuiltInAttributeName
 import me.rerere.k3d.scene.actor.Actor
 import me.rerere.k3d.scene.actor.ActorGroup
-import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.actor.Primitive
+import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.geometry.BufferGeometry
 import me.rerere.k3d.scene.material.StandardMaterial
 import me.rerere.k3d.util.math.Matrix4
@@ -27,8 +25,6 @@ import java.util.Stack
 
 private const val GLB_MAGIC = 0x676c5446 // "glTF"
 private const val GLB_VERSION = 0x02000000 // 2.0
-
-var ctx: Context? = null
 
 /**
  * glTF Loader
@@ -279,11 +275,6 @@ object GltfLoader {
 
     private fun Texture.toTexture2d(requireLinear: Boolean = false): me.rerere.k3d.renderer.resource.Texture.Texture2D {
         return image.use {
-            if(requireLinear) {
-                // convert to linear color space
-
-            }
-
             me.rerere.k3d.renderer.resource.Texture.Texture2D(
                 data = it.toByteBuffer(),
                 wrapS = wrapS,
@@ -292,6 +283,7 @@ object GltfLoader {
                 magFilter = magFilter,
                 width = image.width,
                 height = image.height,
+
             )
         }
     }
