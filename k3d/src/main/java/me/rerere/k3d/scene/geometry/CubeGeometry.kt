@@ -2,6 +2,7 @@ package me.rerere.k3d.scene.geometry
 
 import me.rerere.k3d.renderer.resource.Attribute
 import me.rerere.k3d.renderer.resource.DataType
+import me.rerere.k3d.renderer.shader.BuiltInAttributeName
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 
@@ -31,8 +32,7 @@ class CubeGeometry(
     }
 
     private fun updateVao() {
-        val attribute = this.getAttribute("a_pos") ?: Attribute(
-            name = "a_pos",
+        val attribute = this.getAttribute(BuiltInAttributeName.POSITION.attributeName) ?: Attribute(
             itemSize = 3,
             type = DataType.FLOAT,
             normalized = false,
@@ -89,6 +89,6 @@ class CubeGeometry(
             16, 17, 18, 16, 18, 19,   // right
             20, 21, 22, 20, 22, 23,   // left
         )))
-        setAttribute(attribute)
+        setAttribute(BuiltInAttributeName.POSITION.attributeName, attribute)
     }
 }

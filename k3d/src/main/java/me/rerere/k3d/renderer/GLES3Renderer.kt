@@ -277,9 +277,9 @@ internal class GL3ResourceManager : Disposable {
             vertexArrays[vertexArray] = vao
 
             GLES30.glBindVertexArray(vao)
-            vertexArray.getAttributes().forEach { attribute ->
+            vertexArray.getAttributes().forEach { (name, attribute) ->
                 // Set attribute
-                val location = GLES30.glGetAttribLocation(programId, attribute.name)
+                val location = GLES30.glGetAttribLocation(programId, name)
                 if (location != -1) {
                     // Create buffer for attribute
                     val vbo = genBuffer().getOrThrow()
@@ -304,7 +304,7 @@ internal class GL3ResourceManager : Disposable {
                         attribute.offset
                     )
                 } else {
-                    println("location not found for ${attribute.name}")
+                    println("location not found for $name")
                 }
             }
             // set indices if exists
@@ -327,7 +327,7 @@ internal class GL3ResourceManager : Disposable {
     fun updateVertexArray(vertexArray: VertexArray) {
         val vao = vertexArrays[vertexArray] ?: return
         GLES30.glBindVertexArray(vao)
-        vertexArray.getAttributes().forEach { attribute ->
+        vertexArray.getAttributes().forEach { (_, attribute) ->
             attribute.cleanIfDirty { // update attribute buffer if dirty
                 val vbo = vertexArraysAttributesBuffer[attribute] ?: return@forEach
                 GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vbo)
@@ -347,7 +347,7 @@ internal class GL3ResourceManager : Disposable {
         GLES30.glDeleteVertexArrays(1, intArrayOf(vao), 0)
         vertexArrays.remove(vertexArray)
 
-        vertexArray.getAttributes().forEach { attribute ->
+        vertexArray.getAttributes().forEach { (_, attribute) ->
             val vbo = vertexArraysAttributesBuffer[attribute] ?: return@forEach
             GLES30.glDeleteBuffers(1, intArrayOf(vbo), 0)
             vertexArraysAttributesBuffer.remove(attribute)

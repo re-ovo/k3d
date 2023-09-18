@@ -7,19 +7,19 @@ import java.nio.Buffer
 open class BufferGeometry {
     internal val vao = VertexArray()
 
-    fun setIndices(indices: Buffer) {
-        vao.setIndices(indices)
+    fun setAttribute(name: String, attribute: Attribute) {
+        vao.setAttribute(name, attribute)
     }
 
-    fun setAttribute(attribute: Attribute) {
-        vao.setAttribute(attribute)
+    fun getAttribute(name: String): Attribute? {
+        return vao.getAttribute(name)
     }
 
     fun getIndices(): Buffer? {
         return vao.getIndices()
     }
 
-    fun getAttribute(name: String): Attribute? {
-        return vao.getAttribute(name)
+    fun setIndices(indices: Buffer) {
+        vao.setIndices(indices)
     }
 }

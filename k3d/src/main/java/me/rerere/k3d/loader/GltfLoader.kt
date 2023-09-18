@@ -245,8 +245,8 @@ object GltfLoader {
             }
 
             val geometry = BufferGeometry().apply {
-                attributes.filterNotNull().forEach { attr ->
-                    setAttribute(attr)
+                attributes.filterNotNull().forEach { (name, attr) ->
+                    setAttribute(name, attr)
                 }
                 indicesBuffer?.let {
                     setIndices(it)
@@ -299,7 +299,7 @@ object GltfLoader {
         return accessorOf(gltf, buffers, index)
     }
 
-    private fun Accessor.asAttribute(name: String): Attribute {
+    private fun Accessor.asAttribute(name: String): Pair<String, Attribute> {
         require(bufferView != null) {
             "Accessor bufferView is null, this is not supported yet"
         }
@@ -308,8 +308,7 @@ object GltfLoader {
             start = bufferView.byteOffset, end = bufferView.byteOffset + bufferView.byteLength
         )
 
-        return Attribute(
-            name = name,
+        return name to Attribute(
             data = buffer,
             itemSize = gltfAccessorItemSizeOf(type),
             type = gltfAccessorComponentTypeToDataType(componentType),
