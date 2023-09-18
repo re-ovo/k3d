@@ -6,7 +6,7 @@ import me.rerere.k3d.renderer.resource.Attribute
 import me.rerere.k3d.renderer.resource.Texture
 import me.rerere.k3d.renderer.resource.VertexArray
 import me.rerere.k3d.renderer.shader.ShaderProgram
-import me.rerere.k3d.renderer.shader.Uniform
+import me.rerere.k3d.renderer.resource.Uniform
 import me.rerere.k3d.renderer.shader.createProgram
 import me.rerere.k3d.renderer.shader.createShader
 import me.rerere.k3d.renderer.shader.genBuffer

@@ -1,4 +1,4 @@
-package me.rerere.k3d.renderer.shader
+package me.rerere.k3d.renderer.resource
 
 sealed class Uniform {
     abstract val name: String
