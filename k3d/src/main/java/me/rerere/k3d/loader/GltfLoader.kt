@@ -283,7 +283,7 @@ object GltfLoader {
                 magFilter = magFilter,
                 width = image.width,
                 height = image.height,
-
+                // todo: set color space
             )
         }
     }
