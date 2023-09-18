@@ -1,8 +1,8 @@
 package me.rerere.k3d.loader
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import me.rerere.k3d.util.Color4f
 import java.nio.ByteBuffer
 
 /**
@@ -17,7 +17,11 @@ internal fun Int.reverseBytes(): Int {
             (this and 0xFF000000.toInt() ushr 24)
 }
 
-internal val GsonInstance by lazy { Gson() }
+internal val GsonInstance by lazy {
+    GsonBuilder()
+        .registerTypeAdapter(Color4f::class.java, Color4fAdapter)
+        .create()
+}
 
 /**
  * Slice the byte buffer safely
