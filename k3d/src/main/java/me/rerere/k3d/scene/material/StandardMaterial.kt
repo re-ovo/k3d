@@ -68,12 +68,22 @@ private val StandProgram = ShaderProgram(
             return normal;
         }
         
+        vec4 toLinear(vec4 sRGB)
+        {
+            bvec3 cutoff = lessThan(sRGB.rgb, vec3(0.04045));
+            vec3 higher = pow((sRGB.rgb + vec3(0.055))/vec3(1.055), vec3(2.4));
+            vec3 lower = sRGB.rgb/vec3(12.92);
+
+            return vec4(mix(higher, lower, cutoff), sRGB.a);
+        }
+        
         void main() {
             vec3 normal = getNormal();
             vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));
             float diff = max(dot(normal, lightDir), 0.0);
             
             vec4 baseColor = texture(u_textureBase, v_texCoordBase);
+            baseColor = toLinear(baseColor);
             
             #ifdef USE_TEXTURE_BASE
                 fragColor = vec4(baseColor.rgb * diff, baseColor.a);
