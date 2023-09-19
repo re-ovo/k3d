@@ -8,7 +8,8 @@ import javax.microedition.khronos.egl.EGLDisplay
 /**
  * Choose EGLConfig automatically
  *
- * Prefer 24 bit depth buffer
+ * Prefer 24 bit depth buffer, otherwise 16 bit. 16 bit depth buffer usually cause
+ * [z-fighting](https://en.wikipedia.org/wiki/Z-fighting) in some models.
  */
 object GLESAutoConfigChooser : GLSurfaceView.EGLConfigChooser {
     override fun chooseConfig(egl: EGL10, display: EGLDisplay): EGLConfig {

@@ -24,6 +24,11 @@ import me.rerere.k3d.util.cleanIfDirty
 import java.nio.Buffer
 import java.util.IdentityHashMap
 
+/**
+ * GLES3 Renderer
+ *
+ * It is a renderer that uses OpenGL ES 3.0
+ */
 class GLES3Renderer : Renderer {
     private val shaderProcessor = ShaderProcessor()
     private val resourceManager = GL3ResourceManager(shaderProcessor)
