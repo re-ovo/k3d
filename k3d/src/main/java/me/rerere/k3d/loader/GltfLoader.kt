@@ -109,23 +109,7 @@ object GltfLoader {
         println("Scenes: $scenes")
         println("Default scene: $defaultScene")
 
-        // dump tree
-        var currentDepth = 0
-        val stack = Stack<Pair<ActorGroup, Int>>()
-        stack.push(Pair(defaultScene, 0))
-        while (stack.isNotEmpty()) {
-            val pair = stack.pop()
-            val actor = pair.first
-            currentDepth = pair.second
-            if (actor is ActorGroup) {
-                actor.getChildren().forEach {
-                    if (it is ActorGroup) {
-                        stack.push(Pair(it, currentDepth + 1))
-                    }
-                }
-            }
-            println("  ".repeat(currentDepth) + actor)
-        }
+        defaultScene.dump() // for debug purpose, remove it in the future
 
         return GltfLoadResult(
             scenes = scenes, defaultScene = defaultScene

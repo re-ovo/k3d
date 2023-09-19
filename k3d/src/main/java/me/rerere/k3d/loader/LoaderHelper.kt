@@ -2,9 +2,13 @@ package me.rerere.k3d.loader
 
 import android.graphics.Bitmap
 import com.google.gson.GsonBuilder
+import me.rerere.k3d.scene.actor.Actor
+import me.rerere.k3d.scene.actor.ActorGroup
+import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.util.Color4f
 import me.rerere.k3d.util.math.Vec3
 import java.nio.ByteBuffer
+import java.util.Stack
 
 /**
  * Reverse bytes
@@ -78,5 +82,27 @@ internal inline fun <R> Bitmap.use(block: (Bitmap) -> R): R {
         return block(this)
     } finally {
         this.recycle()
+    }
+}
+
+/**
+ * Dump the scene
+ *
+ * @receiver scene
+ */
+internal fun Scene.dump() {
+    var currentDepth = 0
+    val stack = Stack<Pair<Actor, Int>>()
+    stack.push(Pair(this, 0))
+    while (stack.isNotEmpty()) {
+        val pair = stack.pop()
+        val actor = pair.first
+        currentDepth = pair.second
+        if (actor is ActorGroup) {
+            actor.getChildren().forEach {
+                stack.push(Pair(it, currentDepth + 1))
+            }
+        }
+        println("  ".repeat(currentDepth) + actor)
     }
 }
