@@ -1,22 +1,23 @@
 package me.rerere.k3d.scene.actor
 
+import me.rerere.k3d.scene.light.LightActor
+
 class Scene : ActorGroup() {
-    // private val lights = mutableListOf<Light>()
+    private val lights = mutableListOf<LightActor>()
 
     override fun addChild(actor: Actor) {
         super.addChild(actor)
-//        if(actor is Light) {
-//            if(camera != null) {
-//                throw IllegalStateException("Scene can only have one camera")
-//            }
-//            camera = actor
-//        }
+        if(actor is LightActor) {
+            lights.add(actor)
+        }
     }
 
     override fun removeChild(actor: Actor) {
         super.removeChild(actor)
 
-        // TODO: Remove light etc
+        if(actor is LightActor) {
+            lights.remove(actor)
+        }
     }
 
     fun removeFromScene(actor: Actor) {
