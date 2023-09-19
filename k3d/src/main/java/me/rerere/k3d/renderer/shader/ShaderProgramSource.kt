@@ -24,6 +24,9 @@ class ShaderProgramSource(
         }
 
     fun addMarcoDefinition(name: String, value: String? = null) {
+        if (marcoDefinitions.any { it.name == name }) {
+            removeMarcoDefinition(name)
+        }
         marcoDefinitions = marcoDefinitions + MarcoDefinition(name, value)
     }
 

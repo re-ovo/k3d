@@ -6,7 +6,7 @@ import me.rerere.k3d.renderer.shader.BuiltInUniformName
 import me.rerere.k3d.renderer.shader.ShaderProgramSource
 
 private val StandProgram = ShaderProgramSource(
-    vertexShader = """
+    vertexShader = """ 
         in vec3 a_pos;
         in vec3 a_normal;
         in vec3 a_tangent;
@@ -43,6 +43,8 @@ private val StandProgram = ShaderProgramSource(
         }
     """.trimIndent(),
     fragmentShader = """
+        #include "light"
+        
         in vec3 v_normal;
         in vec3 v_fragPos;
         in mat3 TBN;

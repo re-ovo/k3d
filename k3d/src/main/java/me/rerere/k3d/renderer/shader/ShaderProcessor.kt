@@ -1,7 +1,12 @@
 package me.rerere.k3d.renderer.shader
 
+import me.rerere.k3d.renderer.shader.include.LightGLSL
+
 class ShaderProcessor {
     private var glslVersion = "300 es"
+    private val includes = mutableMapOf(
+        "light" to LightGLSL,
+    )
 
     fun process(program: ShaderProgramSource): ShaderProgramProcessResult {
         val vertexShader =
@@ -35,6 +40,25 @@ class ShaderProcessor {
         // Add precision
         if (type == ShaderType.FRAGMENT_SHADER && lines.none { it.startsWith("precision ") }) {
             header.append("precision mediump float;\n")
+        }
+
+        // Add includes
+        lines.forEach {
+            if (it.startsWith("#include")) {
+                val includeName = it.split(" ")[1].removeSurrounding("\"")
+                val include = includes[includeName]
+                require(include != null) {
+                    "Include $includeName not found"
+                }
+                header.append(include)
+                header.append("\n")
+
+                // Remove the include line
+                trimmed.deleteRange(
+                    trimmed.indexOf(it),
+                    trimmed.indexOf(it) + it.length
+                )
+            }
         }
 
         // Add marco definitions
