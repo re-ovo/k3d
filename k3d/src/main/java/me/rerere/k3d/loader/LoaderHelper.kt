@@ -3,6 +3,7 @@ package me.rerere.k3d.loader
 import android.graphics.Bitmap
 import com.google.gson.GsonBuilder
 import me.rerere.k3d.util.Color4f
+import me.rerere.k3d.util.math.Vec3
 import java.nio.ByteBuffer
 
 /**
@@ -20,6 +21,7 @@ internal fun Int.reverseBytes(): Int {
 internal val GsonInstance by lazy {
     GsonBuilder()
         .registerTypeAdapter(Color4f::class.java, Color4fAdapter)
+        .registerTypeAdapter(Vec3::class.java, Vec3fAdapter)
         .create()
 }
 
