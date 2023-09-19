@@ -6,6 +6,6 @@ import me.rerere.k3d.renderer.resource.Uniform
 
 open class ShaderMaterial(
     val program: ShaderProgram,
-    val uniforms: MutableSet<Uniform> = hashSetOf(),
+    val uniforms: MutableMap<String, Uniform> = mutableMapOf(),
     val textures: MutableMap<String, Texture> = mutableMapOf()
 )

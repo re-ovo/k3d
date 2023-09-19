@@ -21,23 +21,23 @@ private val StandProgram = ShaderProgram(
         out vec2 v_texCoordBase;
         out vec2 v_texCoordNormal;
         
-        uniform mat4 u_worldMatrix;
+        uniform mat4 u_modelMatrix;
         uniform mat4 u_viewMatrix;
         uniform mat4 u_projectionMatrix;
         
         void main() {
-            gl_Position = u_projectionMatrix * u_viewMatrix * u_worldMatrix * vec4(a_pos, 1.0);
+            gl_Position = u_projectionMatrix * u_viewMatrix * u_modelMatrix * vec4(a_pos, 1.0);
             
-            v_normal = mat3(transpose(inverse(u_worldMatrix))) * a_normal;
-            v_fragPos = vec3(u_worldMatrix * vec4(a_pos, 1.0));
+            v_normal = mat3(transpose(inverse(u_modelMatrix))) * a_normal;
+            v_fragPos = vec3(u_modelMatrix * vec4(a_pos, 1.0));
             
             v_texCoordBase = a_texCoordBase;
             v_texCoordNormal = a_texCoordNormal;
             
             // calculate TBN matrix for normal mapping
             // assume the scale is equal in all directions
-            vec3 T = normalize(mat3(u_worldMatrix) * a_tangent);
-            vec3 N = normalize(mat3(u_worldMatrix) * a_normal);
+            vec3 T = normalize(mat3(u_modelMatrix) * a_tangent);
+            vec3 N = normalize(mat3(u_modelMatrix) * a_normal);
             T = normalize(T - dot(T, N) * N); // Gram-Schmidt
             vec3 B = cross(N, T);
             TBN = mat3(T, B, N);

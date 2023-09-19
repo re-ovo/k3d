@@ -7,6 +7,7 @@ import me.rerere.k3d.renderer.resource.Texture
 import me.rerere.k3d.renderer.resource.VertexArray
 import me.rerere.k3d.renderer.shader.ShaderProgram
 import me.rerere.k3d.renderer.resource.Uniform
+import me.rerere.k3d.renderer.shader.BuiltInUniformName
 import me.rerere.k3d.renderer.shader.createProgram
 import me.rerere.k3d.renderer.shader.createShader
 import me.rerere.k3d.renderer.shader.genBuffer
@@ -33,9 +34,9 @@ class GLES3Renderer : Renderer {
         viewportSize = ViewportSize(width, height)
     }
 
-    private val worldMatrixUniform = Uniform.Mat4("u_worldMatrix", FloatArray(16), true)
-    private val viewMatrixUniform = Uniform.Mat4("u_viewMatrix", FloatArray(16), true)
-    private val projectionMatrixUniform = Uniform.Mat4("u_projectionMatrix", FloatArray(16), true)
+    private val worldMatrixUniform = Uniform.Mat4(FloatArray(16), true)
+    private val viewMatrixUniform = Uniform.Mat4(FloatArray(16), true)
+    private val projectionMatrixUniform = Uniform.Mat4(FloatArray(16), true)
 
     override fun render(scene: Scene, camera: Camera) {
         GLES30.glClearColor(0f, 0f, 0f, 1f)
@@ -63,8 +64,8 @@ class GLES3Renderer : Renderer {
             if (actor is Primitive) {
                 resourceManager.useProgram(actor.material.program) {
                     // Apply uniforms
-                    actor.material.uniforms.forEach { uniform ->
-                        resourceManager.useUniform(actor.material.program, uniform)
+                    actor.material.uniforms.forEach { (name, uniform) ->
+                        resourceManager.useUniform(actor.material.program, uniform, name)
                     }
 
                     // Apply built-in uniforms
@@ -72,19 +73,22 @@ class GLES3Renderer : Renderer {
                         actor.material.program,
                         worldMatrixUniform.apply {
                             value = actor.worldMatrix.data
-                        }
+                        },
+                        BuiltInUniformName.MODEL_MATRIX.uniformName
                     )
                     resourceManager.useUniform(
                         actor.material.program,
                         viewMatrixUniform.apply {
                             value = camera.worldMatrixInverse.data
-                        }
+                        },
+                        BuiltInUniformName.VIEW_MATRIX.uniformName
                     )
                     resourceManager.useUniform(
                         actor.material.program,
                         projectionMatrixUniform.apply {
                             value = camera.projectionMatrix.data
-                        }
+                        },
+                        BuiltInUniformName.PROJECTION_MATRIX.uniformName
                     )
 
                     // Apply textures
@@ -151,39 +155,39 @@ internal class GL3ResourceManager : Disposable {
         GLES30.glBindVertexArray(0)
     }
 
-    fun useUniform(program: ShaderProgram, uniform: Uniform) {
+    fun useUniform(program: ShaderProgram, uniform: Uniform, name: String) {
         val programId = getProgram(program) ?: return
         when (uniform) {
             is Uniform.Float1 -> {
-                val location = GLES30.glGetUniformLocation(programId, uniform.name)
+                val location = GLES30.glGetUniformLocation(programId, name)
                 if (location != -1) {
                     GLES30.glUniform1f(location, uniform.value)
                 }
             }
 
             is Uniform.Int1 -> {
-                val location = GLES30.glGetUniformLocation(programId, uniform.name)
+                val location = GLES30.glGetUniformLocation(programId, name)
                 if (location != -1) {
                     GLES30.glUniform1i(location, uniform.value)
                 }
             }
 
             is Uniform.Vec3f -> {
-                val location = GLES30.glGetUniformLocation(programId, uniform.name)
+                val location = GLES30.glGetUniformLocation(programId, name)
                 if (location != -1) {
                     GLES30.glUniform3f(location, uniform.x, uniform.y, uniform.z)
                 }
             }
 
             is Uniform.Vec4f -> {
-                val location = GLES30.glGetUniformLocation(programId, uniform.name)
+                val location = GLES30.glGetUniformLocation(programId, name)
                 if (location != -1) {
                     GLES30.glUniform4f(location, uniform.x, uniform.y, uniform.z, uniform.w)
                 }
             }
 
             is Uniform.Mat4 -> {
-                val location = GLES30.glGetUniformLocation(programId, uniform.name)
+                val location = GLES30.glGetUniformLocation(programId, name)
                 if (location != -1) {
                     GLES30.glUniformMatrix4fv(location, 1, uniform.transpose, uniform.value, 0)
                 }
