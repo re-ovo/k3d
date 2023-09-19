@@ -49,11 +49,11 @@ class MainActivity : ComponentActivity() {
         material = StandardMaterial(),
         count = 36
     ).apply {
-        rotation.set(Euler(0f, 10f.toRadian(), 0f).toQuaternion())
+        // rotation.set(Euler(0f, 10f.toRadian(), 0f).toQuaternion())
     }
     private var model: Scene? = null
     private val scene = Scene().apply {
-        // addChild(cube)
+        addChild(cube)
     }
     private lateinit var controls: OrbitController
 

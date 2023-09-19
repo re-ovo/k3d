@@ -28,10 +28,27 @@ class CubeGeometry(
         }
 
     init {
+        setIndices(
+            IntBuffer.wrap(
+                intArrayOf(
+                    0, 1, 2, 0, 2, 3,    // front
+                    4, 5, 6, 4, 6, 7,    // back
+                    8, 9, 10, 8, 10, 11,   // top
+                    12, 13, 14, 12, 14, 15,   // bottom
+                    16, 17, 18, 16, 18, 19,   // right
+                    20, 21, 22, 20, 22, 23,   // left
+                )
+            )
+        )
         updateVao()
     }
 
     private fun updateVao() {
+        updatePositionBuffer()
+        updateNormalBuffer()
+    }
+
+    private fun updatePositionBuffer() {
         val attribute = this.getAttribute(BuiltInAttributeName.POSITION.attributeName) ?: Attribute(
             itemSize = 3,
             type = DataType.FLOAT,
@@ -80,15 +97,56 @@ class CubeGeometry(
 
             flip()
         }
-        attribute.markDirty()
-        setIndices(IntBuffer.wrap(intArrayOf(
-            0, 1, 2, 0, 2, 3,    // front
-            4, 5, 6, 4, 6, 7,    // back
-            8, 9, 10, 8, 10, 11,   // top
-            12, 13, 14, 12, 14, 15,   // bottom
-            16, 17, 18, 16, 18, 19,   // right
-            20, 21, 22, 20, 22, 23,   // left
-        )))
+
         setAttribute(BuiltInAttributeName.POSITION.attributeName, attribute)
+        attribute.markDirty()
+    }
+
+    private fun updateNormalBuffer() {
+        val attribute = this.getAttribute(BuiltInAttributeName.NORMAL.attributeName) ?: Attribute(
+            itemSize = 3,
+            type = DataType.FLOAT,
+            normalized = false,
+            data = FloatBuffer.allocate(6 * 3 * 4)
+        )
+        val buffer = attribute.data as FloatBuffer
+        buffer.apply {
+            clear()
+
+            // Front face
+            repeat(4) {
+                put(0.0f).put(0.0f).put(1.0f)
+            }
+
+            // Back face
+            repeat(4) {
+                put(0.0f).put(0.0f).put(-1.0f)
+            }
+
+            // Top face
+            repeat(4) {
+                put(0.0f).put(1.0f).put(0.0f)
+            }
+
+            // Bottom face
+            repeat(4) {
+                put(0.0f).put(-1.0f).put(0.0f)
+            }
+
+            // Right face
+            repeat(4) {
+                put(1.0f).put(0.0f).put(0.0f)
+            }
+
+            // Left face
+            repeat(4) {
+                put(-1.0f).put(0.0f).put(0.0f)
+            }
+
+            flip()
+        }
+
+        setAttribute(BuiltInAttributeName.NORMAL.attributeName, attribute)
+        // attribute.markDirty()
     }
 }
