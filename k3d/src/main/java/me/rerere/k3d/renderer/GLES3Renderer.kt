@@ -254,6 +254,8 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
     fun getTextureBuffer(texture: Texture): Int? = textureBuffers[texture]
 
     fun createTextureBuffer(texture: Texture): Result<Int> = runCatching {
+        require(!textureBuffers.containsKey(texture)) { "Texture already exists" }
+
         val textureId = genTexture().getOrThrow()
         textureBuffers[texture] = textureId
 
