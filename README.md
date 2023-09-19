@@ -7,9 +7,6 @@ Android developers to easily achieve various effects without touching the underl
 > Still working on it and it's not ready for testing or use. But I am welcome to any suggestions or
 > contributions.
 
-> 寻求杭州地区的前端或移动端的图形学方向(WebGL/OpenGL)工作机会，如果您对我感兴趣，欢迎联系我(微信:
-> rjl1609403959)
-
 ## Roadmap/TODO
 
 Check [TODO.md](todo.md) for more information.
