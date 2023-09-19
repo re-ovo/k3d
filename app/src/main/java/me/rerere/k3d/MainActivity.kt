@@ -53,7 +53,7 @@ class MainActivity : ComponentActivity() {
     }
     private var model: Scene? = null
     private val scene = Scene().apply {
-        addChild(cube)
+        // addChild(cube)
     }
     private lateinit var controls: OrbitController
 

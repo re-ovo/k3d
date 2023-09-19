@@ -62,8 +62,7 @@ private val StandProgram = ShaderProgramSource(
             return normal;
         }
         
-        vec4 toLinear(vec4 sRGB)
-        {
+        vec4 toLinear(vec4 sRGB) {
             bvec3 cutoff = lessThan(sRGB.rgb, vec3(0.04045));
             vec3 higher = pow((sRGB.rgb + vec3(0.055))/vec3(1.055), vec3(2.4));
             vec3 lower = sRGB.rgb/vec3(12.92);

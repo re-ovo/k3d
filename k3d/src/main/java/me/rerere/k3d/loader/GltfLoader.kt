@@ -240,9 +240,11 @@ object GltfLoader {
                 baseColorTexture = materialData?.baseColorTexture?.toTexture2d(requireLinear = true)
                 normalTexture = materialData?.normalTexture?.toTexture2d()
 
-//                occlusionTexture = materialData?.occlusionTexture?.toTexture2d()
-//                roughnessTexture = materialData?.metallicRoughnessTexture?.toTexture2d()
-//                metallicTexture = materialData?.metallicRoughnessTexture?.toTexture2d()
+                roughnessTexture = materialData?.metallicRoughnessTexture?.toTexture2d()
+                metallicTexture = roughnessTexture
+                occlusionTexture = materialData?.occlusionTexture?.toTexture2d()
+
+                emissiveTexture = materialData?.emissiveTexture?.toTexture2d()
             }
             group.addChild(
                 Primitive(
