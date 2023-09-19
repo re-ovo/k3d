@@ -28,11 +28,11 @@ abstract class Camera : Actor(), Dirty {
         }
     override var dirty: Boolean = false
         get() {
-            return field || position.dirty
+            return field || super.dirty
         }
         set(value) {
             field = value
-            position.dirty = value
+            super.dirty = value
         }
 
     val worldMatrixInverse = Matrix4.identity()

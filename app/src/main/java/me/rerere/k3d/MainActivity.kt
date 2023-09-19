@@ -51,8 +51,9 @@ class MainActivity : ComponentActivity() {
     ).apply {
         rotation.set(Euler(0f, 10f.toRadian(), 0f).toQuaternion())
     }
+    private var model: Scene? = null
     private val scene = Scene().apply {
-       // addChild(cube)
+        // addChild(cube)
     }
     private lateinit var controls: OrbitController
 
@@ -81,6 +82,7 @@ class MainActivity : ComponentActivity() {
                                 )
                                 result.defaultScene.scale.set(0.2f, 0.2f, 0.2f)
                                 scene.addChild(result.defaultScene)
+                                model = result.defaultScene
                             }
                         ) {
                             Text("Load")
@@ -144,7 +146,7 @@ class MainActivity : ComponentActivity() {
                     previousTime = TimeSource.Monotonic.markNow()
 
                     val speed = 360f.toRadian() * deltaTime
-                    //cube.rotation.applyRotation(Euler(0f, speed, 0f).toQuaternion())
+                    model?.rotation?.applyRotation(Euler(0f, speed, 0f).toQuaternion())
 
                     render.render(scene, camera)
                 }

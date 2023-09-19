@@ -2,6 +2,7 @@
 
 package me.rerere.k3d.scene.actor
 
+import me.rerere.k3d.util.Dirty
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.rotation.Quaternion
@@ -9,8 +10,16 @@ import me.rerere.k3d.util.math.transform.scaleMatrix
 import me.rerere.k3d.util.math.transform.translationMatrix
 import java.util.UUID
 
-abstract class Actor {
+abstract class Actor : Dirty {
     private val _id = UUID.randomUUID()
+    override var dirty: Boolean = false
+        get() = field || position.dirty || rotation.dirty || scale.dirty
+        set(value) {
+            field = value
+            position.dirty = value
+            rotation.dirty = value
+            scale.dirty = value
+        }
     var name: String = ""
 
     var parent: Actor? = null
@@ -27,10 +36,11 @@ abstract class Actor {
         get() = _worldMatrix
 
     open fun updateMatrix() {
-        _localMatrix = scaleMatrix(scale).applyMatrix4(rotation.toMatrix4()).applyMatrix4(translationMatrix(position))
+        _localMatrix = scaleMatrix(scale).applyMatrix4(rotation.toMatrix4())
+            .applyMatrix4(translationMatrix(position))
         _worldMatrix = parent?.worldMatrix?.times(_localMatrix) ?: _localMatrix
 
-        if(this is ActorGroup) {
+        if (this is ActorGroup) {
             getChildren().forEach {
                 it.updateMatrix()
             }
@@ -54,7 +64,7 @@ abstract class Actor {
     }
 
     override fun equals(other: Any?): Boolean {
-        if(other !is Actor) return false
+        if (other !is Actor) return false
         return _id == other._id
     }
 

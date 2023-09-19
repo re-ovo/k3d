@@ -53,12 +53,9 @@ class GLES3Renderer : Renderer {
         }
 
         scene.traverse { actor ->
-            if (actor.position.dirty || actor.rotation.dirty || actor.scale.dirty) {
+            if (actor.dirty) {
                 actor.updateMatrix()
-
-                actor.position.markClean()
-                actor.rotation.markClean()
-                actor.scale.markClean()
+                actor.markClean()
             }
 
             if (actor is Primitive) {
