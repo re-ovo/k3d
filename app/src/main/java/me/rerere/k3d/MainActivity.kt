@@ -146,7 +146,7 @@ class MainActivity : ComponentActivity() {
                     previousTime = TimeSource.Monotonic.markNow()
 
                     val speed = 360f.toRadian() * deltaTime
-                    model?.rotation?.applyRotation(Euler(0f, speed, 0f).toQuaternion())
+                    // model?.rotation?.applyRotation(Euler(0f, speed, 0f).toQuaternion())
 
                     render.render(scene, camera)
                 }

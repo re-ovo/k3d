@@ -15,13 +15,13 @@ import me.rerere.k3d.scene.actor.Primitive
 import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.geometry.BufferGeometry
 import me.rerere.k3d.scene.material.StandardMaterial
+import me.rerere.k3d.util.ColorSpace
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.math.transform.setModelMatrix
 import java.io.DataInputStream
 import java.io.InputStream
 import java.nio.Buffer
 import java.nio.ByteBuffer
-import java.util.Stack
 
 private const val GLB_MAGIC = 0x676c5446 // "glTF"
 private const val GLB_VERSION = 0x02000000 // 2.0
@@ -212,19 +212,44 @@ object GltfLoader {
                 materialOf(gltf, buffers, it)
             }
             materialData?.let { material ->
-                attributes += textureCoordAccessor(gltf, buffers, primitive.attributes, material.baseColorTextureCoord)
+                attributes += textureCoordAccessor(
+                    gltf,
+                    buffers,
+                    primitive.attributes,
+                    material.baseColorTextureCoord
+                )
                     .asAttribute(BuiltInAttributeName.TEXCOORD_BASE.attributeName)
 
-                attributes += textureCoordAccessor(gltf, buffers, primitive.attributes, material.normalTextureCoord)
+                attributes += textureCoordAccessor(
+                    gltf,
+                    buffers,
+                    primitive.attributes,
+                    material.normalTextureCoord
+                )
                     .asAttribute(BuiltInAttributeName.TEXCOORD_NORMAL.attributeName)
 
-                attributes += textureCoordAccessor(gltf, buffers, primitive.attributes, material.occulsionTextureCoord)
+                attributes += textureCoordAccessor(
+                    gltf,
+                    buffers,
+                    primitive.attributes,
+                    material.occulsionTextureCoord
+                )
                     .asAttribute(BuiltInAttributeName.TEXCOORD_OCCLUSION.attributeName)
 
-                attributes += textureCoordAccessor(gltf, buffers, primitive.attributes, material.metallicRoughnessTextureCoord)
+                attributes += textureCoordAccessor(
+                    gltf,
+                    buffers,
+                    primitive.attributes,
+                    material.metallicRoughnessTextureCoord
+                )
                     .asAttribute(BuiltInAttributeName.TEXCOORD_ROUGHNESS.attributeName)
 
-                attributes += textureCoordAccessor(gltf, buffers, primitive.attributes, material.metallicRoughnessTextureCoord)
+                attributes += textureCoordAccessor(
+                    gltf,
+                    buffers,
+                    primitive.attributes,
+                    material.metallicRoughnessTextureCoord
+                )
                     .asAttribute(BuiltInAttributeName.TEXCOORD_METALLIC.attributeName)
             }
 
@@ -237,7 +262,7 @@ object GltfLoader {
                 }
             }
             val material = StandardMaterial().apply {
-                baseColorTexture = materialData?.baseColorTexture?.toTexture2d(requireLinear = true)
+                baseColorTexture = materialData?.baseColorTexture?.toTexture2d()
                 normalTexture = materialData?.normalTexture?.toTexture2d()
 
                 roughnessTexture = materialData?.metallicRoughnessTexture?.toTexture2d()
@@ -259,7 +284,7 @@ object GltfLoader {
         return group
     }
 
-    private fun Texture.toTexture2d(requireLinear: Boolean = false): me.rerere.k3d.renderer.resource.Texture.Texture2D {
+    private fun Texture.toTexture2d(): me.rerere.k3d.renderer.resource.Texture.Texture2D {
         return image.use {
             me.rerere.k3d.renderer.resource.Texture.Texture2D(
                 data = it.toByteBuffer(),
@@ -269,7 +294,6 @@ object GltfLoader {
                 magFilter = magFilter,
                 width = image.width,
                 height = image.height,
-                // todo: set color space
             )
         }
     }
@@ -333,14 +357,6 @@ object GltfLoader {
     private fun materialOf(gltf: Gltf, buffers: List<ByteBuffer>, index: Int): Material {
         val material = gltf.materials[index]
 
-//        val occlusionTexture = material.occlusionTexture?.let {
-//            textureOf(gltf, buffers, it.index)
-//        }
-//        val metallicRoughnessTexture =
-//            material.pbrMetallicRoughness?.metallicRoughnessTexture?.let {
-//                textureOf(gltf, buffers, it.index)
-//            }
-
         return Material(
             name = material.name ?: "",
             alphaMode = material.alphaMode ?: "OPAQUE",
@@ -358,7 +374,8 @@ object GltfLoader {
             metallicRoughnessTexture = material.pbrMetallicRoughness?.metallicRoughnessTexture?.let {
                 textureOf(gltf, buffers, it.index)
             },
-            metallicRoughnessTextureCoord = material.pbrMetallicRoughness?.metallicRoughnessTexture?.texCoord ?: 0,
+            metallicRoughnessTextureCoord = material.pbrMetallicRoughness?.metallicRoughnessTexture?.texCoord
+                ?: 0,
             normalTexture = material.normalTexture?.let {
                 textureOf(gltf, buffers, it.index)
             },

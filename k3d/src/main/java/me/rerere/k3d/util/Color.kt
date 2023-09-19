@@ -1,5 +1,10 @@
 package me.rerere.k3d.util
 
+enum class ColorSpace {
+    SRGB,
+    LINEAR_SRGB
+}
+
 data class Color4f(
     val r: Float,
     val g: Float,

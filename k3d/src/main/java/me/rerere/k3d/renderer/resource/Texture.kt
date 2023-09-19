@@ -9,7 +9,7 @@ sealed class Texture(
     val wrapS: TextureWrap,
     val wrapT: TextureWrap,
     val minFilter: TextureFilter,
-    val magFilter: TextureFilter
+    val magFilter: TextureFilter,
 ) {
     class Texture2D(
         data: ByteBuffer,
@@ -18,7 +18,7 @@ sealed class Texture(
         wrapS: TextureWrap = TextureWrap.REPEAT,
         wrapT: TextureWrap = TextureWrap.REPEAT,
         minFilter: TextureFilter = TextureFilter.LINEAR,
-        magFilter: TextureFilter = TextureFilter.LINEAR
+        magFilter: TextureFilter = TextureFilter.LINEAR,
     ) : Texture(data, width, height, wrapS, wrapT, minFilter, magFilter)
 
     class TextureCube(
@@ -28,7 +28,7 @@ sealed class Texture(
         wrapS: TextureWrap = TextureWrap.REPEAT,
         wrapT: TextureWrap = TextureWrap.REPEAT,
         minFilter: TextureFilter = TextureFilter.LINEAR,
-        magFilter: TextureFilter = TextureFilter.LINEAR
+        magFilter: TextureFilter = TextureFilter.LINEAR,
     ) : Texture(data, width, height, wrapS, wrapT, minFilter, magFilter)
 
     override fun toString(): String {
