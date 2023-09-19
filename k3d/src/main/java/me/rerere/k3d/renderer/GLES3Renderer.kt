@@ -4,21 +4,24 @@ import android.opengl.GLES20
 import android.opengl.GLES30
 import me.rerere.k3d.renderer.resource.Attribute
 import me.rerere.k3d.renderer.resource.Texture
-import me.rerere.k3d.renderer.resource.VertexArray
-import me.rerere.k3d.renderer.shader.ShaderProgramSource
 import me.rerere.k3d.renderer.resource.Uniform
+import me.rerere.k3d.renderer.resource.VertexArray
 import me.rerere.k3d.renderer.shader.BuiltInUniformName
 import me.rerere.k3d.renderer.shader.ShaderProcessor
-import me.rerere.k3d.renderer.shader.ShaderProgramProcessResult
+import me.rerere.k3d.renderer.shader.ShaderProgramSource
 import me.rerere.k3d.renderer.shader.createProgram
 import me.rerere.k3d.renderer.shader.createShader
 import me.rerere.k3d.renderer.shader.genBuffer
 import me.rerere.k3d.renderer.shader.genTexture
 import me.rerere.k3d.renderer.shader.genVertexArray
-import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.actor.Primitive
-import me.rerere.k3d.scene.camera.Camera
+import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.actor.traverse
+import me.rerere.k3d.scene.camera.Camera
+import me.rerere.k3d.scene.light.AmbientLight
+import me.rerere.k3d.scene.light.DirectionalLight
+import me.rerere.k3d.scene.light.PointLight
+import me.rerere.k3d.scene.light.SpotLight
 import me.rerere.k3d.util.Disposable
 import me.rerere.k3d.util.cleanIfDirty
 import java.nio.Buffer
@@ -46,6 +49,7 @@ class GLES3Renderer : Renderer {
     private val worldMatrixUniform = Uniform.Mat4(FloatArray(16), true)
     private val viewMatrixUniform = Uniform.Mat4(FloatArray(16), true)
     private val projectionMatrixUniform = Uniform.Mat4(FloatArray(16), true)
+    private val cameraPositionUniform = Uniform.Vec3f(0f, 0f, 0f)
 
     override fun render(scene: Scene, camera: Camera) {
         GLES30.glClearColor(0f, 0f, 0f, 1f)
@@ -96,6 +100,18 @@ class GLES3Renderer : Renderer {
                         },
                         BuiltInUniformName.PROJECTION_MATRIX.uniformName
                     )
+                    resourceManager.useUniform(
+                        actor.material.program,
+                        cameraPositionUniform.apply {
+                            x = camera.position.x
+                            y = camera.position.y
+                            z = camera.position.z
+                        },
+                        BuiltInUniformName.CAMERA_POSITION.uniformName
+                    )
+
+                    // Apply Lights
+                    resourceManager.useLights(this, scene)
 
                     // Apply textures
                     actor.material.textures.entries.forEachIndexed { index, mutableEntry ->
@@ -225,6 +241,62 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
             }
             GLES30.glBindTexture(target, textureId)
             GLES30.glUniform1i(location, internalIndex)
+        }
+    }
+
+    fun useLights(program: ShaderProgramSource, scene: Scene) {
+        if(scene.lights.isEmpty()) return
+        val programId = getProgram(program) ?: return
+
+        // ambient light
+        val ambientLights = scene.lights.filterIsInstance<AmbientLight>()
+        if(ambientLights.isNotEmpty()) {
+            val theLight = ambientLights[0]
+            uniformLocationOf(programId, "ambientLight.position") {
+                GLES30.glUniform3f(it, theLight.position.x, theLight.position.y, theLight.position.z)
+            }
+            uniformLocationOf(programId, "ambientLight.color") {
+                GLES30.glUniform3f(it, theLight.color.r, theLight.color.g, theLight.color.b)
+            }
+            uniformLocationOf(programId, "ambientLight.intensity") {
+                GLES30.glUniform1f(it, theLight.intensity)
+            }
+        } else {
+            uniformLocationOf(programId, "ambientLight.intensity") {
+                GLES30.glUniform1f(it, 0f)
+            }
+        }
+
+        // directional light
+        val directionalLights = scene.lights.filterIsInstance<DirectionalLight>()
+        if(directionalLights.isNotEmpty()) {
+            val theLight = directionalLights[0]
+            uniformLocationOf(programId, "directionalLight.position") {
+                GLES30.glUniform3f(it, theLight.position.x, theLight.position.y, theLight.position.z)
+            }
+            uniformLocationOf(programId, "directionalLight.target") {
+                GLES30.glUniform3f(it, theLight.target.x, theLight.target.y, theLight.target.z)
+            }
+            uniformLocationOf(programId, "directionalLight.color") {
+                GLES30.glUniform3f(it, theLight.color.r, theLight.color.g, theLight.color.b)
+            }
+            uniformLocationOf(programId, "directionalLight.intensity") {
+                GLES30.glUniform1f(it, theLight.intensity)
+            }
+        } else {
+            uniformLocationOf(programId, "directionalLight.intensity") {
+                GLES30.glUniform1f(it, 0f)
+            }
+        }
+
+        val pointLights = scene.lights.filterIsInstance<PointLight>()
+        val spotLights = scene.lights.filterIsInstance<SpotLight>()
+    }
+
+    private inline fun uniformLocationOf(programId: Int, name: String, scope: (Int) -> Unit) {
+        val location = GLES20.glGetUniformLocation(programId, name)
+        if (location != -1) {
+            scope(location)
         }
     }
 

@@ -55,6 +55,7 @@ private val StandProgram = ShaderProgramSource(
         
         uniform sampler2D u_textureBase;
         uniform sampler2D u_textureNormal;
+        uniform vec3 u_cameraPos;
         
         vec3 getNormal() {     
             vec3 normalFromMap = texture(u_textureNormal, v_texCoordNormal).rgb;
@@ -76,11 +77,25 @@ private val StandProgram = ShaderProgramSource(
             #ifdef USE_TEXTURE_BASE
                 vec3 albedo = texture(u_textureBase, v_texCoordBase).rgb;
                 albedo = toLinear(vec4(albedo, 1.0)).rgb;
+                
+                // ambient
+                vec3 ambient = ambientLight.color * ambientLight.intensity;
+                
+                // diffuse
                 vec3 normal = getNormal();
-                vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));
-                float diff = max(dot(normal, lightDir), 0.1);
-                vec3 diffuse = diff * albedo;
-                fragColor = vec4(diffuse, 1.0);
+                vec3 lightDir = normalize(directionalLight.target - directionalLight.position);
+                float diff = max(dot(normal, lightDir), 0.0);
+                vec3 diffuse = directionalLight.color * directionalLight.intensity * diff;
+                
+                // specular
+                vec3 viewDir = normalize(u_cameraPos - v_fragPos);
+                vec3 reflectDir = reflect(-lightDir, normal);
+                float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+                vec3 specular = directionalLight.color * directionalLight.intensity * spec;
+                
+                // combine results
+                vec3 result = (ambient + diffuse + specular) * albedo;
+                fragColor = vec4(result, 1.0);
             #else
                 vec3 albedo = vec3(1.0, 0.0, 0.0);
                 vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));

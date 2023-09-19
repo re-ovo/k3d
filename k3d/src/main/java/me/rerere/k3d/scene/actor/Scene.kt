@@ -3,7 +3,7 @@ package me.rerere.k3d.scene.actor
 import me.rerere.k3d.scene.light.LightActor
 
 class Scene : ActorGroup() {
-    private val lights = mutableListOf<LightActor>()
+    internal val lights = mutableListOf<LightActor>()
 
     override fun addChild(actor: Actor) {
         super.addChild(actor)

@@ -30,8 +30,11 @@ import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.actor.Primitive
 import me.rerere.k3d.scene.camera.PerspectiveCamera
 import me.rerere.k3d.scene.geometry.CubeGeometry
+import me.rerere.k3d.scene.light.AmbientLight
+import me.rerere.k3d.scene.light.DirectionalLight
 import me.rerere.k3d.scene.material.StandardMaterial
 import me.rerere.k3d.ui.theme.K3dTheme
+import me.rerere.k3d.util.Color3f
 import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.rotation.Euler
 import me.rerere.k3d.util.math.rotation.toRadian
@@ -54,6 +57,21 @@ class MainActivity : ComponentActivity() {
     private var model: Scene? = null
     private val scene = Scene().apply {
         // addChild(cube)
+
+        addChild(
+            AmbientLight(
+                color = Color3f.fromHex("#ffffff").toLinear(),
+                intensity = 0.1f
+            )
+        )
+
+        addChild(DirectionalLight(
+            color = Color3f.fromHex("#ffffff").toLinear(),
+            intensity = 1.5f,
+            target = Vec3(0f, 0f, 0f)
+        ).apply {
+            position.set(3f, 3f, 3f)
+        })
     }
     private lateinit var controls: OrbitController
 
