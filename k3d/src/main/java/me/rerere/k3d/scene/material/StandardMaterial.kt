@@ -2,9 +2,9 @@ package me.rerere.k3d.scene.material
 
 import me.rerere.k3d.renderer.resource.Texture
 import me.rerere.k3d.renderer.shader.BuiltInUniformName
-import me.rerere.k3d.renderer.shader.ShaderProgram
+import me.rerere.k3d.renderer.shader.ShaderProgramSource
 
-private val StandProgram = ShaderProgram(
+private val StandProgram = ShaderProgramSource(
     vertexShader = """
         #version 300 es
         

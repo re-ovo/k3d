@@ -5,7 +5,7 @@ import android.opengl.GLES30
 import me.rerere.k3d.renderer.resource.Attribute
 import me.rerere.k3d.renderer.resource.Texture
 import me.rerere.k3d.renderer.resource.VertexArray
-import me.rerere.k3d.renderer.shader.ShaderProgram
+import me.rerere.k3d.renderer.shader.ShaderProgramSource
 import me.rerere.k3d.renderer.resource.Uniform
 import me.rerere.k3d.renderer.shader.BuiltInUniformName
 import me.rerere.k3d.renderer.shader.createProgram
@@ -123,7 +123,7 @@ class GLES3Renderer : Renderer {
 
 internal class GL3ResourceManager : Disposable {
     // program(shaders) related resources
-    private val programs = IdentityHashMap<ShaderProgram, Int>()
+    private val programs = IdentityHashMap<ShaderProgramSource, Int>()
 
     // vao related resources
     private val vertexArrays = IdentityHashMap<VertexArray, Int>()
@@ -133,7 +133,7 @@ internal class GL3ResourceManager : Disposable {
     // texture related resources
     private val textureBuffers = IdentityHashMap<Texture, Int>()
 
-    inline fun useProgram(program: ShaderProgram, scope: ShaderProgram.() -> Unit) {
+    inline fun useProgram(program: ShaderProgramSource, scope: ShaderProgramSource.() -> Unit) {
         val programId = this.getProgram(program) ?: this.createProgram(program)
             .getOrThrow()
         GLES30.glUseProgram(programId)
@@ -141,7 +141,7 @@ internal class GL3ResourceManager : Disposable {
         GLES30.glUseProgram(0)
     }
 
-    inline fun useVertexArray(program: ShaderProgram, vertexArray: VertexArray, scope: () -> Unit) {
+    inline fun useVertexArray(program: ShaderProgramSource, vertexArray: VertexArray, scope: () -> Unit) {
         val vao = getVertexArray(vertexArray) ?: createVertexArray(program, vertexArray)
             .getOrThrow()
 
@@ -152,7 +152,7 @@ internal class GL3ResourceManager : Disposable {
         GLES30.glBindVertexArray(0)
     }
 
-    fun useUniform(program: ShaderProgram, uniform: Uniform, name: String) {
+    fun useUniform(program: ShaderProgramSource, uniform: Uniform, name: String) {
         val programId = getProgram(program) ?: return
         when (uniform) {
             is Uniform.Float1 -> {
@@ -192,7 +192,7 @@ internal class GL3ResourceManager : Disposable {
         }
     }
 
-    fun useTexture(program: ShaderProgram, name: String, texture: Texture, index: Int) {
+    fun useTexture(program: ShaderProgramSource, name: String, texture: Texture, index: Int) {
         val programId = getProgram(program) ?: return
         val location = GLES30.glGetUniformLocation(programId, name)
         val internalIndex = index + 1 // 0 is reserved for default texture
@@ -209,7 +209,7 @@ internal class GL3ResourceManager : Disposable {
         }
     }
 
-    fun createProgram(program: ShaderProgram): Result<Int> = runCatching {
+    fun createProgram(program: ShaderProgramSource): Result<Int> = runCatching {
         require(!programs.containsKey(program)) { "Program already exists" }
         val vertexShader = createShader(GLES20.GL_VERTEX_SHADER, program.vertexShader)
             .getOrThrow()
@@ -221,13 +221,13 @@ internal class GL3ResourceManager : Disposable {
         programId
     }
 
-    fun deleteProgram(program: ShaderProgram) {
+    fun deleteProgram(program: ShaderProgramSource) {
         val programId = programs[program] ?: return
         GLES20.glDeleteProgram(programId)
         programs.remove(program)
     }
 
-    fun getProgram(program: ShaderProgram): Int? = programs[program]
+    fun getProgram(program: ShaderProgramSource): Int? = programs[program]
 
     fun getTextureBuffer(texture: Texture): Int? = textureBuffers[texture]
 
@@ -269,7 +269,7 @@ internal class GL3ResourceManager : Disposable {
         textureBuffers.remove(texture)
     }
 
-    fun createVertexArray(program: ShaderProgram, vertexArray: VertexArray): Result<Int> =
+    fun createVertexArray(program: ShaderProgramSource, vertexArray: VertexArray): Result<Int> =
         runCatching {
             require(!vertexArrays.containsKey(vertexArray)) { "VertexArray already exists" }
 
