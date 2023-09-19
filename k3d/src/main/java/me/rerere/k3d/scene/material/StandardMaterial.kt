@@ -1,13 +1,12 @@
 package me.rerere.k3d.scene.material
 
 import me.rerere.k3d.renderer.resource.Texture
+import me.rerere.k3d.renderer.shader.BuiltInMacroDefinition
 import me.rerere.k3d.renderer.shader.BuiltInUniformName
 import me.rerere.k3d.renderer.shader.ShaderProgramSource
 
 private val StandProgram = ShaderProgramSource(
     vertexShader = """
-        #version 300 es
-        
         in vec3 a_pos;
         in vec3 a_normal;
         in vec3 a_tangent;
@@ -44,9 +43,6 @@ private val StandProgram = ShaderProgramSource(
         }
     """.trimIndent(),
     fragmentShader = """
-        #version 300 es
-        precision mediump float;
-        
         in vec3 v_normal;
         in vec3 v_fragPos;
         in mat3 TBN;
@@ -106,8 +102,10 @@ class StandardMaterial : ShaderMaterial(StandProgram) {
         set(value) {
             if (value == null) {
                 textures.remove(BuiltInUniformName.TEXTURE_BASE.uniformName)
+                program.removeMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_BASE.macroName)
             } else {
                 textures[BuiltInUniformName.TEXTURE_BASE.uniformName] = value
+                program.addMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_BASE.macroName)
             }
         }
 
@@ -116,8 +114,10 @@ class StandardMaterial : ShaderMaterial(StandProgram) {
         set(value) {
             if (value == null) {
                 textures.remove(BuiltInUniformName.TEXTURE_NORMAL.uniformName)
+                program.removeMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_NORMAL.macroName)
             } else {
                 textures[BuiltInUniformName.TEXTURE_NORMAL.uniformName] = value
+                program.addMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_NORMAL.macroName)
             }
         }
 
@@ -126,8 +126,10 @@ class StandardMaterial : ShaderMaterial(StandProgram) {
         set(value) {
             if (value == null) {
                 textures.remove(BuiltInUniformName.TEXTURE_METALLIC.uniformName)
+                program.removeMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_METALLIC.macroName)
             } else {
                 textures[BuiltInUniformName.TEXTURE_METALLIC.uniformName] = value
+                program.addMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_METALLIC.macroName)
             }
         }
 
@@ -136,8 +138,10 @@ class StandardMaterial : ShaderMaterial(StandProgram) {
         set(value) {
             if (value == null) {
                 textures.remove(BuiltInUniformName.TEXTURE_ROUGHNESS.uniformName)
+                program.removeMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_ROUGHNESS.macroName)
             } else {
                 textures[BuiltInUniformName.TEXTURE_ROUGHNESS.uniformName] = value
+                program.addMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_ROUGHNESS.macroName)
             }
         }
 
@@ -146,8 +150,10 @@ class StandardMaterial : ShaderMaterial(StandProgram) {
         set(value) {
             if (value == null) {
                 textures.remove(BuiltInUniformName.TEXTURE_OCCLUSION.uniformName)
+                program.removeMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_OCCLUSION.macroName)
             } else {
                 textures[BuiltInUniformName.TEXTURE_OCCLUSION.uniformName] = value
+                program.addMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_OCCLUSION.macroName)
             }
         }
 
@@ -156,8 +162,10 @@ class StandardMaterial : ShaderMaterial(StandProgram) {
         set(value) {
             if (value == null) {
                 textures.remove(BuiltInUniformName.TEXTURE_EMISSIVE.uniformName)
+                program.removeMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_EMISSIVE.macroName)
             } else {
                 textures[BuiltInUniformName.TEXTURE_EMISSIVE.uniformName] = value
+                program.addMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_EMISSIVE.macroName)
             }
         }
 }

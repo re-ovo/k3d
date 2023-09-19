@@ -20,6 +20,7 @@ class ShaderProcessor {
         type: ShaderType
     ): String {
         val trimmed = StringBuilder(shader.trim())
+        val lines = trimmed.split("\n")
         val header = StringBuilder()
 
         // User should not specify the version in the shader source
@@ -31,12 +32,18 @@ class ShaderProcessor {
         // Add version
         header.append("#version $glslVersion\n")
 
+        // Add precision
+        if (type == ShaderType.FRAGMENT_SHADER && lines.none { it.startsWith("precision ") }) {
+            header.append("precision mediump float;\n")
+        }
+
         // Add marco definitions
         definition.forEach {
             header.append("#define ${it.name}")
             if (it.value != null) {
                 header.append(" ${it.value}")
             }
+            header.append("\n")
         }
 
         return header.append(trimmed).toString()

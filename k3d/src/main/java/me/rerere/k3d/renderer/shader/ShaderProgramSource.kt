@@ -23,6 +23,14 @@ class ShaderProgramSource(
             markDirty()
         }
 
+    fun addMarcoDefinition(name: String, value: String? = null) {
+        marcoDefinitions = marcoDefinitions + MarcoDefinition(name, value)
+    }
+
+    fun removeMarcoDefinition(name: String) {
+        marcoDefinitions = marcoDefinitions.filter { it.name != name }
+    }
+
     init {
         require(vertexShader.isNotBlank() && fragmentShader.isNotBlank()) {
             "Shader source cannot be blank"
@@ -83,5 +91,14 @@ enum class BuiltInUniformName(val uniformName: String) {
     TEXTURE_OCCLUSION("u_textureOcclusion"),
     TEXTURE_EMISSIVE("u_textureEmissive"),
 
-    CAMERA_POSITION("u_cameraPosition"),
+    CAMERA_POSITION("u_cameraPos"),
+}
+
+enum class BuiltInMacroDefinition(val macroName: String) {
+    USE_TEXTURE_BASE("USE_TEXTURE_BASE"),
+    USE_TEXTURE_NORMAL("USE_TEXTURE_NORMAL"),
+    USE_TEXTURE_METALLIC("USE_TEXTURE_METALLIC"),
+    USE_TEXTURE_ROUGHNESS("USE_TEXTURE_ROUGHNESS"),
+    USE_TEXTURE_OCCLUSION("USE_TEXTURE_OCCLUSION"),
+    USE_TEXTURE_EMISSIVE("USE_TEXTURE_EMISSIVE"),
 }

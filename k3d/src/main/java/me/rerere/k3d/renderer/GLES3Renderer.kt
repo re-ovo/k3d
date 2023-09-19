@@ -8,6 +8,8 @@ import me.rerere.k3d.renderer.resource.VertexArray
 import me.rerere.k3d.renderer.shader.ShaderProgramSource
 import me.rerere.k3d.renderer.resource.Uniform
 import me.rerere.k3d.renderer.shader.BuiltInUniformName
+import me.rerere.k3d.renderer.shader.ShaderProcessor
+import me.rerere.k3d.renderer.shader.ShaderProgramProcessResult
 import me.rerere.k3d.renderer.shader.createProgram
 import me.rerere.k3d.renderer.shader.createShader
 import me.rerere.k3d.renderer.shader.genBuffer
@@ -23,7 +25,9 @@ import java.nio.Buffer
 import java.util.IdentityHashMap
 
 class GLES3Renderer : Renderer {
-    private val resourceManager = GL3ResourceManager()
+    private val shaderProcessor = ShaderProcessor()
+    private val resourceManager = GL3ResourceManager(shaderProcessor)
+
     override var viewportSize: ViewportSize = ViewportSize(0, 0)
 
     override fun dispose() {
@@ -121,7 +125,7 @@ class GLES3Renderer : Renderer {
     }
 }
 
-internal class GL3ResourceManager : Disposable {
+internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) : Disposable {
     // program(shaders) related resources
     private val programs = IdentityHashMap<ShaderProgramSource, Int>()
 
@@ -134,6 +138,12 @@ internal class GL3ResourceManager : Disposable {
     private val textureBuffers = IdentityHashMap<Texture, Int>()
 
     inline fun useProgram(program: ShaderProgramSource, scope: ShaderProgramSource.() -> Unit) {
+        if(program.dirty) {
+            deleteProgram(program)
+            program.markClean()
+            println("Update program: $program due to dirty")
+        }
+
         val programId = this.getProgram(program) ?: this.createProgram(program)
             .getOrThrow()
         GLES30.glUseProgram(programId)
@@ -141,7 +151,11 @@ internal class GL3ResourceManager : Disposable {
         GLES30.glUseProgram(0)
     }
 
-    inline fun useVertexArray(program: ShaderProgramSource, vertexArray: VertexArray, scope: () -> Unit) {
+    inline fun useVertexArray(
+        program: ShaderProgramSource,
+        vertexArray: VertexArray,
+        scope: () -> Unit
+    ) {
         val vao = getVertexArray(vertexArray) ?: createVertexArray(program, vertexArray)
             .getOrThrow()
 
@@ -211,9 +225,12 @@ internal class GL3ResourceManager : Disposable {
 
     fun createProgram(program: ShaderProgramSource): Result<Int> = runCatching {
         require(!programs.containsKey(program)) { "Program already exists" }
-        val vertexShader = createShader(GLES20.GL_VERTEX_SHADER, program.vertexShader)
+        val programProcessResult = shaderProcessor.process(program)
+        println(programProcessResult.vertexShader)
+        println(programProcessResult.fragmentShader)
+        val vertexShader = createShader(GLES20.GL_VERTEX_SHADER, programProcessResult.vertexShader)
             .getOrThrow()
-        val fragmentShader = createShader(GLES20.GL_FRAGMENT_SHADER, program.fragmentShader)
+        val fragmentShader = createShader(GLES20.GL_FRAGMENT_SHADER, programProcessResult.fragmentShader)
             .getOrThrow()
         val programId = createProgram(vertexShader, fragmentShader)
             .getOrThrow()
