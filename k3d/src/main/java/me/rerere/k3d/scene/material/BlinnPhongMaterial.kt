@@ -83,7 +83,7 @@ private val programSource = ShaderProgramSource(
                 vec3 ambient = ambientLight.color * ambientLight.intensity;
                 
                 // diffuse
-                vec3 normal = getNormal();
+                vec3 normal = normalize(v_normal);
                 float diff = max(dot(normal, -lightDir), 0.0);
                 vec3 diffuse = directionalLight.color * directionalLight.intensity * diff;
                 
@@ -112,7 +112,7 @@ private val programSource = ShaderProgramSource(
     """.trimIndent()
 )
 
-class StandardMaterial : ShaderMaterial(programSource) {
+class BlinnPhongMaterial : ShaderMaterial(programSource) {
     var baseColorTexture: Texture?
         get() = textures[BuiltInUniformName.TEXTURE_BASE.uniformName]
         set(value) {
@@ -134,54 +134,6 @@ class StandardMaterial : ShaderMaterial(programSource) {
             } else {
                 textures[BuiltInUniformName.TEXTURE_NORMAL.uniformName] = value
                 program.addMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_NORMAL.macroName)
-            }
-        }
-
-    var metallicTexture: Texture?
-        get() = textures[BuiltInUniformName.TEXTURE_METALLIC.uniformName]
-        set(value) {
-            if (value == null) {
-                textures.remove(BuiltInUniformName.TEXTURE_METALLIC.uniformName)
-                program.removeMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_METALLIC.macroName)
-            } else {
-                textures[BuiltInUniformName.TEXTURE_METALLIC.uniformName] = value
-                program.addMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_METALLIC.macroName)
-            }
-        }
-
-    var roughnessTexture: Texture?
-        get() = textures[BuiltInUniformName.TEXTURE_ROUGHNESS.uniformName]
-        set(value) {
-            if (value == null) {
-                textures.remove(BuiltInUniformName.TEXTURE_ROUGHNESS.uniformName)
-                program.removeMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_ROUGHNESS.macroName)
-            } else {
-                textures[BuiltInUniformName.TEXTURE_ROUGHNESS.uniformName] = value
-                program.addMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_ROUGHNESS.macroName)
-            }
-        }
-
-    var occlusionTexture: Texture?
-        get() = textures[BuiltInUniformName.TEXTURE_OCCLUSION.uniformName]
-        set(value) {
-            if (value == null) {
-                textures.remove(BuiltInUniformName.TEXTURE_OCCLUSION.uniformName)
-                program.removeMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_OCCLUSION.macroName)
-            } else {
-                textures[BuiltInUniformName.TEXTURE_OCCLUSION.uniformName] = value
-                program.addMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_OCCLUSION.macroName)
-            }
-        }
-
-    var emissiveTexture: Texture?
-        get() = textures[BuiltInUniformName.TEXTURE_EMISSIVE.uniformName]
-        set(value) {
-            if (value == null) {
-                textures.remove(BuiltInUniformName.TEXTURE_EMISSIVE.uniformName)
-                program.removeMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_EMISSIVE.macroName)
-            } else {
-                textures[BuiltInUniformName.TEXTURE_EMISSIVE.uniformName] = value
-                program.addMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_EMISSIVE.macroName)
             }
         }
 }
