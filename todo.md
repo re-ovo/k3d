@@ -4,7 +4,7 @@
 - [ ] GLTF Loader支持路径加载(文件夹模式), 目前只支持二进制glb
 - [x] 将name从attribute和uniform中拆出来，方便复用
 - [ ] Shader GLSL预处理: 自动添加内置attribute/uniform, include支持
-- [ ] 处理缺失attribute/uniform(texture)的情况, 当前没有处理(例如TANGENT)
+- [ ] 处理缺失attribute/uniform(texture)的情况, 当前没有处理(例如TANGENT), 也许可以自动添加宏定义 `#define HAS_XXX_XXX`, 例如: `HAS_UNIFORM_BASE_COLOR_TEXTURE`, `HAS_ATTRIBUTE_TANGENT`
 - [ ] BRDF材质系统
 - [ ] 灯光系统
 - [ ] Shadow Map / Multi Pass / Post Processing
