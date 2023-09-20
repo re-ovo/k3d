@@ -10,4 +10,4 @@ class SpotLight(
     val penumbra: Float = 0f, // 0 ~ 1
     val distance: Float = 0f,
     val decay: Float = 2f,
-) : LightActor(intensity, color)
+) : Light(intensity, color)

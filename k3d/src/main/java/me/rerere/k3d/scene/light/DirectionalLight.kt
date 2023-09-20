@@ -7,4 +7,4 @@ class DirectionalLight(
     intensity: Float = 1f,
     color: Color3f,
     val target: Vec3 = Vec3(0f, 0f, 0f)
-) : LightActor(intensity, color)
+) : Light(intensity, color)

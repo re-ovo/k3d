@@ -7,4 +7,4 @@ class PointLight(
     color: Color3f,
     val distance: Float = 0f,
     val decay: Float = 2f
-) : LightActor(intensity, color)
+) : Light(intensity, color)
