@@ -67,7 +67,7 @@ class MainActivity : ComponentActivity() {
 
         addChild(DirectionalLight(
             color = Color3f.fromHex("#ffffff").toLinear(),
-            intensity = 1.5f,
+            intensity = 0.8f,
             target = Vec3(0f, 0f, 0f)
         ).apply {
             position.set(3f, 3f, 3f)

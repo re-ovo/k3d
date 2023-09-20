@@ -77,21 +77,24 @@ private val StandProgram = ShaderProgramSource(
             #ifdef USE_TEXTURE_BASE
                 vec3 albedo = texture(u_textureBase, v_texCoordBase).rgb;
                 albedo = toLinear(vec4(albedo, 1.0)).rgb;
+                vec3 lightDir = normalize(directionalLight.target - directionalLight.position);
                 
                 // ambient
                 vec3 ambient = ambientLight.color * ambientLight.intensity;
                 
                 // diffuse
-                vec3 normal = getNormal();
-                vec3 lightDir = normalize(directionalLight.target - directionalLight.position);
-                float diff = max(dot(normal, lightDir), 0.0);
+                vec3 normal = normalize(v_normal);
+                float diff = max(dot(normal, -lightDir), 0.0);
                 vec3 diffuse = directionalLight.color * directionalLight.intensity * diff;
                 
                 // specular
-                vec3 viewDir = normalize(u_cameraPos - v_fragPos);
-                vec3 reflectDir = reflect(-lightDir, normal);
-                float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+                // TODO: Fix specular
+                vec3 viewDir = -normalize(v_fragPos - u_cameraPos);
+                vec3 reflectDir = reflect(lightDir, normal);
+                vec3 halfwayDir = normalize(lightDir + viewDir);
+                float spec = pow(max(dot(normal, halfwayDir), 0.0), 32.0);
                 vec3 specular = directionalLight.color * directionalLight.intensity * spec;
+                // vec3 specular = vec3(0.0);
                 
                 // combine results
                 vec3 result = (ambient + diffuse + specular) * albedo;
