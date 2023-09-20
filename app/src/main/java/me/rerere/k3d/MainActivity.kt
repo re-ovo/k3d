@@ -48,15 +48,20 @@ class MainActivity : ComponentActivity() {
         position.set(0f, 0f, 5f)
     }
     private val cube = Primitive(
-        geometry = CubeGeometry(),
+        geometry = CubeGeometry(
+            depth = 0.1f,
+            height = 0.1f,
+            width = 0.1f
+        ),
         material = StandardMaterial(),
         count = 36
     ).apply {
-        // rotation.set(Euler(0f, 10f.toRadian(), 0f).toQuaternion())
+        position.set(3f, 3f, 3f)
+        rotation.set(Euler(0f, 10f.toRadian(), 0f).toQuaternion())
     }
     private var model: Scene? = null
     private val scene = Scene().apply {
-        // addChild(cube)
+        addChild(cube)
 
         addChild(
             AmbientLight(
@@ -98,7 +103,7 @@ class MainActivity : ComponentActivity() {
                                 val result = GltfLoader.load(
                                     inputStream = assets.open("crates_and_barrels.glb")
                                 )
-                                result.defaultScene.scale.set(0.2f, 0.2f, 0.2f)
+                                result.defaultScene.scale.set(0.5f, 0.5f, 0.5f)
                                 scene.addChild(result.defaultScene)
                                 model = result.defaultScene
                             }
