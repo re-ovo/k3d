@@ -113,75 +113,15 @@ private val programSource = ShaderProgramSource(
 )
 
 class StandardMaterial : ShaderMaterial(programSource) {
-    var baseColorTexture: Texture?
-        get() = textures[BuiltInUniformName.TEXTURE_BASE.uniformName]
-        set(value) {
-            if (value == null) {
-                textures.remove(BuiltInUniformName.TEXTURE_BASE.uniformName)
-                program.removeMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_BASE.macroName)
-            } else {
-                textures[BuiltInUniformName.TEXTURE_BASE.uniformName] = value
-                program.addMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_BASE.macroName)
-            }
-        }
+    var baseColorTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_BASE)
 
-    var normalTexture: Texture?
-        get() = textures[BuiltInUniformName.TEXTURE_NORMAL.uniformName]
-        set(value) {
-            if (value == null) {
-                textures.remove(BuiltInUniformName.TEXTURE_NORMAL.uniformName)
-                program.removeMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_NORMAL.macroName)
-            } else {
-                textures[BuiltInUniformName.TEXTURE_NORMAL.uniformName] = value
-                program.addMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_NORMAL.macroName)
-            }
-        }
+    var normalTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_NORMAL)
 
-    var metallicTexture: Texture?
-        get() = textures[BuiltInUniformName.TEXTURE_METALLIC.uniformName]
-        set(value) {
-            if (value == null) {
-                textures.remove(BuiltInUniformName.TEXTURE_METALLIC.uniformName)
-                program.removeMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_METALLIC.macroName)
-            } else {
-                textures[BuiltInUniformName.TEXTURE_METALLIC.uniformName] = value
-                program.addMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_METALLIC.macroName)
-            }
-        }
+    var metallicTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_METALLIC)
 
-    var roughnessTexture: Texture?
-        get() = textures[BuiltInUniformName.TEXTURE_ROUGHNESS.uniformName]
-        set(value) {
-            if (value == null) {
-                textures.remove(BuiltInUniformName.TEXTURE_ROUGHNESS.uniformName)
-                program.removeMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_ROUGHNESS.macroName)
-            } else {
-                textures[BuiltInUniformName.TEXTURE_ROUGHNESS.uniformName] = value
-                program.addMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_ROUGHNESS.macroName)
-            }
-        }
+    var roughnessTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_ROUGHNESS)
 
-    var occlusionTexture: Texture?
-        get() = textures[BuiltInUniformName.TEXTURE_OCCLUSION.uniformName]
-        set(value) {
-            if (value == null) {
-                textures.remove(BuiltInUniformName.TEXTURE_OCCLUSION.uniformName)
-                program.removeMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_OCCLUSION.macroName)
-            } else {
-                textures[BuiltInUniformName.TEXTURE_OCCLUSION.uniformName] = value
-                program.addMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_OCCLUSION.macroName)
-            }
-        }
+    var occlusionTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_OCCLUSION)
 
-    var emissiveTexture: Texture?
-        get() = textures[BuiltInUniformName.TEXTURE_EMISSIVE.uniformName]
-        set(value) {
-            if (value == null) {
-                textures.remove(BuiltInUniformName.TEXTURE_EMISSIVE.uniformName)
-                program.removeMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_EMISSIVE.macroName)
-            } else {
-                textures[BuiltInUniformName.TEXTURE_EMISSIVE.uniformName] = value
-                program.addMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_EMISSIVE.macroName)
-            }
-        }
+    var emissiveTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_EMISSIVE)
 }
