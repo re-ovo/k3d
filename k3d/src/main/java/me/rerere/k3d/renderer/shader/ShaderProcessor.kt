@@ -42,6 +42,15 @@ class ShaderProcessor {
             header.append("precision mediump float;\n")
         }
 
+        // Add marco definitions
+        definition.forEach {
+            header.append("#define ${it.name}")
+            if (it.value != null) {
+                header.append(" ${it.value}")
+            }
+            header.append("\n")
+        }
+
         // Add includes
         lines.forEach {
             if (it.startsWith("#include")) {
@@ -59,15 +68,6 @@ class ShaderProcessor {
                     trimmed.indexOf(it) + it.length
                 )
             }
-        }
-
-        // Add marco definitions
-        definition.forEach {
-            header.append("#define ${it.name}")
-            if (it.value != null) {
-                header.append(" ${it.value}")
-            }
-            header.append("\n")
         }
 
         return header.append(trimmed).toString()

@@ -15,13 +15,13 @@ open class ShaderMaterial(
         return MaterialUniformDelegate(this, name)
     }
 
-    fun uniformOf(type: BuiltInUniformName) = uniformOf(type.name)
+    fun uniformOf(type: BuiltInUniformName) = uniformOf(type.uniformName)
 
     fun textureOf(name: String): MaterialTextureDelegate {
         return MaterialTextureDelegate(this, name)
     }
 
-    fun textureOf(type: BuiltInUniformName) = textureOf(type.name)
+    fun textureOf(type: BuiltInUniformName) = textureOf(type.uniformName)
 
     fun getUniform(name: String): Uniform? {
         return uniforms[name]

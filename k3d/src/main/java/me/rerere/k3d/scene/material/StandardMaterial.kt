@@ -74,7 +74,7 @@ private val programSource = ShaderProgramSource(
         }
         
         void main() {
-            #ifdef USE_TEXTURE_BASE
+            #ifdef HAS_TEXTURE_u_textureBase
                 vec3 albedo = texture(u_textureBase, v_texCoordBase).rgb;
                 albedo = toLinear(vec4(albedo, 1.0)).rgb;
                 vec3 lightDir = normalize(directionalLight.target - directionalLight.position);
