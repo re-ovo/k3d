@@ -26,8 +26,8 @@ import me.rerere.k3d.loader.GltfLoader
 import me.rerere.k3d.renderer.GLES3Renderer
 import me.rerere.k3d.renderer.GLESAutoConfigChooser
 import me.rerere.k3d.renderer.ViewportSize
+import me.rerere.k3d.scene.actor.Mesh
 import me.rerere.k3d.scene.actor.Scene
-import me.rerere.k3d.scene.actor.Primitive
 import me.rerere.k3d.scene.camera.PerspectiveCamera
 import me.rerere.k3d.scene.geometry.CubeGeometry
 import me.rerere.k3d.scene.light.AmbientLight
@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity() {
     private val camera = PerspectiveCamera().apply {
         position.set(0f, 0f, 5f)
     }
-    private val cube = Primitive(
+    private val cube = Mesh(
         geometry = CubeGeometry(
             depth = 0.1f,
             height = 0.1f,

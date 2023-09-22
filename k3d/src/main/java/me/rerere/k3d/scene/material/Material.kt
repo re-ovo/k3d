@@ -6,6 +6,22 @@ import me.rerere.k3d.renderer.shader.BuiltInUniformName
 import me.rerere.k3d.renderer.shader.ShaderProgramSource
 import kotlin.reflect.KProperty
 
+/**
+ * The material of a [Primitive][me.rerere.k3d.scene.actor.Primitive]
+ *
+ * If you want to define a new material, you can extend this class, like:
+ * ```
+ * class MyMaterial : ShaderMaterial(yourShaderProgramSource) {
+ *  var myUniform by uniformOf("myUniform")
+ *  var myTexture by textureOf("myTexture")
+ *}
+ * ```
+ *
+ * @property program The shader program source
+ * @property uniforms The uniforms of this material
+ * @property textures The textures of this material
+ * @constructor Create empty Shader material
+ */
 open class ShaderMaterial(
     val program: ShaderProgramSource,
     val uniforms: MutableMap<String, Uniform> = mutableMapOf(),
