@@ -5,6 +5,20 @@ import me.rerere.k3d.renderer.shader.BuiltInMacroDefinition
 import me.rerere.k3d.renderer.shader.BuiltInUniformName
 import me.rerere.k3d.renderer.shader.ShaderProgramSource
 
+class StandardMaterial : ShaderMaterial(programSource) {
+    var baseColorTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_BASE)
+
+    var normalTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_NORMAL)
+
+    var metallicTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_METALLIC)
+
+    var roughnessTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_ROUGHNESS)
+
+    var occlusionTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_OCCLUSION)
+
+    var emissiveTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_EMISSIVE)
+}
+
 private val programSource = ShaderProgramSource(
     vertexShader = """ 
         in vec3 a_pos;
@@ -111,17 +125,3 @@ private val programSource = ShaderProgramSource(
         }
     """.trimIndent()
 )
-
-class StandardMaterial : ShaderMaterial(programSource) {
-    var baseColorTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_BASE)
-
-    var normalTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_NORMAL)
-
-    var metallicTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_METALLIC)
-
-    var roughnessTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_ROUGHNESS)
-
-    var occlusionTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_OCCLUSION)
-
-    var emissiveTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_EMISSIVE)
-}
