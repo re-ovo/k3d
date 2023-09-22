@@ -6,29 +6,9 @@ import me.rerere.k3d.renderer.shader.BuiltInUniformName
 import me.rerere.k3d.renderer.shader.ShaderProgramSource
 
 class BlinnPhongMaterial : ShaderMaterial(programSource) {
-    var baseColorTexture: Texture?
-        get() = textures[BuiltInUniformName.TEXTURE_BASE.uniformName]
-        set(value) {
-            if (value == null) {
-                textures.remove(BuiltInUniformName.TEXTURE_BASE.uniformName)
-                program.removeMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_BASE.macroName)
-            } else {
-                textures[BuiltInUniformName.TEXTURE_BASE.uniformName] = value
-                program.addMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_BASE.macroName)
-            }
-        }
+    var baseColorTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_BASE)
 
-    var normalTexture: Texture?
-        get() = textures[BuiltInUniformName.TEXTURE_NORMAL.uniformName]
-        set(value) {
-            if (value == null) {
-                textures.remove(BuiltInUniformName.TEXTURE_NORMAL.uniformName)
-                program.removeMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_NORMAL.macroName)
-            } else {
-                textures[BuiltInUniformName.TEXTURE_NORMAL.uniformName] = value
-                program.addMarcoDefinition(BuiltInMacroDefinition.USE_TEXTURE_NORMAL.macroName)
-            }
-        }
+    var normalTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_NORMAL)
 }
 
 private val programSource = ShaderProgramSource(
