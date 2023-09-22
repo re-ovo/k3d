@@ -11,6 +11,7 @@ import me.rerere.k3d.renderer.resource.TextureWrap
 import me.rerere.k3d.renderer.shader.BuiltInAttributeName
 import me.rerere.k3d.scene.actor.Actor
 import me.rerere.k3d.scene.actor.ActorGroup
+import me.rerere.k3d.scene.actor.Mesh
 import me.rerere.k3d.scene.actor.Primitive
 import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.geometry.BufferGeometry
@@ -272,7 +273,7 @@ object GltfLoader {
                 emissiveTexture = materialData?.emissiveTexture?.toTexture2d()
             }
             group.addChild(
-                Primitive(
+                Mesh(
                     mode = mode,
                     geometry = geometry,
                     material = material,
