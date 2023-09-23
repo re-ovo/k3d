@@ -52,7 +52,7 @@ class GLES3Renderer : Renderer {
     private val cameraPositionUniform = Uniform.Vec3f(0f, 0f, 0f)
 
     override fun render(scene: Scene, camera: Camera) {
-        GLES30.glClearColor(0f, 0f, 0f, 1f)
+        GLES30.glClearColor(0f, 0f, 0f, 0f)
         GLES30.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
 
         GLES30.glViewport(0, 0, viewportSize.width, viewportSize.height)

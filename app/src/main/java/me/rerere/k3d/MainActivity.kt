@@ -1,6 +1,7 @@
 package me.rerere.k3d
 
 import android.content.Context
+import android.graphics.PixelFormat
 import android.opengl.GLSurfaceView
 import android.os.Bundle
 import android.util.AttributeSet
@@ -152,6 +153,8 @@ class MainActivity : ComponentActivity() {
         init {
             setEGLContextClientVersion(3)
             setEGLConfigChooser(GLESAutoConfigChooser)
+            // holder.setFormat(PixelFormat.RGBA_8888)
+            // setZOrderOnTop(true)
 
             setRenderer(object : Renderer {
                 override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
