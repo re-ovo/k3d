@@ -1,11 +1,13 @@
 package me.rerere.k3d.renderer.shader
 
+import me.rerere.k3d.renderer.shader.include.CookTorranceBRDF
 import me.rerere.k3d.renderer.shader.include.LightGLSL
 
 class ShaderProcessor {
     private var glslVersion = "300 es"
     private val includes = mutableMapOf(
         "light" to LightGLSL,
+        "cook_torrance_brdf" to CookTorranceBRDF
     )
 
     fun process(program: ShaderProgramSource): ShaderProgramProcessResult {

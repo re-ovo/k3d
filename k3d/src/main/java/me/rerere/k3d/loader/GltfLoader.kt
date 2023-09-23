@@ -15,6 +15,7 @@ import me.rerere.k3d.scene.actor.Mesh
 import me.rerere.k3d.scene.actor.Primitive
 import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.geometry.BufferGeometry
+import me.rerere.k3d.scene.material.CookTorranceMaterial
 import me.rerere.k3d.scene.material.StandardMaterial
 import me.rerere.k3d.util.ColorSpace
 import me.rerere.k3d.util.math.Matrix4
@@ -262,7 +263,7 @@ object GltfLoader {
                     setIndices(it)
                 }
             }
-            val material = StandardMaterial().apply {
+            val material = CookTorranceMaterial().apply {
                 baseColorTexture = materialData?.baseColorTexture?.toTexture2d()
                 normalTexture = materialData?.normalTexture?.toTexture2d()
 
@@ -270,7 +271,7 @@ object GltfLoader {
                 metallicTexture = roughnessTexture
                 occlusionTexture = materialData?.occlusionTexture?.toTexture2d()
 
-                emissiveTexture = materialData?.emissiveTexture?.toTexture2d()
+                // emissiveTexture = materialData?.emissiveTexture?.toTexture2d()
             }
             group.addChild(
                 Mesh(

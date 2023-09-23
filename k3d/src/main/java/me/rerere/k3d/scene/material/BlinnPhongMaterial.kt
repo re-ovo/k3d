@@ -86,7 +86,7 @@ private val programSource = ShaderProgramSource(
                 vec3 lightDir = normalize(directionalLight.target - directionalLight.position);
                 
                 // ambient
-                vec3 ambient = ambientLight.color * ambientLight.intensity;
+                vec3 ambient = ambientLight.color * ambientLight.intensity * albedo;
                 
                 // diffuse
                 vec3 normal = normalize(v_normal);

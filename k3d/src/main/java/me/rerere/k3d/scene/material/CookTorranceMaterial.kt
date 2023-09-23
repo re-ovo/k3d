@@ -1,11 +1,15 @@
 package me.rerere.k3d.scene.material
 
 import me.rerere.k3d.renderer.resource.Texture
-import me.rerere.k3d.renderer.shader.BuiltInMacroDefinition
+import me.rerere.k3d.renderer.resource.Uniform
 import me.rerere.k3d.renderer.shader.BuiltInUniformName
 import me.rerere.k3d.renderer.shader.ShaderProgramSource
 
-class StandardMaterial : ShaderMaterial(programSource) {
+class CookTorranceMaterial : ShaderMaterial(programSource) {
+    var roughness by uniformOf(BuiltInUniformName.MATERIAL_METALLIC, Uniform.Float1(1.0f))
+
+    var metallic by uniformOf(BuiltInUniformName.MATERIAL_ROUGHNESS, Uniform.Float1(1.0f))
+
     var baseColorTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_BASE)
 
     var normalTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_NORMAL)
@@ -15,8 +19,6 @@ class StandardMaterial : ShaderMaterial(programSource) {
     var roughnessTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_ROUGHNESS)
 
     var occlusionTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_OCCLUSION)
-
-    var emissiveTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_EMISSIVE)
 }
 
 private val programSource = ShaderProgramSource(
@@ -70,7 +72,13 @@ private val programSource = ShaderProgramSource(
         
         uniform sampler2D u_textureBase;
         uniform sampler2D u_textureNormal;
+        uniform sampler2D u_textureMetallic;
+        uniform sampler2D u_textureRoughness;
+        uniform sampler2D u_textureOcclusion;
         uniform vec3 u_cameraPos;
+        
+        uniform float u_materialRoughness;
+        uniform float u_materialMetallic;
         
         vec3 getNormal() {     
             vec3 normalFromMap = texture(u_textureNormal, v_texCoordNormal).rgb;
@@ -88,35 +96,62 @@ private val programSource = ShaderProgramSource(
             return vec4(mix(higher, lower, cutoff), sRGB.a);
         }
         
+        // Cook-Torrance BRDF
+        // L: light direction
+        // V: view direction
+        // N: normal
+        vec3 cookTorranceBRDF(vec3 L, vec3 V, vec3 N, vec3 albedo, float metallic, float roughness, vec3 lightColor, float lightIntensity) {
+            vec3 H = normalize(V + L); // half vector
+            vec3 F0 = vec3(0.04);
+            F0 = mix(F0, albedo, metallic);
+
+            // Fresnel
+            float cosTheta = dot(H, V);
+            vec3 F = fresnelSchlick(cosTheta, F0);
+
+            // Distribution
+            float D = distributionGGX(N, H, roughness);
+
+            // Geometry
+            float G = geometrySmith(N, V, L, roughness);
+
+            // Specular BRDF
+            vec3 numerator = D * G * F;
+            float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001;
+            vec3 specular = numerator / denominator;
+
+            // Diffuse BRDF
+            vec3 kS = F;
+            vec3 kD = vec3(1.0) - kS;
+            kD *= 1.0 - metallic;	  
+            vec3 diffuse = kD * albedo / 3.14159265358979323846;
+
+            return (diffuse + specular) * max(dot(N, L), 0.0) * lightColor * lightIntensity;
+        }
+        
         void main() {
             #ifdef HAS_TEXTURE_u_textureBase
                 vec3 albedo = texture(u_textureBase, v_texCoordBase).rgb;
                 albedo = toLinear(vec4(albedo, 1.0)).rgb;
-                vec3 lightDir = normalize(directionalLight.target - directionalLight.position);
-                
-                // ambient
-                vec3 ambient = ambientLight.color * ambientLight.intensity * albedo;
-                
-                // diffuse
-                vec3 normal = getNormal();
-                float diff = max(dot(normal, -lightDir), 0.0);
-                vec3 diffuse = directionalLight.color * directionalLight.intensity * diff;
-                
-                // specular
-                vec3 viewDir = normalize(v_fragPos - u_cameraPos);
-                vec3 reflectDir = reflect(lightDir, normal);
-                float spec = pow(max(dot(-viewDir, reflectDir), 0.0), 32.0);
-                vec3 specular = directionalLight.color * directionalLight.intensity * spec;
-                
-                // combine results
-                vec3 result = (ambient + diffuse + specular) * albedo;
-                fragColor = vec4(result, 1.0);
             #else
                 vec3 albedo = vec3(1.0, 0.0, 0.0);
-                vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));
-                float diff = max(dot(v_normal, lightDir), 0.1);
-                fragColor = vec4(albedo * diff, 1.0);
             #endif
+            
+            vec3 lightDir = -normalize(directionalLight.target - directionalLight.position);
+                
+            // ambient
+            vec3 ambient = ambientLight.color * ambientLight.intensity * albedo;
+            
+            // cook-torrance
+            vec3 normal = getNormal();
+            vec3 viewDir = -normalize(v_fragPos - u_cameraPos);
+            float roughness = texture(u_textureRoughness, v_texCoordBase).g;
+            float metallic = texture(u_textureMetallic, v_texCoordBase).b;
+            vec3 cookTorrance = cookTorranceBRDF(lightDir, viewDir, normal, albedo, metallic, roughness, directionalLight.color, directionalLight.intensity);
+            
+            // combine results
+            vec3 result = (ambient + cookTorrance);
+            fragColor = vec4(result, 1.0);
             
             // HDR tone mapping
             fragColor.rgb = fragColor.rgb / (fragColor.rgb + vec3(1.0));

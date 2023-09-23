@@ -27,11 +27,14 @@ open class ShaderMaterial(
     val uniforms: MutableMap<String, Uniform> = mutableMapOf(),
     val textures: MutableMap<String, Texture> = mutableMapOf()
 ) {
-    fun uniformOf(name: String): MaterialUniformDelegate {
-        return MaterialUniformDelegate(this, name)
+    fun <T : Uniform> uniformOf(name: String, def: T): MaterialUniformDelegate<T> {
+        if(!uniforms.containsKey(name)){
+            uniforms[name] = def
+        }
+        return MaterialUniformDelegate(this, name, def)
     }
 
-    fun uniformOf(type: BuiltInUniformName) = uniformOf(type.uniformName)
+    fun <T : Uniform> uniformOf(type: BuiltInUniformName, def: T) = uniformOf(type.uniformName, def)
 
     fun textureOf(name: String): MaterialTextureDelegate {
         return MaterialTextureDelegate(this, name)
@@ -68,12 +71,16 @@ open class ShaderMaterial(
     }
 }
 
-class MaterialUniformDelegate(private val material: ShaderMaterial, private val name: String) {
-    operator fun getValue(thisRef: Any?, property: KProperty<*>): Uniform? {
-        return material.getUniform(name)
+class MaterialUniformDelegate<T : Uniform>(
+    private val material: ShaderMaterial,
+    private val name: String,
+    private val def: T
+) {
+    operator fun getValue(thisRef: Any?, property: KProperty<*>): T {
+        return material.getUniform(name) as? T ?: def
     }
 
-    operator fun setValue(thisRef: Any?, property: KProperty<*>, value: Uniform?) {
+    operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
         material.setUniform(name, value)
     }
 }

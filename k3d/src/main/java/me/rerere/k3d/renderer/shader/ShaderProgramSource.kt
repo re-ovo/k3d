@@ -94,6 +94,10 @@ enum class BuiltInUniformName(val uniformName: String) {
     TEXTURE_OCCLUSION("u_textureOcclusion"),
     TEXTURE_EMISSIVE("u_textureEmissive"),
 
+    MATERIAL_ROUGHNESS("u_materialRoughness"),
+    MATERIAL_METALLIC("u_materialMetallic"),
+    MATERIAL_COLOR("u_materialColor"),
+
     CAMERA_POSITION("u_cameraPos"),
 }
 

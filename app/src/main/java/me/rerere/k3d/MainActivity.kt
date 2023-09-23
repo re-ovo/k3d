@@ -15,10 +15,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
@@ -33,6 +35,7 @@ import me.rerere.k3d.scene.camera.PerspectiveCamera
 import me.rerere.k3d.scene.geometry.CubeGeometry
 import me.rerere.k3d.scene.light.AmbientLight
 import me.rerere.k3d.scene.light.DirectionalLight
+import me.rerere.k3d.scene.material.CookTorranceMaterial
 import me.rerere.k3d.scene.material.StandardMaterial
 import me.rerere.k3d.ui.theme.K3dTheme
 import me.rerere.k3d.util.Color3f
@@ -48,19 +51,28 @@ class MainActivity : ComponentActivity() {
     private val camera = PerspectiveCamera().apply {
         position.set(0f, 0f, 5f)
     }
+    private val cubeMaterial = CookTorranceMaterial()
     private val cube = Mesh(
         geometry = CubeGeometry(
             depth = 0.1f,
             height = 0.1f,
             width = 0.1f
         ),
-        material = StandardMaterial(),
+        material = cubeMaterial,
         count = 36
     ).apply {
-        position.set(3f, 3f, 3f)
+        // position.set(3f, 3f, 3f)
+        position.set(0f, 0f, 0f)
         rotation.set(Euler(0f, 10f.toRadian(), 0f).toQuaternion())
     }
     private var model: Scene? = null
+    private val directionalLight = DirectionalLight(
+        color = Color3f.fromHex("#ffffff").toLinear(),
+        intensity = 1.9f,
+        target = Vec3(0f, 0f, 0f)
+    ).apply {
+        position.set(3f, 3f, 3f)
+    }
     private val scene = Scene().apply {
         addChild(cube)
 
@@ -71,13 +83,7 @@ class MainActivity : ComponentActivity() {
             )
         )
 
-        addChild(DirectionalLight(
-            color = Color3f.fromHex("#ffffff").toLinear(),
-            intensity = 0.8f,
-            target = Vec3(0f, 0f, 0f)
-        ).apply {
-            position.set(3f, 3f, 3f)
-        })
+        addChild(directionalLight)
     }
     private lateinit var controls: OrbitController
 
@@ -102,7 +108,7 @@ class MainActivity : ComponentActivity() {
                         TextButton(
                             onClick = {
                                 val result = GltfLoader.load(
-                                    inputStream = assets.open("crates_and_barrels.glb")
+                                    inputStream = assets.open("axe.glb")
                                 )
                                 result.defaultScene.scale.set(0.5f, 0.5f, 0.5f)
                                 scene.addChild(result.defaultScene)
@@ -122,6 +128,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 Box(
                     modifier = Modifier
+                        .weight(1f)
                         .fillMaxSize()
                 ) {
                     AndroidView(
@@ -140,6 +147,33 @@ class MainActivity : ComponentActivity() {
                             }
                         },
                         modifier = Modifier.matchParentSize()
+                    )
+                }
+
+                K3DController {
+                    K3DFloatController(
+                        label = "Directional Light",
+                        getter = { directionalLight.intensity },
+                        setter = {
+                            directionalLight.intensity = it
+                        },
+                        max = 15.0f
+                    )
+
+                    K3DFloatController(
+                        label = "Roughness",
+                        getter = { cubeMaterial.roughness.value },
+                        setter = {
+                            cubeMaterial.roughness.value = it
+                        },
+                    )
+
+                    K3DFloatController(
+                        label = "Metallic",
+                        getter = { cubeMaterial.metallic.value },
+                        setter = {
+                            cubeMaterial.metallic.value = it
+                        },
                     )
                 }
             }
