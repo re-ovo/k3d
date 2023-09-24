@@ -12,12 +12,9 @@ import me.rerere.k3d.renderer.shader.BuiltInAttributeName
 import me.rerere.k3d.scene.actor.Actor
 import me.rerere.k3d.scene.actor.ActorGroup
 import me.rerere.k3d.scene.actor.Mesh
-import me.rerere.k3d.scene.actor.Primitive
 import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.geometry.BufferGeometry
 import me.rerere.k3d.scene.material.CookTorranceMaterial
-import me.rerere.k3d.scene.material.StandardMaterial
-import me.rerere.k3d.util.ColorSpace
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.math.transform.setModelMatrix
 import java.io.DataInputStream

@@ -1,7 +1,6 @@
 package me.rerere.k3d
 
 import android.content.Context
-import android.graphics.PixelFormat
 import android.opengl.GLSurfaceView
 import android.os.Bundle
 import android.util.AttributeSet
@@ -15,12 +14,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
@@ -36,7 +33,6 @@ import me.rerere.k3d.scene.geometry.CubeGeometry
 import me.rerere.k3d.scene.light.AmbientLight
 import me.rerere.k3d.scene.light.DirectionalLight
 import me.rerere.k3d.scene.material.CookTorranceMaterial
-import me.rerere.k3d.scene.material.StandardMaterial
 import me.rerere.k3d.ui.theme.K3dTheme
 import me.rerere.k3d.util.Color3f
 import me.rerere.k3d.util.math.Vec3

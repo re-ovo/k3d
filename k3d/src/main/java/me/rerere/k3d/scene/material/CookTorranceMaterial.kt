@@ -5,6 +5,16 @@ import me.rerere.k3d.renderer.resource.Uniform
 import me.rerere.k3d.renderer.shader.BuiltInUniformName
 import me.rerere.k3d.renderer.shader.ShaderProgramSource
 
+/**
+ * Standard material
+ *
+ * It is based on Cook-Torrance BRDF, a PBR material, which is more realistic than traditional
+ * BRDF models (such as BlinnPhong), but requires more calculations.
+ *
+ * @see BlinnPhongMaterial
+ */
+typealias StandardMaterial = CookTorranceMaterial
+
 class CookTorranceMaterial : ShaderMaterial(programSource) {
     var roughness by uniformOf(BuiltInUniformName.MATERIAL_METALLIC, Uniform.Float1(1.0f))
 
