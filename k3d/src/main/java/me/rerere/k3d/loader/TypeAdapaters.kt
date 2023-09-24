@@ -4,11 +4,11 @@ import com.google.gson.TypeAdapter
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonToken
 import com.google.gson.stream.JsonWriter
-import me.rerere.k3d.util.Color4f
+import me.rerere.k3d.util.Color
 import me.rerere.k3d.util.math.Vec3
 
-internal object Color4fAdapter : TypeAdapter<Color4f>() {
-    override fun write(out: JsonWriter, value: Color4f?) {
+internal object Color4fAdapter : TypeAdapter<Color>() {
+    override fun write(out: JsonWriter, value: Color?) {
         if (value == null) {
             out.nullValue()
             return
@@ -22,7 +22,7 @@ internal object Color4fAdapter : TypeAdapter<Color4f>() {
         }
     }
 
-    override fun read(`in`: JsonReader): Color4f? {
+    override fun read(`in`: JsonReader): Color? {
         if(`in`.peek() == JsonToken.NULL){
             `in`.nextNull()
             return null
@@ -33,7 +33,7 @@ internal object Color4fAdapter : TypeAdapter<Color4f>() {
         val b = `in`.nextDouble().toFloat()
         val a = `in`.nextDouble().toFloat()
         `in`.endArray()
-        return Color4f(r, g, b, a)
+        return Color(r, g, b, a)
     }
 }
 

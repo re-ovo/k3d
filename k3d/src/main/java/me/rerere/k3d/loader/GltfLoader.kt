@@ -8,6 +8,7 @@ import me.rerere.k3d.renderer.resource.DataType
 import me.rerere.k3d.renderer.resource.DrawMode
 import me.rerere.k3d.renderer.resource.TextureFilter
 import me.rerere.k3d.renderer.resource.TextureWrap
+import me.rerere.k3d.renderer.resource.Uniform
 import me.rerere.k3d.renderer.shader.BuiltInAttributeName
 import me.rerere.k3d.scene.actor.Actor
 import me.rerere.k3d.scene.actor.ActorGroup
@@ -15,6 +16,7 @@ import me.rerere.k3d.scene.actor.Mesh
 import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.geometry.BufferGeometry
 import me.rerere.k3d.scene.material.CookTorranceMaterial
+import me.rerere.k3d.util.Color
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.math.transform.setModelMatrix
 import java.io.DataInputStream
@@ -261,13 +263,18 @@ object GltfLoader {
                 }
             }
             val material = CookTorranceMaterial().apply {
+                baseColor = Uniform.Color4f(materialData?.baseColorFactor ?: Color.white())
                 baseColorTexture = materialData?.baseColorTexture?.toTexture2d()
+
                 normalTexture = materialData?.normalTexture?.toTexture2d()
 
                 roughnessTexture = materialData?.metallicRoughnessTexture?.toTexture2d()
-                metallicTexture = roughnessTexture
-                occlusionTexture = materialData?.occlusionTexture?.toTexture2d()
+                roughness = Uniform.Float1(materialData?.roughnessFactor ?: 1f)
 
+                metallicTexture = roughnessTexture
+                metallic = Uniform.Float1(materialData?.metallicFactor ?: 1f)
+
+                // occlusionTexture = materialData?.occlusionTexture?.toTexture2d()
                 // emissiveTexture = materialData?.emissiveTexture?.toTexture2d()
             }
             group.addChild(
@@ -361,9 +368,7 @@ object GltfLoader {
             alphaMode = material.alphaMode ?: "OPAQUE",
             alphaCutoff = material.alphaCutoff ?: 0.5f,
             doubleSided = material.doubleSided ?: false,
-            baseColorFactor = material.pbrMetallicRoughness?.baseColorFactor ?: listOf(
-                1f, 1f, 1f, 1f
-            ),
+            baseColorFactor = material.pbrMetallicRoughness?.baseColorFactor ?: Color.white(),
             baseColorTexture = material.pbrMetallicRoughness?.baseColorTexture?.let {
                 textureOf(gltf, buffers, it.index)
             },
@@ -476,7 +481,7 @@ private data class Accessor(
 
 private data class Material(
     val name: String,
-    val baseColorFactor: List<Float>?,
+    val baseColorFactor: Color,
     val baseColorTexture: Texture?,
     val baseColorTextureCoord: Int,
     val metallicFactor: Float?,
@@ -566,7 +571,7 @@ private data class Gltf(
     )
 
     data class MaterialPbrMetallicRoughness(
-        val baseColorFactor: List<Float>?,
+        val baseColorFactor: Color?,
         val baseColorTexture: TextureInfo?,
         val metallicFactor: Float?,
         val roughnessFactor: Float?,

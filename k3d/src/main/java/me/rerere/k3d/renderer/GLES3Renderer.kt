@@ -23,6 +23,7 @@ import me.rerere.k3d.scene.light.AmbientLight
 import me.rerere.k3d.scene.light.DirectionalLight
 import me.rerere.k3d.scene.light.PointLight
 import me.rerere.k3d.scene.light.SpotLight
+import me.rerere.k3d.util.ColorSpace
 import me.rerere.k3d.util.Disposable
 import me.rerere.k3d.util.cleanIfDirty
 import java.nio.Buffer
@@ -225,6 +226,20 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
                     GLES30.glUniformMatrix4fv(location, 1, uniform.transpose, uniform.value, 0)
                 }
             }
+
+            is Uniform.Color4f -> {
+                val location = GLES30.glGetUniformLocation(programId, name)
+                if (location != -1) {
+                    GLES30.glUniform4f(location, uniform.color.linearR, uniform.color.linearG, uniform.color.linearB, uniform.color.a)
+                }
+            }
+
+            is Uniform.Color3f -> {
+                val location = GLES30.glGetUniformLocation(programId, name)
+                if (location != -1) {
+                    GLES30.glUniform3f(location, uniform.color.linearR, uniform.color.linearG, uniform.color.linearB)
+                }
+            }
         }
     }
 
@@ -257,7 +272,7 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
                 GLES30.glUniform3f(it, theLight.position.x, theLight.position.y, theLight.position.z)
             }
             uniformLocationOf(programId, "ambientLight.color") {
-                GLES30.glUniform3f(it, theLight.color.r, theLight.color.g, theLight.color.b)
+                GLES30.glUniform3f(it, theLight.color.linearR, theLight.color.linearG, theLight.color.linearB)
             }
             uniformLocationOf(programId, "ambientLight.intensity") {
                 GLES30.glUniform1f(it, theLight.intensity)
@@ -279,7 +294,7 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
                 GLES30.glUniform3f(it, theLight.target.x, theLight.target.y, theLight.target.z)
             }
             uniformLocationOf(programId, "directionalLight.color") {
-                GLES30.glUniform3f(it, theLight.color.r, theLight.color.g, theLight.color.b)
+                GLES30.glUniform3f(it, theLight.color.linearR, theLight.color.linearG, theLight.color.linearB)
             }
             uniformLocationOf(programId, "directionalLight.intensity") {
                 GLES30.glUniform1f(it, theLight.intensity)

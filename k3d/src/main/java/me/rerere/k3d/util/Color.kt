@@ -17,96 +17,75 @@ enum class ColorSpace {
     LINEAR_SRGB
 }
 
-data class Color4f(
-    val r: Float,
-    val g: Float,
-    val b: Float,
-    val a: Float = 1f,
+data class Color(
+    var r: Float,
+    var g: Float,
+    var b: Float,
+    var a: Float = 1f,
     val colorSpace: ColorSpace = ColorSpace.SRGB
 ) {
+    init {
+        require(r in 0f..1f)
+        require(g in 0f..1f)
+        require(b in 0f..1f)
+        require(a in 0f..1f)
+    }
+
+    internal val linearR: Float
+        get() = if (colorSpace == ColorSpace.SRGB) {
+            r.srgbToLinear()
+        } else {
+            r
+        }
+
+    internal val linearG: Float
+        get() = if (colorSpace == ColorSpace.SRGB) {
+            g.srgbToLinear()
+        } else {
+            g
+        }
+
+    internal val linearB: Float
+        get() = if (colorSpace == ColorSpace.SRGB) {
+            b.srgbToLinear()
+        } else {
+            b
+        }
+
     companion object {
         @JvmStatic
-        fun fromHex(hex: String): Color4f {
+        fun fromRGBAHex(hex: String): Color {
             val value = hex.hexToInt(hexColorFormat)
-            return Color4f(
-                ((value shr 16) and 0xFF) / 255f,
-                ((value shr 8) and 0xFF) / 255f,
-                (value and 0xFF) / 255f,
-                ((value shr 24) and 0xFF) / 255f
-            )
-        }
-    }
-
-    fun toLinear(): Color4f {
-        require(colorSpace == ColorSpace.SRGB) {
-            "Color space must be srgb"
+            val r = ((value shr 16) and 0xFF) / 255f
+            val g = ((value shr 8) and 0xFF) / 255f
+            val b = (value and 0xFF) / 255f
+            val a = ((value shr 24) and 0xFF) / 255f
+            return Color(r, g, b, a, colorSpace = ColorSpace.SRGB)
         }
 
-        return Color4f(
-            r = r.srgbToLinear(),
-            g = g.srgbToLinear(),
-            b = b.srgbToLinear(),
-            a = a,
-            colorSpace = ColorSpace.LINEAR_SRGB
-        )
-    }
-
-    fun toSRGB(): Color4f {
-        require(colorSpace == ColorSpace.LINEAR_SRGB) {
-            "Color space must be linear srgb"
-        }
-
-        return Color4f(
-            r = r.linearToSRGB(),
-            g = g.linearToSRGB(),
-            b = b.linearToSRGB(),
-            a = a,
-            colorSpace = ColorSpace.SRGB
-        )
-    }
-}
-
-data class Color3f(
-    val r: Float,
-    val g: Float,
-    val b: Float,
-    val colorSpace: ColorSpace = ColorSpace.SRGB
-) {
-    companion object {
         @JvmStatic
-        fun fromHex(hex: String): Color3f {
+        fun fromRGBHex(hex: String): Color {
             val value = hex.hexToInt(hexColorFormat)
-            return Color3f(
-                ((value shr 16) and 0xFF) / 255f,
-                ((value shr 8) and 0xFF) / 255f,
-                (value and 0xFF) / 255f,
-                colorSpace = ColorSpace.SRGB
-            )
-        }
-    }
-
-    fun toLinear(): Color3f {
-        require(colorSpace == ColorSpace.SRGB) {
-            "Color space must be srgb"
+            val r = ((value shr 16) and 0xFF) / 255f
+            val g = ((value shr 8) and 0xFF) / 255f
+            val b = (value and 0xFF) / 255f
+            return Color(r, g, b, colorSpace = ColorSpace.SRGB)
         }
 
-        return Color3f(
-            r = r.srgbToLinear(),
-            g = g.srgbToLinear(),
-            b = b.srgbToLinear()
-        )
-    }
+        @JvmStatic
+        fun red() = Color(1f, 0f, 0f)
 
-    fun toSRGB(): Color3f {
-        require(colorSpace == ColorSpace.LINEAR_SRGB) {
-            "Color space must be linear srgb"
-        }
+        @JvmStatic
+        fun green() = Color(0f, 1f, 0f)
 
-        return Color3f(
-            r = r.linearToSRGB(),
-            g = g.linearToSRGB(),
-            b = b.linearToSRGB()
-        )
+        @JvmStatic
+        fun blue() = Color(0f, 0f, 1f)
+
+        @JvmStatic
+        fun white() = Color(1f, 1f, 1f)
+
+        @JvmStatic
+        fun black() = Color(0f, 0f, 0f)
     }
 }
 

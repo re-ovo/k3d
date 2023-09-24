@@ -1,12 +1,11 @@
 package me.rerere.k3d.loader
 
 import android.graphics.Bitmap
-import android.opengl.GLUtils
 import com.google.gson.GsonBuilder
 import me.rerere.k3d.scene.actor.Actor
 import me.rerere.k3d.scene.actor.ActorGroup
 import me.rerere.k3d.scene.actor.Scene
-import me.rerere.k3d.util.Color4f
+import me.rerere.k3d.util.Color
 import me.rerere.k3d.util.math.Vec3
 import java.nio.ByteBuffer
 import java.util.Stack
@@ -25,7 +24,7 @@ internal fun Int.reverseBytes(): Int {
 
 internal val GsonInstance by lazy {
     GsonBuilder()
-        .registerTypeAdapter(Color4f::class.java, Color4fAdapter)
+        .registerTypeAdapter(Color::class.java, Color4fAdapter)
         .registerTypeAdapter(Vec3::class.java, Vec3fAdapter)
         .create()
 }
@@ -63,20 +62,6 @@ internal fun createEmptyBitmap(
     val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
     bitmap.eraseColor(eraseColor)
     return bitmap
-}
-
-/**
- * Convert a bitmap to byte buffer
- *
- * @receiver bitmap
- * @return byte buffer
- */
-@Deprecated("use GLUtils.texImage2D instead to avoid memory copy", ReplaceWith("GLUtils.texImage2D"))
-internal fun Bitmap.toByteBuffer(): ByteBuffer {
-    val buffer = ByteBuffer.allocate(this.byteCount)
-    this.copyPixelsToBuffer(buffer)
-    buffer.flip()
-    return buffer
 }
 
 internal inline fun <R> Bitmap.use(block: (Bitmap) -> R): R {

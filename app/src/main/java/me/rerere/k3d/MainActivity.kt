@@ -26,6 +26,7 @@ import me.rerere.k3d.loader.GltfLoader
 import me.rerere.k3d.renderer.GLES3Renderer
 import me.rerere.k3d.renderer.GLESAutoConfigChooser
 import me.rerere.k3d.renderer.ViewportSize
+import me.rerere.k3d.renderer.resource.Uniform
 import me.rerere.k3d.scene.actor.Mesh
 import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.camera.PerspectiveCamera
@@ -34,7 +35,7 @@ import me.rerere.k3d.scene.light.AmbientLight
 import me.rerere.k3d.scene.light.DirectionalLight
 import me.rerere.k3d.scene.material.CookTorranceMaterial
 import me.rerere.k3d.ui.theme.K3dTheme
-import me.rerere.k3d.util.Color3f
+import me.rerere.k3d.util.Color
 import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.rotation.Euler
 import me.rerere.k3d.util.math.rotation.toRadian
@@ -47,7 +48,11 @@ class MainActivity : ComponentActivity() {
     private val camera = PerspectiveCamera().apply {
         position.set(0f, 0f, 5f)
     }
-    private val cubeMaterial = CookTorranceMaterial()
+    private val cubeMaterial = CookTorranceMaterial().apply {
+        baseColor = Uniform.Color4f(Color(1f, 0f, 0f))
+        roughness = Uniform.Float1(0.5f)
+        metallic = Uniform.Float1(0.5f)
+    }
     private val cube = Mesh(
         geometry = CubeGeometry(
             depth = 0.1f,
@@ -63,7 +68,7 @@ class MainActivity : ComponentActivity() {
     }
     private var model: Scene? = null
     private val directionalLight = DirectionalLight(
-        color = Color3f.fromHex("#ffffff").toLinear(),
+        color = Color.fromRGBHex("#ffffff"),
         intensity = 1.9f,
         target = Vec3(0f, 0f, 0f)
     ).apply {
@@ -74,7 +79,7 @@ class MainActivity : ComponentActivity() {
 
         addChild(
             AmbientLight(
-                color = Color3f.fromHex("#ffffff").toLinear(),
+                color = Color.fromRGBHex("#ffffff"),
                 intensity = 0.1f
             )
         )
@@ -104,7 +109,7 @@ class MainActivity : ComponentActivity() {
                         TextButton(
                             onClick = {
                                 val result = GltfLoader.load(
-                                    inputStream = assets.open("vans_old_skool_green.glb")
+                                    inputStream = assets.open("axe.glb")
                                 )
                                 result.defaultScene.scale.set(0.5f, 0.5f, 0.5f)
                                 scene.addChild(result.defaultScene)
@@ -154,6 +159,15 @@ class MainActivity : ComponentActivity() {
                             directionalLight.intensity = it
                         },
                         max = 15.0f
+                    )
+
+                    K3DFloatController(
+                        label = "Cube Color (R)",
+                        getter = { cubeMaterial.baseColor.color.r },
+                        setter = {
+                            cubeMaterial.baseColor.color.r = it
+                        },
+                        max = 1f
                     )
 
                     K3DFloatController(

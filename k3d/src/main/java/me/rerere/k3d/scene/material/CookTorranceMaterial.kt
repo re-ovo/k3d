@@ -4,6 +4,7 @@ import me.rerere.k3d.renderer.resource.Texture
 import me.rerere.k3d.renderer.resource.Uniform
 import me.rerere.k3d.renderer.shader.BuiltInUniformName
 import me.rerere.k3d.renderer.shader.ShaderProgramSource
+import me.rerere.k3d.util.Color
 
 /**
  * Standard material
@@ -16,19 +17,18 @@ import me.rerere.k3d.renderer.shader.ShaderProgramSource
 typealias StandardMaterial = CookTorranceMaterial
 
 class CookTorranceMaterial : ShaderMaterial(programSource) {
-    var roughness by uniformOf(BuiltInUniformName.MATERIAL_METALLIC, Uniform.Float1(1.0f))
-
-    var metallic by uniformOf(BuiltInUniformName.MATERIAL_ROUGHNESS, Uniform.Float1(1.0f))
-
+    var baseColor by uniformOf(BuiltInUniformName.MATERIAL_COLOR, Uniform.Color4f(Color.fromRGBHex("#FFFFFF")))
     var baseColorTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_BASE)
 
     var normalTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_NORMAL)
 
+    var metallic by uniformOf(BuiltInUniformName.MATERIAL_ROUGHNESS, Uniform.Float1(1.0f))
     var metallicTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_METALLIC)
 
+    var roughness by uniformOf(BuiltInUniformName.MATERIAL_METALLIC, Uniform.Float1(1.0f))
     var roughnessTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_ROUGHNESS)
 
-    var occlusionTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_OCCLUSION)
+    // var occlusionTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_OCCLUSION)
 }
 
 private val programSource = ShaderProgramSource(
@@ -87,6 +87,7 @@ private val programSource = ShaderProgramSource(
         uniform sampler2D u_textureOcclusion;
         uniform vec3 u_cameraPos;
         
+        uniform vec4 u_materialColor;
         uniform float u_materialRoughness;
         uniform float u_materialMetallic;
         
@@ -98,12 +99,12 @@ private val programSource = ShaderProgramSource(
             return normal;
         }
         
-        vec4 toLinear(vec4 sRGB) {
-            bvec3 cutoff = lessThan(sRGB.rgb, vec3(0.04045));
-            vec3 higher = pow((sRGB.rgb + vec3(0.055))/vec3(1.055), vec3(2.4));
-            vec3 lower = sRGB.rgb/vec3(12.92);
+        vec3 toLinear(vec3 sRGB) {
+            bvec3 cutoff = lessThan(sRGB, vec3(0.04045));
+            vec3 higher = pow((sRGB + vec3(0.055))/vec3(1.055), vec3(2.4));
+            vec3 lower = sRGB/vec3(12.92);
 
-            return vec4(mix(higher, lower, cutoff), sRGB.a);
+            return mix(higher, lower, cutoff);
         }
         
         // Cook-Torrance BRDF
@@ -140,11 +141,12 @@ private val programSource = ShaderProgramSource(
         }
         
         void main() {
+            vec3 albedo = u_materialColor.rgb;
+            float opacity = u_materialColor.a;
+            
             #ifdef HAS_TEXTURE_u_textureBase
-                vec3 albedo = texture(u_textureBase, v_texCoordBase).rgb;
-                albedo = toLinear(vec4(albedo, 1.0)).rgb;
-            #else
-                vec3 albedo = vec3(1.0, 0.0, 0.0);
+                albedo *= toLinear(texture(u_textureBase, v_texCoordBase).rgb);
+                opacity *= texture(u_textureBase, v_texCoordBase).a;
             #endif
             
             vec3 lightDir = -normalize(directionalLight.target - directionalLight.position);
@@ -153,15 +155,25 @@ private val programSource = ShaderProgramSource(
             vec3 ambient = ambientLight.color * ambientLight.intensity * albedo;
             
             // cook-torrance
-            vec3 normal = getNormal();
+            #ifdef HAS_TEXTURE_u_textureNormal
+                vec3 normal = getNormal();
+            #else
+                vec3 normal = normalize(v_normal);
+            #endif
             vec3 viewDir = -normalize(v_fragPos - u_cameraPos);
-            float roughness = texture(u_textureRoughness, v_texCoordBase).g;
-            float metallic = texture(u_textureMetallic, v_texCoordBase).b;
+            float roughness = u_materialRoughness;
+            #ifdef HAS_TEXTURE_u_textureRoughness
+                roughness *= texture(u_textureRoughness, v_texCoordBase).g;
+            #endif
+            float metallic = u_materialMetallic;
+            #ifdef HAS_TEXTURE_u_textureMetallic
+                metallic *= texture(u_textureMetallic, v_texCoordBase).b;
+            #endif
             vec3 cookTorrance = cookTorranceBRDF(lightDir, viewDir, normal, albedo, metallic, roughness, directionalLight.color, directionalLight.intensity);
             
             // combine results
             vec3 result = (ambient + cookTorrance);
-            fragColor = vec4(result, 1.0);
+            fragColor = vec4(result, opacity);
             
             // HDR tone mapping
             fragColor.rgb = fragColor.rgb / (fragColor.rgb + vec3(1.0));

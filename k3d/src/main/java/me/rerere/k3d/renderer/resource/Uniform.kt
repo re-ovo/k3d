@@ -34,6 +34,36 @@ sealed class Uniform {
         }
     }
 
+    class Color4f(var color: me.rerere.k3d.util.Color) : Uniform() {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Color4f) return false
+
+            if (color != other.color) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            return color.hashCode()
+        }
+    }
+
+    class Color3f(var color: me.rerere.k3d.util.Color) : Uniform() {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Color3f) return false
+
+            if (color != other.color) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            return color.hashCode()
+        }
+    }
+
     class Vec3f(var x: Float, var y: Float, var z: Float) : Uniform() {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
