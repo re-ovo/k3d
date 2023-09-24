@@ -287,9 +287,9 @@ object GltfLoader {
     }
 
     private fun Texture.toTexture2d(): me.rerere.k3d.renderer.resource.Texture.Texture2D {
-        return image.use {
+        return image.let {
             me.rerere.k3d.renderer.resource.Texture.Texture2D(
-                data = it.toByteBuffer(),
+                data = it,
                 wrapS = wrapS,
                 wrapT = wrapT,
                 minFilter = minFilter,

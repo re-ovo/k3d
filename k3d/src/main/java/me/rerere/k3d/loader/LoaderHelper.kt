@@ -1,6 +1,7 @@
 package me.rerere.k3d.loader
 
 import android.graphics.Bitmap
+import android.opengl.GLUtils
 import com.google.gson.GsonBuilder
 import me.rerere.k3d.scene.actor.Actor
 import me.rerere.k3d.scene.actor.ActorGroup
@@ -70,8 +71,9 @@ internal fun createEmptyBitmap(
  * @receiver bitmap
  * @return byte buffer
  */
+@Deprecated("use GLUtils.texImage2D instead to avoid memory copy", ReplaceWith("GLUtils.texImage2D"))
 internal fun Bitmap.toByteBuffer(): ByteBuffer {
-    val buffer = ByteBuffer.allocateDirect(this.byteCount)
+    val buffer = ByteBuffer.allocate(this.byteCount)
     this.copyPixelsToBuffer(buffer)
     buffer.flip()
     return buffer

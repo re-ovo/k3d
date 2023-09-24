@@ -2,6 +2,7 @@ package me.rerere.k3d.renderer
 
 import android.opengl.GLES20
 import android.opengl.GLES30
+import android.opengl.GLUtils
 import me.rerere.k3d.renderer.resource.Attribute
 import me.rerere.k3d.renderer.resource.Texture
 import me.rerere.k3d.renderer.resource.Uniform
@@ -338,16 +339,13 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
             is Texture.TextureCube -> GLES30.GL_TEXTURE_CUBE_MAP
         }
         GLES30.glBindTexture(target, textureId)
-        GLES30.glTexImage2D(
+        GLUtils.texImage2D(
             target,
             0,
             GLES30.GL_RGBA,
-            texture.width,
-            texture.height,
-            0,
-            GLES30.GL_RGBA,
+            texture.data,
             GLES30.GL_UNSIGNED_BYTE,
-            texture.data
+           0
         )
         GLES30.glGenerateMipmap(target)
         GLES30.glTexParameteri(target, GLES30.GL_TEXTURE_MIN_FILTER, texture.minFilter.value)
