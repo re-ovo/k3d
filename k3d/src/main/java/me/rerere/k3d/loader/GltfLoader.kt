@@ -263,16 +263,16 @@ object GltfLoader {
                 }
             }
             val material = CookTorranceMaterial().apply {
-                baseColor = Uniform.Color4f(materialData?.baseColorFactor ?: Color.white())
+                baseColor = materialData?.baseColorFactor ?: Color.white()
                 baseColorTexture = materialData?.baseColorTexture?.toTexture2d()
 
                 normalTexture = materialData?.normalTexture?.toTexture2d()
 
                 roughnessTexture = materialData?.metallicRoughnessTexture?.toTexture2d()
-                roughness = Uniform.Float1(materialData?.roughnessFactor ?: 1f)
+                roughness = materialData?.roughnessFactor ?: 1f
 
                 metallicTexture = roughnessTexture
-                metallic = Uniform.Float1(materialData?.metallicFactor ?: 1f)
+                metallic = materialData?.metallicFactor ?: 1f
 
                 // occlusionTexture = materialData?.occlusionTexture?.toTexture2d()
                 // emissiveTexture = materialData?.emissiveTexture?.toTexture2d()

@@ -22,7 +22,6 @@ data class Color(
     var g: Float,
     var b: Float,
     var a: Float = 1f,
-    val colorSpace: ColorSpace = ColorSpace.SRGB
 ) {
     init {
         require(r in 0f..1f)
@@ -30,27 +29,6 @@ data class Color(
         require(b in 0f..1f)
         require(a in 0f..1f)
     }
-
-    internal val linearR: Float
-        get() = if (colorSpace == ColorSpace.SRGB) {
-            r.srgbToLinear()
-        } else {
-            r
-        }
-
-    internal val linearG: Float
-        get() = if (colorSpace == ColorSpace.SRGB) {
-            g.srgbToLinear()
-        } else {
-            g
-        }
-
-    internal val linearB: Float
-        get() = if (colorSpace == ColorSpace.SRGB) {
-            b.srgbToLinear()
-        } else {
-            b
-        }
 
     companion object {
         @JvmStatic
@@ -60,7 +38,7 @@ data class Color(
             val g = ((value shr 8) and 0xFF) / 255f
             val b = (value and 0xFF) / 255f
             val a = ((value shr 24) and 0xFF) / 255f
-            return Color(r, g, b, a, colorSpace = ColorSpace.SRGB)
+            return Color(r.srgbToLinear(), g.srgbToLinear(), b.srgbToLinear(), a)
         }
 
         @JvmStatic
@@ -69,17 +47,8 @@ data class Color(
             val r = ((value shr 16) and 0xFF) / 255f
             val g = ((value shr 8) and 0xFF) / 255f
             val b = (value and 0xFF) / 255f
-            return Color(r, g, b, colorSpace = ColorSpace.SRGB)
+            return Color(r.srgbToLinear(), g.srgbToLinear(), b.srgbToLinear(), 1f)
         }
-
-        @JvmStatic
-        fun red() = Color(1f, 0f, 0f)
-
-        @JvmStatic
-        fun green() = Color(0f, 1f, 0f)
-
-        @JvmStatic
-        fun blue() = Color(0f, 0f, 1f)
 
         @JvmStatic
         fun white() = Color(1f, 1f, 1f)

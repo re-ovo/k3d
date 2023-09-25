@@ -46,7 +46,9 @@ fun K3DFloatController(
     LaunchedEffect(Unit) {
         snapshotFlow { state.floatValue }
             .distinctUntilChanged()
-            .collect { setter(it) }
+            .collect {
+                setter(it)
+            }
     }
 
     Row(

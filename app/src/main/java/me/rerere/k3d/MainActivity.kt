@@ -49,9 +49,9 @@ class MainActivity : ComponentActivity() {
         position.set(0f, 0f, 5f)
     }
     private val cubeMaterial = CookTorranceMaterial().apply {
-        baseColor = Uniform.Color4f(Color(1f, 0f, 0f))
-        roughness = Uniform.Float1(0.5f)
-        metallic = Uniform.Float1(0.5f)
+        baseColor = Color(1f, 0f, 0f)
+        roughness = 0.5f
+        metallic =0.5f
     }
     private val cube = Mesh(
         geometry = CubeGeometry(
@@ -163,26 +163,26 @@ class MainActivity : ComponentActivity() {
 
                     K3DFloatController(
                         label = "Cube Color (R)",
-                        getter = { cubeMaterial.baseColor.color.r },
+                        getter = { cubeMaterial.baseColor.r },
                         setter = {
-                            cubeMaterial.baseColor.color.r = it
+                            cubeMaterial.baseColor = cubeMaterial.baseColor.copy(r = it)
                         },
                         max = 1f
                     )
 
                     K3DFloatController(
                         label = "Roughness",
-                        getter = { cubeMaterial.roughness.value },
+                        getter = { cubeMaterial.roughness },
                         setter = {
-                            cubeMaterial.roughness.value = it
+                            cubeMaterial.roughness = it
                         },
                     )
 
                     K3DFloatController(
                         label = "Metallic",
-                        getter = { cubeMaterial.metallic.value },
+                        getter = { cubeMaterial.metallic },
                         setter = {
-                            cubeMaterial.metallic.value = it
+                            cubeMaterial.metallic = it
                         },
                     )
                 }

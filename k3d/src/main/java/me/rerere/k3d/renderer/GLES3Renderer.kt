@@ -23,9 +23,10 @@ import me.rerere.k3d.scene.light.AmbientLight
 import me.rerere.k3d.scene.light.DirectionalLight
 import me.rerere.k3d.scene.light.PointLight
 import me.rerere.k3d.scene.light.SpotLight
-import me.rerere.k3d.util.ColorSpace
 import me.rerere.k3d.util.Disposable
 import me.rerere.k3d.util.cleanIfDirty
+import me.rerere.k3d.util.math.Matrix4
+import me.rerere.k3d.util.math.Vec3
 import java.nio.Buffer
 import java.util.IdentityHashMap
 
@@ -48,10 +49,10 @@ class GLES3Renderer : Renderer {
         viewportSize = ViewportSize(width, height)
     }
 
-    private val worldMatrixUniform = Uniform.Mat4(FloatArray(16), true)
-    private val viewMatrixUniform = Uniform.Mat4(FloatArray(16), true)
-    private val projectionMatrixUniform = Uniform.Mat4(FloatArray(16), true)
-    private val cameraPositionUniform = Uniform.Vec3f(0f, 0f, 0f)
+    private val worldMatrixUniform = Uniform.Mat4(Matrix4.identity(), true)
+    private val viewMatrixUniform = Uniform.Mat4(Matrix4.identity(), true)
+    private val projectionMatrixUniform = Uniform.Mat4(Matrix4.identity(), true)
+    private val cameraPositionUniform = Uniform.Vec3f(Vec3(0f, 0f, 0f))
 
     override fun render(scene: Scene, camera: Camera) {
         GLES30.glClearColor(0f, 0f, 0f, 0f)
@@ -84,30 +85,32 @@ class GLES3Renderer : Renderer {
                     resourceManager.useUniform(
                         actor.material.program,
                         worldMatrixUniform.apply {
-                            value = actor.worldMatrix.data
+                            value = actor.worldMatrix
                         },
                         BuiltInUniformName.MODEL_MATRIX.uniformName
                     )
                     resourceManager.useUniform(
                         actor.material.program,
                         viewMatrixUniform.apply {
-                            value = camera.worldMatrixInverse.data
+                            value = camera.worldMatrixInverse
                         },
                         BuiltInUniformName.VIEW_MATRIX.uniformName
                     )
                     resourceManager.useUniform(
                         actor.material.program,
                         projectionMatrixUniform.apply {
-                            value = camera.projectionMatrix.data
+                            value = camera.projectionMatrix
                         },
                         BuiltInUniformName.PROJECTION_MATRIX.uniformName
                     )
                     resourceManager.useUniform(
                         actor.material.program,
                         cameraPositionUniform.apply {
-                            x = camera.position.x
-                            y = camera.position.y
-                            z = camera.position.z
+                            value.apply {
+                                x = camera.position.x
+                                y = camera.position.y
+                                z = camera.position.z
+                            }
                         },
                         BuiltInUniformName.CAMERA_POSITION.uniformName
                     )
@@ -192,14 +195,14 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
     fun useUniform(program: ShaderProgramSource, uniform: Uniform, name: String) {
         val programId = getProgram(program) ?: return
         when (uniform) {
-            is Uniform.Float1 -> {
+            is Uniform.Float -> {
                 val location = GLES30.glGetUniformLocation(programId, name)
                 if (location != -1) {
                     GLES30.glUniform1f(location, uniform.value)
                 }
             }
 
-            is Uniform.Int1 -> {
+            is Uniform.Int -> {
                 val location = GLES30.glGetUniformLocation(programId, name)
                 if (location != -1) {
                     GLES30.glUniform1i(location, uniform.value)
@@ -209,35 +212,27 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
             is Uniform.Vec3f -> {
                 val location = GLES30.glGetUniformLocation(programId, name)
                 if (location != -1) {
-                    GLES30.glUniform3f(location, uniform.x, uniform.y, uniform.z)
+                    GLES30.glUniform3f(location, uniform.value.x, uniform.value.y, uniform.value.z)
                 }
             }
 
             is Uniform.Vec4f -> {
                 val location = GLES30.glGetUniformLocation(programId, name)
                 if (location != -1) {
-                    GLES30.glUniform4f(location, uniform.x, uniform.y, uniform.z, uniform.w)
+                    GLES30.glUniform4f(
+                        location,
+                        uniform.value.x,
+                        uniform.value.y,
+                        uniform.value.z,
+                        uniform.value.w
+                    )
                 }
             }
 
             is Uniform.Mat4 -> {
                 val location = GLES30.glGetUniformLocation(programId, name)
                 if (location != -1) {
-                    GLES30.glUniformMatrix4fv(location, 1, uniform.transpose, uniform.value, 0)
-                }
-            }
-
-            is Uniform.Color4f -> {
-                val location = GLES30.glGetUniformLocation(programId, name)
-                if (location != -1) {
-                    GLES30.glUniform4f(location, uniform.color.linearR, uniform.color.linearG, uniform.color.linearB, uniform.color.a)
-                }
-            }
-
-            is Uniform.Color3f -> {
-                val location = GLES30.glGetUniformLocation(programId, name)
-                if (location != -1) {
-                    GLES30.glUniform3f(location, uniform.color.linearR, uniform.color.linearG, uniform.color.linearB)
+                    GLES30.glUniformMatrix4fv(location, 1, uniform.transpose, uniform.value.data, 0)
                 }
             }
         }
@@ -272,7 +267,7 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
                 GLES30.glUniform3f(it, theLight.position.x, theLight.position.y, theLight.position.z)
             }
             uniformLocationOf(programId, "ambientLight.color") {
-                GLES30.glUniform3f(it, theLight.color.linearR, theLight.color.linearG, theLight.color.linearB)
+                GLES30.glUniform3f(it, theLight.color.r, theLight.color.g, theLight.color.b)
             }
             uniformLocationOf(programId, "ambientLight.intensity") {
                 GLES30.glUniform1f(it, theLight.intensity)
@@ -294,7 +289,7 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
                 GLES30.glUniform3f(it, theLight.target.x, theLight.target.y, theLight.target.z)
             }
             uniformLocationOf(programId, "directionalLight.color") {
-                GLES30.glUniform3f(it, theLight.color.linearR, theLight.color.linearG, theLight.color.linearB)
+                GLES30.glUniform3f(it, theLight.color.r, theLight.color.g, theLight.color.b)
             }
             uniformLocationOf(programId, "directionalLight.intensity") {
                 GLES30.glUniform1f(it, theLight.intensity)

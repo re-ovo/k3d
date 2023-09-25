@@ -1,124 +1,86 @@
 package me.rerere.k3d.renderer.resource
 
+import me.rerere.k3d.util.math.Matrix4
+import me.rerere.k3d.util.math.Vec3
+import me.rerere.k3d.util.math.Vec4
+
 /**
  * This class represents a single uniform
  */
 sealed class Uniform {
-    class Float1(var value: Float) : Uniform() {
+    class Float(var value: kotlin.Float) : Uniform() {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
-            if (other !is Float1) return false
+            if (other !is Float) return false
 
             if (value != other.value) return false
 
             return true
         }
 
-        override fun hashCode(): Int {
+        override fun hashCode(): kotlin.Int {
             return value.hashCode()
         }
     }
 
-    class Int1(var value: Int) : Uniform() {
+    class Int(var value: kotlin.Int) : Uniform() {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
-            if (other !is Int1) return false
+            if (other !is Int) return false
 
             if (value != other.value) return false
 
             return true
         }
 
-        override fun hashCode(): Int {
+        override fun hashCode(): kotlin.Int {
             return value
         }
     }
 
-    class Color4f(var color: me.rerere.k3d.util.Color) : Uniform() {
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (other !is Color4f) return false
-
-            if (color != other.color) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            return color.hashCode()
-        }
-    }
-
-    class Color3f(var color: me.rerere.k3d.util.Color) : Uniform() {
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (other !is Color3f) return false
-
-            if (color != other.color) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            return color.hashCode()
-        }
-    }
-
-    class Vec3f(var x: Float, var y: Float, var z: Float) : Uniform() {
+    class Vec3f(var value: Vec3) : Uniform() {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is Vec3f) return false
 
-            if (x != other.x) return false
-            if (y != other.y) return false
-            if (z != other.z) return false
+            if (value != other.value) return false
 
             return true
         }
 
-        override fun hashCode(): Int {
-            var result = x.hashCode()
-            result = 31 * result + y.hashCode()
-            result = 31 * result + z.hashCode()
-            return result
+        override fun hashCode(): kotlin.Int {
+            return value.hashCode()
         }
     }
 
-    class Vec4f(var x: Float, var y: Float, var z: Float, var w: Float) : Uniform() {
+    class Vec4f(var value: Vec4) : Uniform() {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is Vec4f) return false
 
-            if (x != other.x) return false
-            if (y != other.y) return false
-            if (z != other.z) return false
-            if (w != other.w) return false
+            if (value != other.value) return false
 
             return true
         }
 
-        override fun hashCode(): Int {
-            var result = x.hashCode()
-            result = 31 * result + y.hashCode()
-            result = 31 * result + z.hashCode()
-            result = 31 * result + w.hashCode()
-            return result
+        override fun hashCode(): kotlin.Int {
+            return value.hashCode()
         }
     }
 
-    class Mat4(var value: FloatArray, var transpose: Boolean) : Uniform() {
+    class Mat4(var value: Matrix4, var transpose: Boolean) : Uniform() {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is Mat4) return false
 
-            if (!value.contentEquals(other.value)) return false
+            if (value != other.value) return false
             if (transpose != other.transpose) return false
 
             return true
         }
 
-        override fun hashCode(): Int {
-            var result = value.contentHashCode()
+        override fun hashCode(): kotlin.Int {
+            var result = value.hashCode()
             result = 31 * result + transpose.hashCode()
             return result
         }

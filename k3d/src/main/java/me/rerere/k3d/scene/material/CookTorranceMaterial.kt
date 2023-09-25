@@ -17,15 +17,15 @@ import me.rerere.k3d.util.Color
 typealias StandardMaterial = CookTorranceMaterial
 
 class CookTorranceMaterial : ShaderMaterial(programSource) {
-    var baseColor by uniformOf(BuiltInUniformName.MATERIAL_COLOR, Uniform.Color4f(Color.fromRGBHex("#FFFFFF")))
+    var baseColor by color4fUniformOf(BuiltInUniformName.MATERIAL_COLOR, Color.fromRGBHex("#FFFFFF"))
     var baseColorTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_BASE)
 
     var normalTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_NORMAL)
 
-    var metallic by uniformOf(BuiltInUniformName.MATERIAL_ROUGHNESS, Uniform.Float1(1.0f))
+    var metallic by floatUniformOf(BuiltInUniformName.MATERIAL_ROUGHNESS, 1.0f)
     var metallicTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_METALLIC)
 
-    var roughness by uniformOf(BuiltInUniformName.MATERIAL_METALLIC, Uniform.Float1(1.0f))
+    var roughness by floatUniformOf(BuiltInUniformName.MATERIAL_METALLIC, 1.0f)
     var roughnessTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_ROUGHNESS)
 
     // var occlusionTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_OCCLUSION)
