@@ -67,6 +67,10 @@ class MainActivity : ComponentActivity() {
         rotation.set(Euler(0f, 10f.toRadian(), 0f).toQuaternion())
     }
     private var model: Scene? = null
+    private val ambientLight = AmbientLight(
+        color = Color.fromRGBHex("#ffffff"),
+        intensity = 0.1f
+    )
     private val directionalLight = DirectionalLight(
         color = Color.fromRGBHex("#ffffff"),
         intensity = 1.9f,
@@ -76,14 +80,7 @@ class MainActivity : ComponentActivity() {
     }
     private val scene = Scene().apply {
         addChild(cube)
-
-        addChild(
-            AmbientLight(
-                color = Color.fromRGBHex("#ffffff"),
-                intensity = 0.1f
-            )
-        )
-
+        addChild(ambientLight)
         addChild(directionalLight)
     }
     private lateinit var controls: OrbitController
@@ -109,7 +106,7 @@ class MainActivity : ComponentActivity() {
                         TextButton(
                             onClick = {
                                 val result = GltfLoader.load(
-                                    inputStream = assets.open("axe.glb")
+                                    inputStream = assets.open("sofa_combination.glb")
                                 )
                                 result.defaultScene.scale.set(0.5f, 0.5f, 0.5f)
                                 scene.addChild(result.defaultScene)
@@ -159,6 +156,14 @@ class MainActivity : ComponentActivity() {
                             directionalLight.intensity = it
                         },
                         max = 15.0f
+                    )
+
+                    K3DFloatController(
+                        label = "Ambient Light",
+                        getter = { ambientLight.intensity },
+                        setter = {
+                            ambientLight.intensity = it
+                        },
                     )
 
                     K3DFloatController(

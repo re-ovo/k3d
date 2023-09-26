@@ -28,7 +28,10 @@ class CookTorranceMaterial : ShaderMaterial(programSource) {
     var roughness by floatUniformOf(BuiltInUniformName.MATERIAL_METALLIC, 1.0f)
     var roughnessTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_ROUGHNESS)
 
-    // var occlusionTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_OCCLUSION)
+    var occlusionTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_OCCLUSION)
+
+    var emissive by color3fUniformOf(BuiltInUniformName.MATERIAL_EMISSIVE, Color.fromRGBHex("#000000"))
+    var emissiveTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_EMISSIVE)
 }
 
 private val programSource = ShaderProgramSource(
@@ -85,11 +88,13 @@ private val programSource = ShaderProgramSource(
         uniform sampler2D u_textureMetallic;
         uniform sampler2D u_textureRoughness;
         uniform sampler2D u_textureOcclusion;
+        uniform sampler2D u_textureEmissive;
         uniform vec3 u_cameraPos;
         
         uniform vec4 u_materialColor;
         uniform float u_materialRoughness;
         uniform float u_materialMetallic;
+        uniform vec3 u_materialEmissive;
         
         vec3 getNormal() {     
             vec3 normalFromMap = texture(u_textureNormal, v_texCoordNormal).rgb;
@@ -143,23 +148,25 @@ private val programSource = ShaderProgramSource(
         void main() {
             vec3 albedo = u_materialColor.rgb;
             float opacity = u_materialColor.a;
-            
             #ifdef HAS_TEXTURE_u_textureBase
                 albedo *= toLinear(texture(u_textureBase, v_texCoordBase).rgb);
                 opacity *= texture(u_textureBase, v_texCoordBase).a;
             #endif
             
-            vec3 lightDir = -normalize(directionalLight.target - directionalLight.position);
-                
-            // ambient
-            vec3 ambient = ambientLight.color * ambientLight.intensity * albedo;
-            
-            // cook-torrance
             #ifdef HAS_TEXTURE_u_textureNormal
                 vec3 normal = getNormal();
             #else
                 vec3 normal = normalize(v_normal);
             #endif
+                
+            // ambient
+            vec3 ambient = ambientLight.color * ambientLight.intensity * albedo;
+            #ifdef HAS_TEXTURE_u_textureOcclusion
+                ambient *= texture(u_textureOcclusion, v_texCoordBase).r;
+            #endif
+            
+            // directional light
+            vec3 lightDir = -normalize(directionalLight.target - directionalLight.position);
             vec3 viewDir = -normalize(v_fragPos - u_cameraPos);
             float roughness = u_materialRoughness;
             #ifdef HAS_TEXTURE_u_textureRoughness
@@ -172,7 +179,10 @@ private val programSource = ShaderProgramSource(
             vec3 cookTorrance = cookTorranceBRDF(lightDir, viewDir, normal, albedo, metallic, roughness, directionalLight.color, directionalLight.intensity);
             
             // combine results
-            vec3 result = (ambient + cookTorrance);
+            vec3 result = (ambient + cookTorrance + u_materialEmissive);
+            #ifdef HAS_TEXTURE_u_textureEmissive
+                result += toLinear(texture(u_textureEmissive, v_texCoordBase).rgb);
+            #endif
             fragColor = vec4(result, opacity);
             
             // HDR tone mapping

@@ -97,6 +97,7 @@ enum class BuiltInUniformName(val uniformName: String) {
     MATERIAL_ROUGHNESS("u_materialRoughness"),
     MATERIAL_METALLIC("u_materialMetallic"),
     MATERIAL_COLOR("u_materialColor"),
+    MATERIAL_EMISSIVE("u_materialEmissive"),
 
     CAMERA_POSITION("u_cameraPos"),
 }

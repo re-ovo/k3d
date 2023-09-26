@@ -274,8 +274,10 @@ object GltfLoader {
                 metallicTexture = roughnessTexture
                 metallic = materialData?.metallicFactor ?: 1f
 
-                // occlusionTexture = materialData?.occlusionTexture?.toTexture2d()
-                // emissiveTexture = materialData?.emissiveTexture?.toTexture2d()
+                occlusionTexture = materialData?.occlusionTexture?.toTexture2d()
+
+                emissiveTexture = materialData?.emissiveTexture?.toTexture2d()
+                emissive = materialData?.emissiveFactor ?: Color.black()
             }
             group.addChild(
                 Mesh(
@@ -388,7 +390,7 @@ object GltfLoader {
                 textureOf(gltf, buffers, it.index)
             },
             occulsionTextureCoord = material.occlusionTexture?.texCoord ?: 0,
-            emissiveFactor = material.emissiveFactor ?: listOf(0f, 0f, 0f),
+            emissiveFactor = material.emissiveFactor ?: Color.black(),
             emissiveTexture = material.emissiveTexture?.let {
                 textureOf(gltf, buffers, it.index)
             },
@@ -493,7 +495,7 @@ private data class Material(
     val occlusionTexture: Texture?,
     val occulsionTextureCoord: Int,
     val emissiveTexture: Texture?,
-    val emissiveFactor: List<Float>?,
+    val emissiveFactor: Color?,
     val alphaMode: String?,
     val alphaCutoff: Float?,
     val doubleSided: Boolean?,
@@ -564,7 +566,7 @@ private data class Gltf(
         val normalTexture: TextureInfo?,
         val occlusionTexture: TextureInfo?,
         val emissiveTexture: TextureInfo?,
-        val emissiveFactor: List<Float>?,
+        val emissiveFactor: Color?,
         val alphaMode: String?,
         val alphaCutoff: Float?,
         val doubleSided: Boolean?,

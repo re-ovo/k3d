@@ -31,7 +31,7 @@ internal object Color4fAdapter : TypeAdapter<Color>() {
         val r = `in`.nextDouble().toFloat()
         val g = `in`.nextDouble().toFloat()
         val b = `in`.nextDouble().toFloat()
-        val a = `in`.nextDouble().toFloat()
+        val a = if(`in`.hasNext()) `in`.nextDouble().toFloat() else 1f
         `in`.endArray()
         return Color(r, g, b, a)
     }
