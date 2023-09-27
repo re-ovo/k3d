@@ -17,8 +17,10 @@ import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.geometry.BufferGeometry
 import me.rerere.k3d.scene.material.CookTorranceMaterial
 import me.rerere.k3d.util.Color
+import me.rerere.k3d.util.computeTangent
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.math.transform.setModelMatrix
+import me.rerere.k3d.util.sequenceFloatData
 import java.io.DataInputStream
 import java.io.InputStream
 import java.nio.Buffer
@@ -254,14 +256,6 @@ object GltfLoader {
                     .asAttribute(BuiltInAttributeName.TEXCOORD_METALLIC.attributeName)
             }
 
-            val geometry = BufferGeometry().apply {
-                attributes.filterNotNull().forEach { (name, attr) ->
-                    setAttribute(name, attr)
-                }
-                indicesBuffer?.let {
-                    setIndices(it)
-                }
-            }
             val material = CookTorranceMaterial().apply {
                 baseColor = materialData?.baseColorFactor ?: Color.white()
                 baseColorTexture = materialData?.baseColorTexture?.toTexture2d()
@@ -279,6 +273,29 @@ object GltfLoader {
                 emissiveTexture = materialData?.emissiveTexture?.toTexture2d()
                 emissive = materialData?.emissiveFactor ?: Color.black()
             }
+
+            val geometry = BufferGeometry().apply {
+                attributes.filterNotNull().forEach { (name, attr) ->
+                    setAttribute(name, attr)
+                }
+                indicesBuffer?.let {
+                    setIndices(it)
+                }
+            }
+
+            // 如果没有Tangent但有normal map，计算Tangent
+            if (geometry.getAttribute(BuiltInAttributeName.TANGENT.attributeName) == null) {
+                if(material.normalTexture != null) {
+                    require(geometry.getAttribute(BuiltInAttributeName.NORMAL.attributeName) != null) {
+                        "Invalid geometry: no normal attribute"
+                    }
+
+                    // compute tangent
+                    // TODO: 也许添加到Primitive里面会更好, 方便用户手动加载模型也能自动计算tangent
+                    geometry.computeTangent(positionCount)
+                }
+            }
+
             group.addChild(
                 Mesh(
                     mode = mode,
