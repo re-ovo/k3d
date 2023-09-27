@@ -23,6 +23,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
 import me.rerere.k3d.controller.OrbitController
 import me.rerere.k3d.loader.GltfLoader
+import me.rerere.k3d.renderer.Clock
 import me.rerere.k3d.renderer.GLES3Renderer
 import me.rerere.k3d.renderer.GLESAutoConfigChooser
 import me.rerere.k3d.renderer.ViewportSize
@@ -51,7 +52,7 @@ class MainActivity : ComponentActivity() {
     private val cubeMaterial = CookTorranceMaterial().apply {
         baseColor = Color(1f, 0f, 0f)
         roughness = 0.5f
-        metallic =0.5f
+        metallic = 0.5f
     }
     private val cube = Mesh(
         geometry = CubeGeometry(
@@ -197,7 +198,7 @@ class MainActivity : ComponentActivity() {
 
     inner class K3DView(context: Context?, attrs: AttributeSet? = null) :
         GLSurfaceView(context, attrs) {
-        private var previousTime = TimeSource.Monotonic.markNow()
+        private val clock = Clock()
 
         init {
             setEGLContextClientVersion(3)
@@ -217,11 +218,10 @@ class MainActivity : ComponentActivity() {
                 }
 
                 override fun onDrawFrame(gl: GL10?) {
-                    val deltaTime = previousTime.elapsedNow().inWholeMilliseconds.toFloat() / 1000f
-                    previousTime = TimeSource.Monotonic.markNow()
+                    clock.tick()
 
-                    val speed = 360f.toRadian() * deltaTime
-                    // model?.rotation?.applyRotation(Euler(0f, speed, 0f).toQuaternion())
+                    val speed = 360f.toRadian() * clock.getDelta()
+                    model?.rotation?.applyRotation(Euler(0f, speed, 0f).toQuaternion())
 
                     render.render(scene, camera)
                 }
