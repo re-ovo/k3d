@@ -221,7 +221,7 @@ class MainActivity : ComponentActivity() {
                     clock.tick()
 
                     val speed = 360f.toRadian() * clock.getDelta()
-                    model?.rotation?.applyRotation(Euler(0f, speed, 0f).toQuaternion())
+                    // model?.rotation?.applyRotation(Euler(0f, speed, 0f).toQuaternion())
 
                     render.render(scene, camera)
                 }

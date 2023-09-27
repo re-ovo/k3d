@@ -41,32 +41,33 @@ class OrbitController(
         handler.handle(event)
     }
 
+    private val MIN_PITCH = -Math.PI.toFloat() / 2
+    private val MAX_PITCH = Math.PI.toFloat() / 2
+
     private fun handleDrag(rotate: ControllerEvent.Rotate) {
         val dx = rotate.deltaX / element.height.toFloat()
         val dy = rotate.deltaY / element.height.toFloat()
 
-        camera.yaw -= dx * 5f
-        camera.pitch -= dy * 5f
-        camera.pitch = camera.pitch.coerceIn(-90f, 90f)
+        val newYaw = camera.yaw - dx * 5f
+        val newPitch = (camera.pitch - dy * 5f).coerceIn(MIN_PITCH, MAX_PITCH)
 
-        update()
+        update(newYaw, newPitch, distance)
     }
 
     private fun handleZoom(event: ControllerEvent.Zoom) {
         val delta = -event.delta
+        val dist = this.distance + delta / 50f
 
-        println("Zoom: $delta")
-        this.distance += delta / 50f
-        this.distance = this.distance.coerceIn(0.1f, 100f)
-
-        update()
+        update(camera.yaw, camera.pitch, dist.coerceIn(0.1f, 100f))
     }
 
-    private fun update() {
-        val x = target.x + distance * cos(camera.pitch) * sin(camera.yaw)
-        val y = target.y + distance * sin(-camera.pitch)
-        val z = target.z + distance * cos(camera.pitch) * cos(camera.yaw)
-        camera.position.set(x, y, z)
-        camera.lookAt(target)
+    private fun update(newYaw: Float, newPitch: Float, newDistance: Float) {
+        val x = target.x + newDistance * cos(newPitch) * sin(newYaw)
+        val y = target.y + newDistance * sin(-newPitch)
+        val z = target.z + newDistance * cos(newPitch) * cos(newYaw)
+        this.distance = newDistance
+        this.camera.position.set(x, y, z)
+        this.camera.yaw = newYaw
+        this.camera.pitch = newPitch
     }
 }

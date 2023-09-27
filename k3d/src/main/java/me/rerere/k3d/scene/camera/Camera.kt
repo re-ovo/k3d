@@ -63,7 +63,10 @@ abstract class Camera : Actor(), Dirty {
         } else {
             asin(direction.y)
         }
-        yaw = atan2(-direction.x, -direction.z)
+
+        if(direction.x != 0f || direction.z != 0f) {
+            yaw = atan2(-direction.x, -direction.z)
+        }
     }
 
     abstract fun updateProjectionMatrix()
