@@ -7,6 +7,9 @@ import me.rerere.k3d.util.math.Vec3
 import kotlin.math.cos
 import kotlin.math.sin
 
+private const val MIN_PITCH = -Math.PI.toFloat() / 2
+private const val MAX_PITCH = Math.PI.toFloat() / 2
+
 /**
  * Orbit controller
  *
@@ -40,9 +43,6 @@ class OrbitController(
     fun handleEvent(event: MotionEvent) {
         handler.handle(event)
     }
-
-    private val MIN_PITCH = -Math.PI.toFloat() / 2
-    private val MAX_PITCH = Math.PI.toFloat() / 2
 
     private fun handleDrag(rotate: ControllerEvent.Rotate) {
         val dx = rotate.deltaX / element.height.toFloat()
