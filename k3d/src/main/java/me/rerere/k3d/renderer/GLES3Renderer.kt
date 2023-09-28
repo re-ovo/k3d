@@ -15,6 +15,7 @@ import me.rerere.k3d.renderer.shader.createShader
 import me.rerere.k3d.renderer.shader.genBuffer
 import me.rerere.k3d.renderer.shader.genTexture
 import me.rerere.k3d.renderer.shader.genVertexArray
+import me.rerere.k3d.scene.actor.Actor
 import me.rerere.k3d.scene.actor.Primitive
 import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.actor.traverse
@@ -23,6 +24,7 @@ import me.rerere.k3d.scene.light.AmbientLight
 import me.rerere.k3d.scene.light.DirectionalLight
 import me.rerere.k3d.scene.light.PointLight
 import me.rerere.k3d.scene.light.SpotLight
+import me.rerere.k3d.scene.material.AlphaMode
 import me.rerere.k3d.util.Disposable
 import me.rerere.k3d.util.cleanIfDirty
 import me.rerere.k3d.util.math.Matrix4
@@ -62,11 +64,16 @@ class GLES3Renderer : Renderer {
 
         GLES30.glEnable(GLES30.GL_DEPTH_TEST)
         GLES30.glEnable(GLES30.GL_CULL_FACE)
+        GLES30.glEnable(GLES30.GL_BLEND)
+        GLES30.glBlendFunc(GLES30.GL_SRC_ALPHA, GLES30.GL_ONE_MINUS_SRC_ALPHA)
 
         if (camera.dirty) {
             camera.updateMatrix()
             camera.markClean()
         }
+
+        val opaqueActors = arrayListOf<Primitive>()
+        val transparentActors = arrayListOf<Primitive>()
 
         scene.traverse { actor ->
             if (actor.dirty) {
@@ -75,76 +82,96 @@ class GLES3Renderer : Renderer {
             }
 
             if (actor is Primitive) {
-                resourceManager.useProgram(actor.material.program) {
-                    // Apply uniforms
-                    actor.material.uniforms.forEach { (name, uniform) ->
-                        resourceManager.useUniform(actor.material.program, uniform, name)
+                when (actor.material.alphaMode) {
+                    AlphaMode.OPAQUE -> opaqueActors.add(actor)
+                    AlphaMode.BLEND -> transparentActors.add(actor)
+                    AlphaMode.MASK -> TODO("Mask mode is not supported yet")
+                }
+            }
+        }
+
+        // render opaque actors
+        opaqueActors.forEach { actor ->
+            renderPrimitive(actor, camera, scene)
+        }
+
+        // render transparent actors
+        transparentActors.forEach { actor ->
+            renderPrimitive(actor, camera, scene)
+        }
+    }
+
+    private fun renderPrimitive(actor: Primitive, camera: Camera, scene: Scene) {
+        // GLES20.glDepthMask(actor.material.alphaMode == AlphaMode.OPAQUE)
+
+        resourceManager.useProgram(actor.material.program) {
+            // Apply uniforms
+            actor.material.uniforms.forEach { (name, uniform) ->
+                resourceManager.useUniform(actor.material.program, uniform, name)
+            }
+
+            // Apply built-in uniforms
+            resourceManager.useUniform(
+                actor.material.program,
+                worldMatrixUniform.apply {
+                    value = actor.worldMatrix
+                },
+                BuiltInUniformName.MODEL_MATRIX.uniformName
+            )
+            resourceManager.useUniform(
+                actor.material.program,
+                viewMatrixUniform.apply {
+                    value = camera.worldMatrixInverse
+                },
+                BuiltInUniformName.VIEW_MATRIX.uniformName
+            )
+            resourceManager.useUniform(
+                actor.material.program,
+                projectionMatrixUniform.apply {
+                    value = camera.projectionMatrix
+                },
+                BuiltInUniformName.PROJECTION_MATRIX.uniformName
+            )
+            resourceManager.useUniform(
+                actor.material.program,
+                cameraPositionUniform.apply {
+                    value.apply {
+                        x = camera.position.x
+                        y = camera.position.y
+                        z = camera.position.z
                     }
+                },
+                BuiltInUniformName.CAMERA_POSITION.uniformName
+            )
 
-                    // Apply built-in uniforms
-                    resourceManager.useUniform(
-                        actor.material.program,
-                        worldMatrixUniform.apply {
-                            value = actor.worldMatrix
-                        },
-                        BuiltInUniformName.MODEL_MATRIX.uniformName
-                    )
-                    resourceManager.useUniform(
-                        actor.material.program,
-                        viewMatrixUniform.apply {
-                            value = camera.worldMatrixInverse
-                        },
-                        BuiltInUniformName.VIEW_MATRIX.uniformName
-                    )
-                    resourceManager.useUniform(
-                        actor.material.program,
-                        projectionMatrixUniform.apply {
-                            value = camera.projectionMatrix
-                        },
-                        BuiltInUniformName.PROJECTION_MATRIX.uniformName
-                    )
-                    resourceManager.useUniform(
-                        actor.material.program,
-                        cameraPositionUniform.apply {
-                            value.apply {
-                                x = camera.position.x
-                                y = camera.position.y
-                                z = camera.position.z
-                            }
-                        },
-                        BuiltInUniformName.CAMERA_POSITION.uniformName
-                    )
+            // Apply Lights
+            resourceManager.useLights(this, scene)
 
-                    // Apply Lights
-                    resourceManager.useLights(this, scene)
+            // Apply textures
+            actor.material.textures.entries.forEachIndexed { index, mutableEntry ->
+                val (name, texture) = mutableEntry
+                resourceManager.useTexture(
+                    actor.material.program,
+                    name,
+                    texture,
+                    index
+                )
+            }
 
-                    // Apply textures
-                    actor.material.textures.entries.forEachIndexed { index, mutableEntry ->
-                        val (name, texture) = mutableEntry
-                        resourceManager.useTexture(
-                            actor.material.program,
-                            name,
-                            texture,
-                            index
-                        )
-                    }
-
-                    resourceManager.useVertexArray(this, actor.geometry.vao) {
-                        if (actor.geometry.getIndices() == null) {
-                            GLES30.glDrawArrays(
-                                actor.mode.value,
-                                0,
-                                actor.count
-                            )
-                        } else {
-                            GLES30.glDrawElements(
-                                actor.mode.value,
-                                actor.count,
-                                GLES30.GL_UNSIGNED_INT,
-                                0
-                            )
-                        }
-                    }
+            resourceManager.useVertexArray(this, actor.geometry.vao) {
+                if (actor.geometry.getIndices() == null) {
+                    GLES30.glDrawArrays(
+                        actor.mode.value,
+                        0,
+                        actor.count
+                    )
+                } else {
+                    GLES30.glDrawElements(
+                        actor.mode.value,
+                        actor.count,
+                        GLES30.GL_UNSIGNED_INT,
+                        0
+                    )
                 }
             }
         }
@@ -164,7 +191,7 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
     private val textureBuffers = IdentityHashMap<Texture, Int>()
 
     inline fun useProgram(program: ShaderProgramSource, scope: ShaderProgramSource.() -> Unit) {
-        if(program.dirty) {
+        if (program.dirty) {
             deleteProgram(program)
             program.markClean()
             println("Update program: $program due to dirty")
@@ -256,15 +283,20 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
     }
 
     fun useLights(program: ShaderProgramSource, scene: Scene) {
-        if(scene.lights.isEmpty()) return
+        if (scene.lights.isEmpty()) return
         val programId = getProgram(program) ?: return
 
         // ambient light
         val ambientLights = scene.lights.filterIsInstance<AmbientLight>()
-        if(ambientLights.isNotEmpty()) {
+        if (ambientLights.isNotEmpty()) {
             val theLight = ambientLights[0]
             uniformLocationOf(programId, "ambientLight.position") {
-                GLES30.glUniform3f(it, theLight.position.x, theLight.position.y, theLight.position.z)
+                GLES30.glUniform3f(
+                    it,
+                    theLight.position.x,
+                    theLight.position.y,
+                    theLight.position.z
+                )
             }
             uniformLocationOf(programId, "ambientLight.color") {
                 GLES30.glUniform3f(it, theLight.color.r, theLight.color.g, theLight.color.b)
@@ -280,10 +312,15 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
 
         // directional light
         val directionalLights = scene.lights.filterIsInstance<DirectionalLight>()
-        if(directionalLights.isNotEmpty()) {
+        if (directionalLights.isNotEmpty()) {
             val theLight = directionalLights[0]
             uniformLocationOf(programId, "directionalLight.position") {
-                GLES30.glUniform3f(it, theLight.position.x, theLight.position.y, theLight.position.z)
+                GLES30.glUniform3f(
+                    it,
+                    theLight.position.x,
+                    theLight.position.y,
+                    theLight.position.z
+                )
             }
             uniformLocationOf(programId, "directionalLight.target") {
                 GLES30.glUniform3f(it, theLight.target.x, theLight.target.y, theLight.target.z)
@@ -318,8 +355,9 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
         // println(programProcessResult.fragmentShader)
         val vertexShader = createShader(GLES20.GL_VERTEX_SHADER, programProcessResult.vertexShader)
             .getOrThrow()
-        val fragmentShader = createShader(GLES20.GL_FRAGMENT_SHADER, programProcessResult.fragmentShader)
-            .getOrThrow()
+        val fragmentShader =
+            createShader(GLES20.GL_FRAGMENT_SHADER, programProcessResult.fragmentShader)
+                .getOrThrow()
         val programId = createProgram(vertexShader, fragmentShader)
             .getOrThrow()
         programs[program] = programId
@@ -355,7 +393,7 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
             GLES30.GL_RGBA,
             texture.data,
             GLES30.GL_UNSIGNED_BYTE,
-           0
+            0
         )
         GLES30.glGenerateMipmap(target)
         GLES30.glTexParameteri(target, GLES30.GL_TEXTURE_MIN_FILTER, texture.minFilter.value)

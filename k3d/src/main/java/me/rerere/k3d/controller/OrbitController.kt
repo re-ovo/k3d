@@ -21,7 +21,6 @@ class OrbitController(
     val target: Vec3,
     val element: View,
 ) {
-    private var distance = 5f
     private val handler = MotionHandler { event ->
         println(event)
 
@@ -50,13 +49,16 @@ class OrbitController(
 
         val newYaw = camera.yaw - dx * 5f
         val newPitch = (camera.pitch - dy * 5f).coerceIn(MIN_PITCH, MAX_PITCH)
+        camera.yaw = newYaw
+        camera.pitch = newPitch
 
-        update(newYaw, newPitch, distance)
+        update()
     }
 
     private fun handleZoom(event: ControllerEvent.Zoom) {
         val delta = -event.delta
-        val dist = this.distance + delta / 50f
+        val oldDist = camera.position.distance(target)
+        val dist = oldDist + delta / 50f
 
         update(camera.yaw, camera.pitch, dist.coerceIn(0.1f, 100f))
     }
