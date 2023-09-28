@@ -4,6 +4,7 @@ import android.view.MotionEvent
 import android.view.View
 import me.rerere.k3d.scene.camera.Camera
 import me.rerere.k3d.util.math.Vec3
+import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -21,8 +22,6 @@ class OrbitController(
     var distanceRange: ClosedFloatingPointRange<Float> = 0.1f..100f
 
     private val handler = MotionHandler { event ->
-        println(event)
-
         when (event) {
             is ControllerEvent.Rotate -> {
                 handleDrag(event)
@@ -33,7 +32,7 @@ class OrbitController(
             }
 
             is ControllerEvent.Pan -> {
-                // handlePan(event)
+                handlePan(event)
             }
         }
     }
@@ -70,6 +69,28 @@ class OrbitController(
         val y = target.y + newDist * sin(-camera.pitch)
         val z = target.z + newDist * cos(camera.pitch) * cos(camera.yaw)
         camera.position.set(x, y, z)
+
+        update()
+    }
+
+    private fun handlePan(event: ControllerEvent.Pan) {
+        val dx = event.deltaX / element.height.toFloat()
+        val dy = -event.deltaY / element.height.toFloat()
+
+        val direction = Vec3(
+            cos(camera.pitch) * sin(camera.yaw),
+            sin(-camera.pitch),
+            cos(camera.pitch) * cos(camera.yaw)
+        )
+        val right = Vec3(sin(camera.yaw - PI / 2f).toFloat(), 0f,
+            cos(camera.yaw - PI / 2).toFloat()
+        )
+        val up = right.cross(direction)
+
+        val translation = right * dx - up * dy
+
+        camera.position += translation
+        target += translation
 
         update()
     }

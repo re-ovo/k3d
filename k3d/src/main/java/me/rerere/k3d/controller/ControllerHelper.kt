@@ -45,16 +45,8 @@ internal class MotionHandler(private val handler: (ControllerEvent) -> Unit) {
                     lastDistance = distance
                 } else if (event.pointerCount == 3) {
                     // Three fingers touch: Pan
-                    val x0 = event.getX(0)
-                    val y0 = event.getY(0)
-                    val x1 = event.getX(1)
-                    val y1 = event.getY(1)
-                    val x2 = event.getX(2)
-                    val y2 = event.getY(2)
-
-                    val deltaX = (x0 + x1 + x2) / 3 - lastX
-                    val deltaY = (y0 + y1 + y2) / 3 - lastY
-
+                    val deltaX = event.x - lastX
+                    val deltaY = event.y - lastY
                     handler(ControllerEvent.Pan(deltaX, deltaY))
                 }
 

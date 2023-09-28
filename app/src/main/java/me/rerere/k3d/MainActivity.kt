@@ -108,7 +108,7 @@ class MainActivity : ComponentActivity() {
                         TextButton(
                             onClick = {
                                 val result = GltfLoader(this@MainActivity).load(
-                                    inputStream = assets.open("used_new_balance_574_classic______free.glb")
+                                    inputStream = assets.open("free_isometric_cafe.glb")
                                 )
                                 //result.defaultScene.scale.set(0.1f, 0.1f, 0.1f)
                                 scene.addChild(result.defaultScene)

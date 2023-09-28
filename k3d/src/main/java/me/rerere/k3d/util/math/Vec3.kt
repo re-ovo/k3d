@@ -44,6 +44,12 @@ class Vec3(
         return Vec3(x + other.x, y + other.y, z + other.z)
     }
 
+    operator fun plusAssign(other: Vec3) {
+        x += other.x
+        y += other.y
+        z += other.z
+    }
+
     operator fun minus(other: Vec3): Vec3 {
         return Vec3(x - other.x, y - other.y, z - other.z)
     }
