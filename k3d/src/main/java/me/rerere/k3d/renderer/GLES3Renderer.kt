@@ -314,8 +314,8 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
     fun createProgram(program: ShaderProgramSource): Result<Int> = runCatching {
         require(!programs.containsKey(program)) { "Program already exists" }
         val programProcessResult = shaderProcessor.process(program)
-        println(programProcessResult.vertexShader)
-        println(programProcessResult.fragmentShader)
+        // println(programProcessResult.vertexShader)
+        // println(programProcessResult.fragmentShader)
         val vertexShader = createShader(GLES20.GL_VERTEX_SHADER, programProcessResult.vertexShader)
             .getOrThrow()
         val fragmentShader = createShader(GLES20.GL_FRAGMENT_SHADER, programProcessResult.fragmentShader)
@@ -390,6 +390,7 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
                     val vbo = genBuffer().getOrThrow()
                     vertexArraysAttributesBuffer[attribute] = vbo
                     GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vbo)
+                    attribute.data.rewind()
                     val size = attribute.data.sizeInBytes()
                     println("[K3D:Resource] stream attribute buffer: ${attribute.data} / size: $size")
                     GLES30.glBufferData(
@@ -418,6 +419,7 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
                 println("[K3D:Resource] stream indices buffer: $indices")
                 vertexArraysIndicesBuffer[vertexArray] = buffer
                 GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, buffer)
+                indices.rewind()
                 GLES30.glBufferData(
                     GLES30.GL_ELEMENT_ARRAY_BUFFER,
                     indices.sizeInBytes(),

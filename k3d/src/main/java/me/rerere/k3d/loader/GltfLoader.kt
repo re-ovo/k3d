@@ -8,7 +8,6 @@ import me.rerere.k3d.renderer.resource.DataType
 import me.rerere.k3d.renderer.resource.DrawMode
 import me.rerere.k3d.renderer.resource.TextureFilter
 import me.rerere.k3d.renderer.resource.TextureWrap
-import me.rerere.k3d.renderer.resource.Uniform
 import me.rerere.k3d.renderer.shader.BuiltInAttributeName
 import me.rerere.k3d.scene.actor.Actor
 import me.rerere.k3d.scene.actor.ActorGroup
@@ -20,11 +19,11 @@ import me.rerere.k3d.util.Color
 import me.rerere.k3d.util.computeTangent
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.math.transform.setModelMatrix
-import me.rerere.k3d.util.sequenceFloatData
 import java.io.DataInputStream
 import java.io.InputStream
 import java.nio.Buffer
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 private const val GLB_MAGIC = 0x676c5446 // "glTF"
 private const val GLB_VERSION = 0x02000000 // 2.0
@@ -177,10 +176,10 @@ object GltfLoader {
                         accessor.asAttribute(BuiltInAttributeName.NORMAL.attributeName)
                     }
 
-                    "TANGENT" -> {
-                        val accessor = accessorOf(gltf, buffers, accessorIndex)
-                        accessor.asAttribute(BuiltInAttributeName.TANGENT.attributeName)
-                    }
+//                    "TANGENT" -> {
+//                        val accessor = accessorOf(gltf, buffers, accessorIndex)
+//                        accessor.asAttribute(BuiltInAttributeName.TANGENT.attributeName)
+//                    }
 
                     else -> {
                         println("Unsupported attribute: $key")
@@ -200,10 +199,14 @@ object GltfLoader {
                 val accessor = accessorOf(gltf, buffers, it)
                 val bufferView = accessor.bufferView ?: error("Accessor bufferView is null")
 
+                val dataType = gltfAccessorComponentTypeToDataType(accessor.componentType)
+                require(dataType == DataType.UNSIGNED_INT) {
+                    "Indices data type must be UNSIGNED_INT, but got $dataType"
+                }
+
                 if (bufferView.byteStride > 0) {
                     error("BufferView byteStride > 0 is not supported yet for indices")
                 }
-
                 bufferView.buffer.sliceSafely(
                     start = bufferView.byteOffset + accessor.byteOffset,
                     end = bufferView.byteOffset + bufferView.byteLength + accessor.byteOffset
@@ -283,19 +286,6 @@ object GltfLoader {
                 }
             }
 
-            // 如果没有Tangent但有normal map，计算Tangent
-            if (geometry.getAttribute(BuiltInAttributeName.TANGENT.attributeName) == null) {
-                if(material.normalTexture != null) {
-                    require(geometry.getAttribute(BuiltInAttributeName.NORMAL.attributeName) != null) {
-                        "Invalid geometry: no normal attribute"
-                    }
-
-                    // compute tangent
-                    // TODO: 也许添加到Primitive里面会更好, 方便用户手动加载模型也能自动计算tangent
-                    geometry.computeTangent(positionCount)
-                }
-            }
-
             group.addChild(
                 Mesh(
                     mode = mode,
@@ -350,6 +340,7 @@ object GltfLoader {
             normalized = false,
             stride = bufferView.byteStride,
             offset = byteOffset,
+            count = count,
         )
     }
 

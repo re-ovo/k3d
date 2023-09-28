@@ -53,7 +53,8 @@ class CubeGeometry(
             itemSize = 3,
             type = DataType.FLOAT,
             normalized = false,
-            data = FloatBuffer.allocate(6 * 3 * 4)
+            data = FloatBuffer.allocate(6 * 3 * 4),
+            count = 6 * 4
         )
         val buffer = attribute.data as FloatBuffer
         buffer.apply {
@@ -107,7 +108,8 @@ class CubeGeometry(
             itemSize = 3,
             type = DataType.FLOAT,
             normalized = false,
-            data = FloatBuffer.allocate(6 * 3 * 4)
+            data = FloatBuffer.allocate(6 * 3 * 4),
+            count = 6 * 4
         )
         val buffer = attribute.data as FloatBuffer
         buffer.apply {

@@ -1,8 +1,11 @@
 package me.rerere.k3d.scene.actor
 
 import me.rerere.k3d.renderer.resource.DrawMode
+import me.rerere.k3d.renderer.shader.BuiltInAttributeName
+import me.rerere.k3d.renderer.shader.BuiltInUniformName
 import me.rerere.k3d.scene.geometry.BufferGeometry
 import me.rerere.k3d.scene.material.ShaderMaterial
+import me.rerere.k3d.util.computeTangent
 
 /**
  * A primitive is a renderable object, which contains a geometry and a material
@@ -27,4 +30,23 @@ abstract class Primitive(
     val material: ShaderMaterial,
     val mode: DrawMode = DrawMode.TRIANGLES,
     val count: Int = 0,
-) : Actor()
+) : Actor() {
+    init {
+        // Compute tangent if not found
+        if (geometry.getAttribute(BuiltInAttributeName.TANGENT.attributeName) == null) {
+            if (material.getTexture(BuiltInUniformName.TEXTURE_NORMAL.uniformName) != null) {
+                require(geometry.getAttribute(BuiltInAttributeName.NORMAL.attributeName) != null) {
+                    "Invalid geometry: normal attribute not found but normal map is used"
+                }
+
+                println("(!) Tangent attribute not found, computing...")
+                val vertCount = geometry.getAttribute(BuiltInAttributeName.POSITION.attributeName)!!.count
+                println("Vertex count: $vertCount")
+                geometry.computeTangent(
+                    vertCount = vertCount,
+                    indicesCount = count
+                )
+            }
+        }
+    }
+}
