@@ -47,7 +47,7 @@ import kotlin.time.TimeSource
 class MainActivity : ComponentActivity() {
     private val render = GLES3Renderer()
     private val camera = PerspectiveCamera().apply {
-        position.set(0f, 0f, 5f)
+        position.set(0f, 50f, 5f)
     }
     private val cubeMaterial = CookTorranceMaterial().apply {
         baseColor = Color(1f, 0f, 0f)

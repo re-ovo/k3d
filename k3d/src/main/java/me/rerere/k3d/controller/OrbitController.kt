@@ -7,9 +7,6 @@ import me.rerere.k3d.util.math.Vec3
 import kotlin.math.cos
 import kotlin.math.sin
 
-private const val MIN_PITCH = -Math.PI.toFloat() / 2
-private const val MAX_PITCH = Math.PI.toFloat() / 2
-
 /**
  * Orbit controller
  *
@@ -21,6 +18,8 @@ class OrbitController(
     val target: Vec3,
     val element: View,
 ) {
+    var distanceRange: ClosedFloatingPointRange<Float> = 0.1f..100f
+
     private val handler = MotionHandler { event ->
         println(event)
 
@@ -48,9 +47,16 @@ class OrbitController(
         val dy = rotate.deltaY / element.height.toFloat()
 
         val newYaw = camera.yaw - dx * 5f
-        val newPitch = (camera.pitch - dy * 5f).coerceIn(MIN_PITCH, MAX_PITCH)
+        val newPitch = camera.pitch - dy * 5f
         camera.yaw = newYaw
         camera.pitch = newPitch
+
+        // 根据yaw和pitch计算新的位置
+        val dist = camera.position.distance(target)
+        val x = target.x + dist * cos(camera.pitch) * sin(camera.yaw)
+        val y = target.y + dist * sin(-camera.pitch)
+        val z = target.z + dist * cos(camera.pitch) * cos(camera.yaw)
+        camera.position.set(x, y, z)
 
         update()
     }
@@ -58,18 +64,28 @@ class OrbitController(
     private fun handleZoom(event: ControllerEvent.Zoom) {
         val delta = -event.delta
         val oldDist = camera.position.distance(target)
-        val dist = oldDist + delta / 50f
+        val newDist = (oldDist + delta / 50f)
 
-        update(camera.yaw, camera.pitch, dist.coerceIn(0.1f, 100f))
+        val x = target.x + newDist * cos(camera.pitch) * sin(camera.yaw)
+        val y = target.y + newDist * sin(-camera.pitch)
+        val z = target.z + newDist * cos(camera.pitch) * cos(camera.yaw)
+        camera.position.set(x, y, z)
+
+        update()
     }
 
-    private fun update(newYaw: Float, newPitch: Float, newDistance: Float) {
-        val x = target.x + newDistance * cos(newPitch) * sin(newYaw)
-        val y = target.y + newDistance * sin(-newPitch)
-        val z = target.z + newDistance * cos(newPitch) * cos(newYaw)
-        this.distance = newDistance
-        this.camera.position.set(x, y, z)
-        this.camera.yaw = newYaw
-        this.camera.pitch = newPitch
+    private fun update() {
+        // 限制距离
+        val dist = camera.position.distance(target)
+        if (dist !in distanceRange) {
+            val newDist = dist.coerceIn(distanceRange)
+            val x = target.x + newDist * cos(camera.pitch) * sin(camera.yaw)
+            val y = target.y + newDist * sin(-camera.pitch)
+            val z = target.z + newDist * cos(camera.pitch) * cos(camera.yaw)
+            camera.position.set(x, y, z)
+        }
+
+        // 更新相机朝向
+        camera.lookAt(target)
     }
 }

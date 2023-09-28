@@ -7,8 +7,12 @@ import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.rotation.Euler
 import me.rerere.k3d.util.math.transform.rotationMatrix
 import me.rerere.k3d.util.math.transform.translationMatrix
+import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.atan2
+
+private const val MIN_PITCH = -Math.PI.toFloat() / 2
+private const val MAX_PITCH = Math.PI.toFloat() / 2
 
 abstract class Camera : Actor(), Dirty {
     var yaw: Float = 0f
@@ -18,7 +22,7 @@ abstract class Camera : Actor(), Dirty {
         }
     var pitch: Float = 0f
         set(value) {
-            field = value
+            field = value.coerceIn(MIN_PITCH, MAX_PITCH)
             markDirty()
         }
     var roll: Float = 0f
@@ -64,7 +68,7 @@ abstract class Camera : Actor(), Dirty {
             asin(direction.y)
         }
 
-        if(direction.x != 0f || direction.z != 0f) {
+        if(abs(direction.x) > 1e-2 || abs(direction.z) > 1e-2) {
             yaw = atan2(-direction.x, -direction.z)
         }
     }
