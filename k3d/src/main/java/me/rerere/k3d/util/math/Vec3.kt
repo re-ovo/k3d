@@ -44,44 +44,16 @@ class Vec3(
         return Vec3(x + other.x, y + other.y, z + other.z)
     }
 
-    fun selfPlus(other: Vec3): Vec3 {
-        x += other.x
-        y += other.y
-        z += other.z
-        return this
-    }
-
     operator fun minus(other: Vec3): Vec3 {
         return Vec3(x - other.x, y - other.y, z - other.z)
-    }
-
-    fun selfMinus(other: Vec3): Vec3 {
-        x -= other.x
-        y -= other.y
-        z -= other.z
-        return this
     }
 
     operator fun times(other: Vec3): Vec3 {
         return Vec3(x * other.x, y * other.y, z * other.z)
     }
 
-    fun selfTimes(other: Vec3): Vec3 {
-        x *= other.x
-        y *= other.y
-        z *= other.z
-        return this
-    }
-
     operator fun div(other: Vec3): Vec3 {
         return Vec3(x / other.x, y / other.y, z / other.z)
-    }
-
-    fun selfDiv(other: Vec3): Vec3 {
-        x /= other.x
-        y /= other.y
-        z /= other.z
-        return this
     }
 
     operator fun times(other: Float): Vec3 {
@@ -94,22 +66,8 @@ class Vec3(
         z *= other
     }
 
-    fun selfTimes(other: Float): Vec3 {
-        x *= other
-        y *= other
-        z *= other
-        return this
-    }
-
     operator fun div(other: Float): Vec3 {
         return Vec3(x / other, y / other, z / other)
-    }
-
-    fun selfDiv(other: Float): Vec3 {
-        x /= other
-        y /= other
-        z /= other
-        return this
     }
 
     fun dot(other: Vec3): Float {
@@ -140,7 +98,7 @@ class Vec3(
         return Vec3(x / length, y / length, z / length)
     }
 
-    fun selfNormalize(): Vec3 {
+    fun normalizeSelf(): Vec3 {
         val length = length()
         x /= length
         y /= length

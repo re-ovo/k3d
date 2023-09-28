@@ -56,7 +56,7 @@ abstract class Camera : Actor(), Dirty {
     }
 
     fun lookAt(target: Vec3) { // default target to -Z
-        val direction = (target - position).selfNormalize()
+        val direction = (target - position).normalizeSelf()
 
         pitch = if (direction.x == 0f && direction.z == 0f) {
             if (direction.y > 0) {

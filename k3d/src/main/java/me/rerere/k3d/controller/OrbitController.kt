@@ -88,4 +88,8 @@ class OrbitController(
         // 更新相机朝向
         camera.lookAt(target)
     }
+
+    init {
+        update()
+    }
 }
