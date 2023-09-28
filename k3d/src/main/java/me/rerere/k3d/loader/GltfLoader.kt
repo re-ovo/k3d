@@ -14,6 +14,7 @@ import me.rerere.k3d.scene.actor.ActorGroup
 import me.rerere.k3d.scene.actor.Mesh
 import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.geometry.BufferGeometry
+import me.rerere.k3d.scene.material.AlphaMode
 import me.rerere.k3d.scene.material.CookTorranceMaterial
 import me.rerere.k3d.util.Color
 import me.rerere.k3d.util.computeTangent
@@ -260,6 +261,9 @@ object GltfLoader {
             }
 
             val material = CookTorranceMaterial().apply {
+                alphaMode = materialData?.alphaMode ?: AlphaMode.OPAQUE
+                alphaCutoff = materialData?.alphaCutoff ?: 0.5f
+
                 baseColor = materialData?.baseColorFactor ?: Color.white()
                 baseColorTexture = materialData?.baseColorTexture?.toTexture2d()
 
@@ -375,7 +379,7 @@ object GltfLoader {
 
         return Material(
             name = material.name ?: "",
-            alphaMode = material.alphaMode ?: "OPAQUE",
+            alphaMode = material.alphaMode ?: AlphaMode.OPAQUE,
             alphaCutoff = material.alphaCutoff ?: 0.5f,
             doubleSided = material.doubleSided ?: false,
             baseColorFactor = material.pbrMetallicRoughness?.baseColorFactor ?: Color.white(),
@@ -504,7 +508,7 @@ private data class Material(
     val occulsionTextureCoord: Int,
     val emissiveTexture: Texture?,
     val emissiveFactor: Color?,
-    val alphaMode: String?,
+    val alphaMode: AlphaMode?,
     val alphaCutoff: Float?,
     val doubleSided: Boolean?,
 )
@@ -575,7 +579,7 @@ private data class Gltf(
         val occlusionTexture: TextureInfo?,
         val emissiveTexture: TextureInfo?,
         val emissiveFactor: Color?,
-        val alphaMode: String?,
+        val alphaMode: AlphaMode?,
         val alphaCutoff: Float?,
         val doubleSided: Boolean?,
     )

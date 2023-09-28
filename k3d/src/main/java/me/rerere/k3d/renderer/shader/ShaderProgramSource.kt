@@ -100,6 +100,7 @@ enum class BuiltInUniformName(val uniformName: String) {
     MATERIAL_EMISSIVE("u_materialEmissive"),
 
     CAMERA_POSITION("u_cameraPos"),
+    ALPHA_CUTOFF("u_alphaCutoff"),
 }
 
 enum class BuiltInMacroDefinition(val macroName: String) {
