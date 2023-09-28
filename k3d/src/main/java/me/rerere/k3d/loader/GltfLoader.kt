@@ -1,8 +1,12 @@
 package me.rerere.k3d.loader
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.opengl.GLUtils
 import com.google.gson.JsonObject
+import com.google.gson.JsonParseException
+import com.google.gson.JsonParser
 import me.rerere.k3d.renderer.resource.Attribute
 import me.rerere.k3d.renderer.resource.DataType
 import me.rerere.k3d.renderer.resource.DrawMode
@@ -16,6 +20,7 @@ import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.geometry.BufferGeometry
 import me.rerere.k3d.scene.material.AlphaMode
 import me.rerere.k3d.scene.material.CookTorranceMaterial
+import me.rerere.k3d.scene.material.StandardMaterial
 import me.rerere.k3d.util.Color
 import me.rerere.k3d.util.computeTangent
 import me.rerere.k3d.util.math.Matrix4
@@ -25,6 +30,7 @@ import java.io.InputStream
 import java.nio.Buffer
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.util.UUID
 
 private const val GLB_MAGIC = 0x676c5446 // "glTF"
 private const val GLB_VERSION = 0x02000000 // 2.0
@@ -37,7 +43,7 @@ private const val GLB_VERSION = 0x02000000 // 2.0
  * [glTF 2.0 Specification](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html)
  */
 @OptIn(ExperimentalStdlibApi::class)
-object GltfLoader {
+class GltfLoader(private val context: Context) {
     fun load(inputStream: InputStream): GltfLoadResult {
         return DataInputStream(inputStream).use {
             readGlb(it)
@@ -96,6 +102,11 @@ object GltfLoader {
 
         println(jsonChunk)
         println(binChunk)
+        JsonParser.parseString(jsonChunk).asJsonObject.let {
+            it.keySet().forEach { key ->
+                println("$key: ${it.get(key)}")
+            }
+        }
 
         val gltf = GsonInstance.fromJson(jsonChunk, Gltf::class.java)
         return parse(gltf = gltf, buffers = buildList {
@@ -177,10 +188,10 @@ object GltfLoader {
                         accessor.asAttribute(BuiltInAttributeName.NORMAL.attributeName)
                     }
 
-//                    "TANGENT" -> {
-//                        val accessor = accessorOf(gltf, buffers, accessorIndex)
-//                        accessor.asAttribute(BuiltInAttributeName.TANGENT.attributeName)
-//                    }
+                    "TANGENT" -> {
+                        val accessor = accessorOf(gltf, buffers, accessorIndex)
+                        accessor.asAttribute(BuiltInAttributeName.TANGENT.attributeName)
+                    }
 
                     else -> {
                         println("Unsupported attribute: $key")
@@ -196,13 +207,13 @@ object GltfLoader {
             val indicesAccessor = primitive.indices?.let {
                 accessorOf(gltf, buffers, it)
             }
-            val indicesBuffer: Buffer? = primitive.indices?.let {
+            val indicesBuffer: Pair<Buffer, DataType>? = primitive.indices?.let {
                 val accessor = accessorOf(gltf, buffers, it)
                 val bufferView = accessor.bufferView ?: error("Accessor bufferView is null")
 
                 val dataType = gltfAccessorComponentTypeToDataType(accessor.componentType)
-                require(dataType == DataType.UNSIGNED_INT) {
-                    "Indices data type must be UNSIGNED_INT, but got $dataType"
+                require(dataType == DataType.UNSIGNED_INT || dataType == DataType.UNSIGNED_SHORT) {
+                    "Indices data type must be UNSIGNED_INT/SHORT, but got $dataType"
                 }
 
                 if (bufferView.byteStride > 0) {
@@ -211,7 +222,7 @@ object GltfLoader {
                 bufferView.buffer.sliceSafely(
                     start = bufferView.byteOffset + accessor.byteOffset,
                     end = bufferView.byteOffset + bufferView.byteLength + accessor.byteOffset
-                )
+                ) to dataType
             }
 
             // Material
@@ -219,48 +230,70 @@ object GltfLoader {
                 materialOf(gltf, buffers, it)
             }
             materialData?.let { material ->
-                attributes += textureCoordAccessor(
-                    gltf,
-                    buffers,
-                    primitive.attributes,
-                    material.baseColorTextureCoord
-                )
-                    .asAttribute(BuiltInAttributeName.TEXCOORD_BASE.attributeName)
+                material.baseColorTexture?.let {
+                    attributes += textureCoordAccessor(
+                        gltf,
+                        buffers,
+                        primitive.attributes,
+                        material.baseColorTextureCoord ?: 0
+                    )
+                        .asAttribute(BuiltInAttributeName.TEXCOORD_BASE.attributeName)
+                }
 
-                attributes += textureCoordAccessor(
-                    gltf,
-                    buffers,
-                    primitive.attributes,
-                    material.normalTextureCoord
-                )
-                    .asAttribute(BuiltInAttributeName.TEXCOORD_NORMAL.attributeName)
+                material.normalTexture?.let {
+                    attributes += textureCoordAccessor(
+                        gltf,
+                        buffers,
+                        primitive.attributes,
+                        material.normalTextureCoord ?: 0
+                    )
+                        .asAttribute(BuiltInAttributeName.TEXCOORD_NORMAL.attributeName)
+                }
 
-                attributes += textureCoordAccessor(
-                    gltf,
-                    buffers,
-                    primitive.attributes,
-                    material.occulsionTextureCoord
-                )
-                    .asAttribute(BuiltInAttributeName.TEXCOORD_OCCLUSION.attributeName)
+                material.occlusionTexture?.let {
+                    attributes += textureCoordAccessor(
+                        gltf,
+                        buffers,
+                        primitive.attributes,
+                        material.occulsionTextureCoord ?: 0
+                    )
+                        .asAttribute(BuiltInAttributeName.TEXCOORD_OCCLUSION.attributeName)
+                }
 
-                attributes += textureCoordAccessor(
-                    gltf,
-                    buffers,
-                    primitive.attributes,
-                    material.metallicRoughnessTextureCoord
-                )
-                    .asAttribute(BuiltInAttributeName.TEXCOORD_ROUGHNESS.attributeName)
+                material.metallicRoughnessTexture?.let {
+                    attributes += textureCoordAccessor(
+                        gltf,
+                        buffers,
+                        primitive.attributes,
+                        material.metallicRoughnessTextureCoord ?: 0
+                    )
+                        .asAttribute(BuiltInAttributeName.TEXCOORD_ROUGHNESS.attributeName)
+                }
 
-                attributes += textureCoordAccessor(
-                    gltf,
-                    buffers,
-                    primitive.attributes,
-                    material.metallicRoughnessTextureCoord
-                )
-                    .asAttribute(BuiltInAttributeName.TEXCOORD_METALLIC.attributeName)
+                material.metallicRoughnessTexture?.let {
+                    attributes += textureCoordAccessor(
+                        gltf,
+                        buffers,
+                        primitive.attributes,
+                        material.metallicRoughnessTextureCoord ?: 0
+                    )
+                        .asAttribute(BuiltInAttributeName.TEXCOORD_METALLIC.attributeName)
+                }
+
+                material.emissiveTexture?.let {
+                    attributes += textureCoordAccessor(
+                        gltf,
+                        buffers,
+                        primitive.attributes,
+                        material.emissiveTextureCoord ?: 0
+                    )
+                        .asAttribute(BuiltInAttributeName.TEXCOORD_EMISSIVE.attributeName)
+                }
             }
 
-            val material = CookTorranceMaterial().apply {
+            val material = StandardMaterial().apply {
+                name = materialData?.name ?: UUID.randomUUID().toString()
+
                 alphaMode = materialData?.alphaMode ?: AlphaMode.OPAQUE
                 alphaCutoff = materialData?.alphaCutoff ?: 0.5f
                 doubleSided = materialData?.doubleSided ?: false
@@ -287,7 +320,8 @@ object GltfLoader {
                     setAttribute(name, attr)
                 }
                 indicesBuffer?.let {
-                    setIndices(it)
+                    setIndices(it.first)
+                    setIndiceType(it.second)
                 }
             }
 
@@ -383,30 +417,30 @@ object GltfLoader {
             alphaMode = material.alphaMode ?: AlphaMode.OPAQUE,
             alphaCutoff = material.alphaCutoff ?: 0.5f,
             doubleSided = material.doubleSided ?: false,
-            baseColorFactor = material.pbrMetallicRoughness?.baseColorFactor ?: Color.white(),
+            baseColorFactor = material.pbrMetallicRoughness?.baseColorFactor,
             baseColorTexture = material.pbrMetallicRoughness?.baseColorTexture?.let {
                 textureOf(gltf, buffers, it.index)
             },
-            baseColorTextureCoord = material.pbrMetallicRoughness?.baseColorTexture?.texCoord ?: 0,
+            baseColorTextureCoord = material.pbrMetallicRoughness?.baseColorTexture?.texCoord,
             metallicFactor = material.pbrMetallicRoughness?.metallicFactor ?: 1f,
             roughnessFactor = material.pbrMetallicRoughness?.roughnessFactor ?: 1f,
             metallicRoughnessTexture = material.pbrMetallicRoughness?.metallicRoughnessTexture?.let {
                 textureOf(gltf, buffers, it.index)
             },
-            metallicRoughnessTextureCoord = material.pbrMetallicRoughness?.metallicRoughnessTexture?.texCoord
-                ?: 0,
+            metallicRoughnessTextureCoord = material.pbrMetallicRoughness?.metallicRoughnessTexture?.texCoord,
             normalTexture = material.normalTexture?.let {
                 textureOf(gltf, buffers, it.index)
             },
-            normalTextureCoord = material.normalTexture?.texCoord ?: 0,
+            normalTextureCoord = material.normalTexture?.texCoord,
             occlusionTexture = material.occlusionTexture?.let {
                 textureOf(gltf, buffers, it.index)
             },
-            occulsionTextureCoord = material.occlusionTexture?.texCoord ?: 0,
+            occulsionTextureCoord = material.occlusionTexture?.texCoord,
             emissiveFactor = material.emissiveFactor ?: Color.black(),
             emissiveTexture = material.emissiveTexture?.let {
                 textureOf(gltf, buffers, it.index)
             },
+            emissiveTextureCoord = material.emissiveTexture?.texCoord,
         )
     }
 
@@ -415,10 +449,12 @@ object GltfLoader {
         val sampler = gltf.samplers[texture.sampler]
         return Texture(
             image = imageOf(gltf, buffers, texture.source),
-            wrapS = TextureWrap.fromValue(sampler.wrapS),
-            wrapT = TextureWrap.fromValue(sampler.wrapT),
-            minFilter = TextureFilter.fromValue(sampler.minFilter),
-            magFilter = TextureFilter.fromValue(sampler.magFilter),
+            wrapS = sampler.wrapS?.let { TextureWrap.fromValue(it) } ?: TextureWrap.REPEAT,
+            wrapT = sampler.wrapT?.let { TextureWrap.fromValue(it) } ?: TextureWrap.REPEAT,
+            minFilter = sampler.minFilter?.let { TextureFilter.fromValue(it) }
+                ?: TextureFilter.LINEAR,
+            magFilter = sampler.magFilter?.let { TextureFilter.fromValue(it) }
+                ?: TextureFilter.LINEAR,
         )
     }
 
@@ -433,6 +469,7 @@ object GltfLoader {
 
             // Convert image to bitmap
             val bytes = ByteArray(buffer.remaining())
+            buffer.order(ByteOrder.nativeOrder())
             buffer.get(bytes)
             return BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
         } else if (image.uri != null) {
@@ -496,18 +533,19 @@ private data class Accessor(
 
 private data class Material(
     val name: String,
-    val baseColorFactor: Color,
+    val baseColorFactor: Color?,
     val baseColorTexture: Texture?,
-    val baseColorTextureCoord: Int,
+    val baseColorTextureCoord: Int?,
     val metallicFactor: Float?,
     val roughnessFactor: Float?,
     val metallicRoughnessTexture: Texture?,
-    val metallicRoughnessTextureCoord: Int,
+    val metallicRoughnessTextureCoord: Int?,
     val normalTexture: Texture?,
-    val normalTextureCoord: Int,
+    val normalTextureCoord: Int?,
     val occlusionTexture: Texture?,
-    val occulsionTextureCoord: Int,
+    val occulsionTextureCoord: Int?,
     val emissiveTexture: Texture?,
+    val emissiveTextureCoord: Int?,
     val emissiveFactor: Color?,
     val alphaMode: AlphaMode?,
     val alphaCutoff: Float?,
@@ -620,10 +658,10 @@ private data class Gltf(
     )
 
     data class Sampler(
-        val magFilter: Int,
-        val minFilter: Int,
-        val wrapS: Int,
-        val wrapT: Int,
+        val magFilter: Int?,
+        val minFilter: Int?,
+        val wrapS: Int?,
+        val wrapT: Int?,
     )
 
     data class Scene(

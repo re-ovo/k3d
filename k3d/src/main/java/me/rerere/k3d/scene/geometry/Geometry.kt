@@ -1,6 +1,7 @@
 package me.rerere.k3d.scene.geometry
 
 import me.rerere.k3d.renderer.resource.Attribute
+import me.rerere.k3d.renderer.resource.DataType
 import me.rerere.k3d.renderer.resource.VertexArray
 import java.nio.Buffer
 
@@ -21,5 +22,9 @@ open class BufferGeometry {
 
     fun setIndices(indices: Buffer) {
         vao.setIndices(indices)
+    }
+
+    fun setIndiceType(type: DataType) {
+        vao.setIndiceType(type)
     }
 }

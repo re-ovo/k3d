@@ -23,7 +23,7 @@ class ShaderProcessor {
 
     private fun processShader(
         shader: String,
-        definition: List<MarcoDefinition>,
+        definition: Set<MarcoDefinition>,
         type: ShaderType
     ): String {
         val trimmed = StringBuilder(shader.trim())

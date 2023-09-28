@@ -7,6 +7,7 @@ import me.rerere.k3d.scene.geometry.BufferGeometry
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
+import java.nio.IntBuffer
 import kotlin.math.sqrt
 
 internal fun Attribute.readFloatData(count: Int): List<FloatArray> {
@@ -25,16 +26,30 @@ internal fun Attribute.readFloatData(count: Int): List<FloatArray> {
     }
 }
 
-internal fun BufferGeometry.readIndices(count: Int): IntArray {
+internal fun BufferGeometry.readIndices(count: Int, indiceType: DataType): IntArray {
     val indices = getIndices()
     return if (indices != null) {
-        val intBuffer = (indices as ByteBuffer).apply {
+        (indices as ByteBuffer).apply {
             rewind()
             order(ByteOrder.nativeOrder())
-        }.asIntBuffer()
-        val result = IntArray(count)
-        intBuffer.get(result)
-        result
+        }.let { buffer ->
+            when(indiceType) {
+                DataType.UNSIGNED_INT -> {
+                    val result = IntArray(count)
+                    buffer.asIntBuffer().get(result)
+                    result
+                }
+
+                DataType.UNSIGNED_SHORT -> {
+                    val result = ShortArray(count)
+                    buffer.asShortBuffer().get(result)
+                    result.map { it.toInt() }.toIntArray()
+                }
+
+                else -> error("Unsupported indice type: $indiceType")
+            }
+        }
+
     } else {
         IntArray(count) { it }
     }
@@ -47,7 +62,7 @@ internal fun BufferGeometry.computeTangent(vertCount: Int, indicesCount: Int) {
     val uvs =
         getAttribute(BuiltInAttributeName.TEXCOORD_NORMAL.attributeName)?.readFloatData(vertCount)
             ?: return
-    val indices = readIndices(indicesCount)
+    val indices = readIndices(indicesCount, vao.getIndiceType())
 
     require(indices.size % 3 == 0) { "Indices size must be a multiple of 3" }
     require(indices.all { it < vertCount }) { "Indices must be less than vertex count" }

@@ -35,6 +35,7 @@ class Attribute(
 internal class VertexArray {
     private val attributes = hashMapOf<String, Attribute>()
     private var indices: Buffer? = null
+    private var indiceType: DataType = DataType.UNSIGNED_INT
 
     fun setAttribute(name: String, attribute: Attribute) {
         attributes[name] = attribute
@@ -52,5 +53,13 @@ internal class VertexArray {
 
     fun getIndices(): Buffer? {
         return indices
+    }
+
+    fun setIndiceType(type: DataType) {
+        this.indiceType = type
+    }
+
+    fun getIndiceType(): DataType {
+        return indiceType
     }
 }

@@ -87,7 +87,9 @@ class GLES3Renderer : Renderer {
                 when (actor.material.alphaMode) {
                     AlphaMode.OPAQUE -> opaqueActors.add(actor)
                     AlphaMode.BLEND -> transparentActors.add(actor)
-                    AlphaMode.MASK -> TODO("Mask mode is not supported yet")
+                    AlphaMode.MASK -> transparentActors.add(actor).also {
+                        error("AlphaMode.MASK is not supported yet")
+                    }
                 }
             }
         }
@@ -179,7 +181,7 @@ class GLES3Renderer : Renderer {
                     GLES20.glDrawElements(
                         actor.mode.value,
                         actor.count,
-                        GLES30.GL_UNSIGNED_INT,
+                        actor.geometry.vao.getIndiceType().value,
                         0
                     )
                 }

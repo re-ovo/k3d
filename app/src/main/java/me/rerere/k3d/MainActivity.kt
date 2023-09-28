@@ -78,7 +78,7 @@ class MainActivity : ComponentActivity() {
         intensity = 1.9f,
         target = Vec3(0f, 0f, 0f)
     ).apply {
-        position.set(3f, 3f, 3f)
+        position.set(30f, 30f, 30f)
     }
     private val scene = Scene().apply {
         addChild(cube)
@@ -107,10 +107,10 @@ class MainActivity : ComponentActivity() {
                     actions = {
                         TextButton(
                             onClick = {
-                                val result = GltfLoader.load(
-                                    inputStream = assets.open("ship_in_a_bottle.glb")
+                                val result = GltfLoader(this@MainActivity).load(
+                                    inputStream = assets.open("used_new_balance_574_classic______free.glb")
                                 )
-                                // result.defaultScene.scale.set(0.1f, 0.1f, 0.1f)
+                                //result.defaultScene.scale.set(0.1f, 0.1f, 0.1f)
                                 scene.addChild(result.defaultScene)
                                 model = result.defaultScene
                             }

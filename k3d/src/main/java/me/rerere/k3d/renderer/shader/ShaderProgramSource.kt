@@ -5,7 +5,7 @@ import me.rerere.k3d.util.Dirty
 class ShaderProgramSource(
     vertexShader: String,
     fragmentShader: String,
-    marcoDefinitions: List<MarcoDefinition> = emptyList()
+    marcoDefinitions: Set<MarcoDefinition> = emptySet()
 ) : Dirty {
     var vertexShader: String = vertexShader
         set(value) {
@@ -17,21 +17,19 @@ class ShaderProgramSource(
             field = value
             markDirty()
         }
-    var marcoDefinitions: List<MarcoDefinition> = marcoDefinitions
-        set(value) {
-            field = value
-            markDirty()
-        }
+    private val _marcoDefinitions: MutableSet<MarcoDefinition> = marcoDefinitions.toMutableSet()
+    val marcoDefinitions: Set<MarcoDefinition> = _marcoDefinitions
 
     fun addMarcoDefinition(name: String, value: String? = null) {
-        if (marcoDefinitions.any { it.name == name }) {
-            removeMarcoDefinition(name)
-        }
-        marcoDefinitions = marcoDefinitions + MarcoDefinition(name, value)
+        _marcoDefinitions.add(MarcoDefinition(name, value))
+        markDirty()
     }
 
     fun removeMarcoDefinition(name: String) {
-        marcoDefinitions = marcoDefinitions.filter { it.name != name }
+        _marcoDefinitions.removeIf {
+            it.name == name
+        }
+        markDirty()
     }
 
     init {
@@ -50,7 +48,6 @@ class ShaderProgramSource(
 
         if (vertexShader != other.vertexShader) return false
         if (fragmentShader != other.fragmentShader) return false
-        if (marcoDefinitions != other.marcoDefinitions) return false
 
         return true
     }
@@ -58,15 +55,25 @@ class ShaderProgramSource(
     override fun hashCode(): Int {
         var result = vertexShader.hashCode()
         result = 31 * result + fragmentShader.hashCode()
-        result = 31 * result + marcoDefinitions.hashCode()
         return result
     }
 }
 
-data class MarcoDefinition(
+class MarcoDefinition(
     val name: String,
     val value: String? = null
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is MarcoDefinition) return false
+        if (name != other.name) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return name.hashCode()
+    }
+}
 
 enum class BuiltInAttributeName(val attributeName: String) {
     POSITION("a_pos"),
@@ -76,7 +83,7 @@ enum class BuiltInAttributeName(val attributeName: String) {
     TEXCOORD_METALLIC("a_texCoordMetallic"),
     TEXCOORD_ROUGHNESS("a_texCoordRoughness"),
     TEXCOORD_OCCLUSION("a_texCoordOcclusion"),
-    TEXCOORD_EMISIVE("a_texCoordEmisive"),
+    TEXCOORD_EMISSIVE("a_texCoordEmissive"),
     COLOR("a_color"), // vertex color
     TANGENT("a_tangent"),
     BITANGENT("a_bitangent")
@@ -101,13 +108,4 @@ enum class BuiltInUniformName(val uniformName: String) {
 
     CAMERA_POSITION("u_cameraPos"),
     ALPHA_CUTOFF("u_alphaCutoff"),
-}
-
-enum class BuiltInMacroDefinition(val macroName: String) {
-    USE_TEXTURE_BASE("USE_TEXTURE_BASE"),
-    USE_TEXTURE_NORMAL("USE_TEXTURE_NORMAL"),
-    USE_TEXTURE_METALLIC("USE_TEXTURE_METALLIC"),
-    USE_TEXTURE_ROUGHNESS("USE_TEXTURE_ROUGHNESS"),
-    USE_TEXTURE_OCCLUSION("USE_TEXTURE_OCCLUSION"),
-    USE_TEXTURE_EMISSIVE("USE_TEXTURE_EMISSIVE"),
 }

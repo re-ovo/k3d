@@ -16,7 +16,7 @@ import me.rerere.k3d.util.Color
  */
 typealias StandardMaterial = CookTorranceMaterial
 
-class CookTorranceMaterial : ShaderMaterial(programSource) {
+class CookTorranceMaterial : ShaderMaterial(programSource()) {
     var baseColor by color4fUniformOf(BuiltInUniformName.MATERIAL_COLOR, Color.fromRGBHex("#FFFFFF"))
     var baseColorTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_BASE)
 
@@ -34,165 +34,188 @@ class CookTorranceMaterial : ShaderMaterial(programSource) {
     var emissiveTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_EMISSIVE)
 }
 
-private val programSource = ShaderProgramSource(
-    vertexShader = """ 
-        in vec3 a_pos;
-        in vec3 a_normal;
-        in vec3 a_tangent;
-        in vec2 a_texCoordBase;
-        in vec2 a_texCoordNormal;
-        
-        out vec3 v_fragPos;
-        out vec3 v_normal;
-        out mat3 TBN;
-        
-        out vec2 v_texCoordBase;
-        out vec2 v_texCoordNormal;
-        
-        uniform mat4 u_modelMatrix;
-        uniform mat4 u_viewMatrix;
-        uniform mat4 u_projectionMatrix;
-        
-        void main() {
-            gl_Position = u_projectionMatrix * u_viewMatrix * u_modelMatrix * vec4(a_pos, 1.0);
-            
-            v_normal = mat3(transpose(inverse(u_modelMatrix))) * a_normal;
-            v_fragPos = vec3(u_modelMatrix * vec4(a_pos, 1.0));
-            
-            v_texCoordBase = a_texCoordBase;
-            v_texCoordNormal = a_texCoordNormal;
-            
-            // calculate TBN matrix for normal mapping
-            // assume the scale is equal in all directions
-            vec3 T = normalize(mat3(u_modelMatrix) * a_tangent);
-            vec3 N = normalize(mat3(u_modelMatrix) * a_normal);
-            T = normalize(T - dot(T, N) * N); // Gram-Schmidt
-            vec3 B = cross(N, T);
-            TBN = mat3(T, B, N);
-        }
-    """.trimIndent(),
-    fragmentShader = """
-        #include "light"
-        #include "cook_torrance_brdf"
-        
-        in vec3 v_normal;
-        in vec3 v_fragPos;
-        in mat3 TBN;
-        in vec2 v_texCoordBase;
-        in vec2 v_texCoordNormal;
-      
-        out vec4 fragColor;
-        
-        uniform sampler2D u_textureBase;
-        uniform sampler2D u_textureNormal;
-        uniform sampler2D u_textureMetallic;
-        uniform sampler2D u_textureRoughness;
-        uniform sampler2D u_textureOcclusion;
-        uniform sampler2D u_textureEmissive;
-        uniform vec3 u_cameraPos;
-        
-        uniform vec4 u_materialColor;
-        uniform float u_materialRoughness;
-        uniform float u_materialMetallic;
-        uniform vec3 u_materialEmissive;
-        
-        vec3 getNormal() {     
-            vec3 normalFromMap = texture(u_textureNormal, v_texCoordNormal).rgb;
-            normalFromMap = normalize(normalFromMap * 2.0 - 1.0);
-            vec3 normal = normalize(TBN * normalFromMap);
+private val programSource: () -> ShaderProgramSource = {
+    ShaderProgramSource(
+        vertexShader = """ 
+    in vec3 a_pos;
+    in vec3 a_normal;
+    in vec3 a_tangent;
     
-            return normal;
-        }
+    out vec3 v_fragPos;
+    out vec3 v_normal;
+    out mat3 TBN;
+    
+    uniform mat4 u_modelMatrix;
+    uniform mat4 u_viewMatrix;
+    uniform mat4 u_projectionMatrix;
+    
+    in vec2 a_texCoordBase;
+    in vec2 a_texCoordNormal;
+    in vec2 a_texCoordMetallic;
+    in vec2 a_texCoordRoughness;
+    in vec2 a_texCoordOcclusion;
+    in vec2 a_texCoordEmissive;
+    
+    out vec2 v_texCoordBase;
+    out vec2 v_texCoordNormal;
+    out vec2 v_texCoordMetallic;
+    out vec2 v_texCoordRoughness;
+    out vec2 v_texCoordOcclusion;
+    out vec2 v_texCoordEmissive;
+
+    void main() {
+        gl_Position = u_projectionMatrix * u_viewMatrix * u_modelMatrix * vec4(a_pos, 1.0);
         
-        vec3 toLinear(vec3 sRGB) {
-            bvec3 cutoff = lessThan(sRGB, vec3(0.04045));
-            vec3 higher = pow((sRGB + vec3(0.055))/vec3(1.055), vec3(2.4));
-            vec3 lower = sRGB/vec3(12.92);
-
-            return mix(higher, lower, cutoff);
-        }
+        v_normal = mat3(transpose(inverse(u_modelMatrix))) * a_normal;
+        v_fragPos = vec3(u_modelMatrix * vec4(a_pos, 1.0));
         
-        // Cook-Torrance BRDF
-        // L: light direction
-        // V: view direction
-        // N: normal
-        vec3 cookTorranceBRDF(vec3 L, vec3 V, vec3 N, vec3 albedo, float metallic, float roughness, vec3 lightColor, float lightIntensity) {
-            vec3 H = normalize(V + L); // half vector
-            vec3 F0 = vec3(0.04);
-            F0 = mix(F0, albedo, metallic);
-
-            // Fresnel
-            float cosTheta = dot(H, V);
-            vec3 F = fresnelSchlick(cosTheta, F0);
-
-            // Distribution
-            float D = distributionGGX(N, H, roughness);
-
-            // Geometry
-            float G = geometrySmith(N, V, L, roughness);
-
-            // Specular BRDF
-            vec3 numerator = D * G * F;
-            float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001;
-            vec3 specular = numerator / denominator;
-
-            // Diffuse BRDF
-            vec3 kS = F;
-            vec3 kD = vec3(1.0) - kS;
-            kD *= 1.0 - metallic;	  
-            vec3 diffuse = kD * albedo / 3.14159265358979323846;
-
-            return (diffuse + specular) * max(dot(N, L), 0.0) * lightColor * lightIntensity;
-        }
+        v_texCoordBase = a_texCoordBase;
+        v_texCoordNormal = a_texCoordNormal;
+        v_texCoordMetallic = a_texCoordMetallic;
+        v_texCoordRoughness = a_texCoordRoughness;
+        v_texCoordOcclusion = a_texCoordOcclusion;
+        v_texCoordEmissive = a_texCoordEmissive;
         
-        void main() {
-            vec3 albedo = u_materialColor.rgb;
-            float opacity = u_materialColor.a;
-            #ifdef HAS_TEXTURE_u_textureBase
-                albedo *= toLinear(texture(u_textureBase, v_texCoordBase).rgb);
-                opacity *= texture(u_textureBase, v_texCoordBase).a;
-            #endif
+        // calculate TBN matrix for normal mapping
+        // assume the scale is equal in all directions
+        vec3 T = normalize(mat3(u_modelMatrix) * a_tangent);
+        vec3 N = normalize(mat3(u_modelMatrix) * a_normal);
+        T = normalize(T - dot(T, N) * N); // Gram-Schmidt
+        vec3 B = cross(N, T);
+        TBN = mat3(T, B, N);
+    }
+""".trimIndent(),
+        fragmentShader = """
+    #include "light"
+    #include "cook_torrance_brdf"
+    
+    out vec4 fragColor;
+    
+    in vec3 v_normal;
+    in vec3 v_fragPos;
+    in mat3 TBN;
+    
+    in vec2 v_texCoordBase;
+    in vec2 v_texCoordNormal;
+    in vec2 v_texCoordMetallic;
+    in vec2 v_texCoordRoughness;
+    in vec2 v_texCoordOcclusion;
+    in vec2 v_texCoordEmissive;
+
+    uniform sampler2D u_textureBase;
+    uniform sampler2D u_textureNormal;
+    uniform sampler2D u_textureMetallic;
+    uniform sampler2D u_textureRoughness;
+    uniform sampler2D u_textureOcclusion;
+    uniform sampler2D u_textureEmissive;
+    uniform vec3 u_cameraPos;
+    
+    uniform vec4 u_materialColor;
+    uniform float u_materialRoughness;
+    uniform float u_materialMetallic;
+    uniform vec3 u_materialEmissive;
+    
+    vec3 getNormal() {     
+        vec3 normalFromMap = texture(u_textureNormal, v_texCoordNormal).rgb;
+        normalFromMap = normalize(normalFromMap * 2.0 - 1.0);
+        vec3 normal = normalize(TBN * normalFromMap);
+
+        return normal;
+    }
+    
+    vec3 toLinear(vec3 sRGB) {
+        bvec3 cutoff = lessThan(sRGB, vec3(0.04045));
+        vec3 higher = pow((sRGB + vec3(0.055))/vec3(1.055), vec3(2.4));
+        vec3 lower = sRGB/vec3(12.92);
+
+        return mix(higher, lower, cutoff);
+    }
+    
+    // Cook-Torrance BRDF
+    // L: light direction
+    // V: view direction
+    // N: normal
+    vec3 cookTorranceBRDF(vec3 L, vec3 V, vec3 N, vec3 albedo, float metallic, float roughness, vec3 lightColor, float lightIntensity) {
+        vec3 H = normalize(V + L); // half vector
+        vec3 F0 = vec3(0.04);
+        F0 = mix(F0, albedo, metallic);
+
+        // Fresnel
+        float cosTheta = dot(H, V);
+        vec3 F = fresnelSchlick(cosTheta, F0);
+
+        // Distribution
+        float D = distributionGGX(N, H, roughness);
+
+        // Geometry
+        float G = geometrySmith(N, V, L, roughness);
+
+        // Specular BRDF
+        vec3 numerator = D * G * F;
+        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001;
+        vec3 specular = numerator / denominator;
+
+        // Diffuse BRDF
+        vec3 kS = F;
+        vec3 kD = vec3(1.0) - kS;
+        kD *= 1.0 - metallic;	  
+        vec3 diffuse = kD * albedo / 3.14159265358979323846;
+
+        return (diffuse + specular) * max(dot(N, L), 0.0) * lightColor * lightIntensity;
+    }
+    
+    void main() {
+        vec3 albedo = u_materialColor.rgb;
+        float opacity = u_materialColor.a;
+        
+        #ifdef HAS_TEXTURE_u_textureBase
+            albedo *= toLinear(texture(u_textureBase, v_texCoordBase).rgb);
+            opacity *= texture(u_textureBase, v_texCoordBase).a;
+        #
+
+        #ifdef HAS_TEXTURE_u_textureNormal
+            vec3 normal = getNormal();
+        #else
+            vec3 normal = normalize(v_normal);
+        #endif
             
-            fragColor = vec4(albedo, opacity);
-            return;
-            
-            #ifdef HAS_TEXTURE_u_textureNormal
-                vec3 normal = getNormal();
-            #else
-                vec3 normal = normalize(v_normal);
-            #endif
-                
-            // ambient
-            vec3 ambient = ambientLight.color * ambientLight.intensity * albedo;
-            #ifdef HAS_TEXTURE_u_textureOcclusion
-                ambient *= texture(u_textureOcclusion, v_texCoordBase).r;
-            #endif
-            
-            // directional light
-            vec3 lightDir = -normalize(directionalLight.target - directionalLight.position);
-            vec3 viewDir = -normalize(v_fragPos - u_cameraPos);
-            float roughness = u_materialRoughness;
-            #ifdef HAS_TEXTURE_u_textureRoughness
-                roughness *= texture(u_textureRoughness, v_texCoordBase).g;
-            #endif
-            float metallic = u_materialMetallic;
-            #ifdef HAS_TEXTURE_u_textureMetallic
-                metallic *= texture(u_textureMetallic, v_texCoordBase).b;
-            #endif
-            vec3 cookTorrance = cookTorranceBRDF(lightDir, viewDir, normal, albedo, metallic, roughness, directionalLight.color, directionalLight.intensity);
-            
-            // combine results
-            vec3 result = (ambient + cookTorrance + u_materialEmissive);
-            #ifdef HAS_TEXTURE_u_textureEmissive
-                result += toLinear(texture(u_textureEmissive, v_texCoordBase).rgb);
-            #endif
-            fragColor = vec4(result, opacity);
-            
-            // HDR tone mapping
-            fragColor.rgb = fragColor.rgb / (fragColor.rgb + vec3(1.0));
-            
-            // Gamma correction (2.2)
-            fragColor.rgb = pow(fragColor.rgb, vec3(1.0/2.2));
-        }
-    """.trimIndent()
-)
+        // ambient
+        vec3 ambient = ambientLight.color * ambientLight.intensity * albedo;
+        #ifdef HAS_TEXTURE_u_textureOcclusion
+            ambient *= texture(u_textureOcclusion, v_texCoordOcclusion).r;
+        #endif
+        
+        // directional light
+        vec3 lightDir = -normalize(directionalLight.target - directionalLight.position);
+        vec3 viewDir = -normalize(v_fragPos - u_cameraPos);
+        float roughness = u_materialRoughness;
+        #ifdef HAS_TEXTURE_u_textureRoughness
+            roughness *= texture(u_textureRoughness, v_texCoordRoughness).g;
+        #endif
+        float metallic = u_materialMetallic;
+        #ifdef HAS_TEXTURE_u_textureMetallic
+            metallic *= texture(u_textureMetallic, v_texCoordMetallic).b;
+        #endif
+        vec3 cookTorrance = cookTorranceBRDF(lightDir, viewDir, normal, albedo, metallic, roughness, directionalLight.color, directionalLight.intensity);
+        
+        // combine results
+        vec3 result = (ambient + cookTorrance);
+        
+        // emissive
+        #ifdef HAS_TEXTURE_u_textureEmissive
+            result += toLinear(texture(u_textureEmissive, v_texCoordEmissive).rgb) * u_materialEmissive;
+        #else
+            result += u_materialEmissive;
+        #endif
+        
+        fragColor = vec4(result, opacity);
+        
+        // HDR tone mapping
+        fragColor.rgb = fragColor.rgb / (fragColor.rgb + vec3(1.0));
+        
+        // Gamma correction (2.2)
+        fragColor.rgb = pow(fragColor.rgb, vec3(1.0/2.2));
+    }
+""".trimIndent()
+    )
+}

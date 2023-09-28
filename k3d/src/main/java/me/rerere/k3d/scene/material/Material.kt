@@ -30,6 +30,7 @@ open class ShaderMaterial(
     val uniforms: MutableMap<String, Uniform> = mutableMapOf(),
     val textures: MutableMap<String, Texture> = mutableMapOf()
 ) {
+    var name = ""
     var alphaMode = AlphaMode.OPAQUE
     var alphaCutoff by floatUniformOf(BuiltInUniformName.ALPHA_CUTOFF, 0.5f)
     var doubleSided = false
