@@ -171,7 +171,7 @@ private val programSource: () -> ShaderProgramSource = {
         #ifdef HAS_TEXTURE_u_textureBase
             albedo *= toLinear(texture(u_textureBase, v_texCoordBase).rgb);
             opacity *= texture(u_textureBase, v_texCoordBase).a;
-        #
+        #endif 
 
         #ifdef HAS_TEXTURE_u_textureNormal
             vec3 normal = getNormal();

@@ -3,10 +3,9 @@ package me.rerere.k3d.loader
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.opengl.GLUtils
 import com.google.gson.JsonObject
-import com.google.gson.JsonParseException
 import com.google.gson.JsonParser
+import com.google.gson.annotations.SerializedName
 import me.rerere.k3d.renderer.resource.Attribute
 import me.rerere.k3d.renderer.resource.DataType
 import me.rerere.k3d.renderer.resource.DrawMode
@@ -19,10 +18,8 @@ import me.rerere.k3d.scene.actor.Mesh
 import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.geometry.BufferGeometry
 import me.rerere.k3d.scene.material.AlphaMode
-import me.rerere.k3d.scene.material.CookTorranceMaterial
 import me.rerere.k3d.scene.material.StandardMaterial
 import me.rerere.k3d.util.Color
-import me.rerere.k3d.util.computeTangent
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.math.transform.setModelMatrix
 import java.io.DataInputStream
@@ -38,9 +35,12 @@ private const val GLB_VERSION = 0x02000000 // 2.0
 /**
  * glTF Loader
  *
- * It only supports glTF 2.0
+ * Note that it only supports glTF 2.0
  *
  * [glTF 2.0 Specification](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html)
+ *
+ * Supported extensions:
+ * - [KHR_materials_pbrSpecularGlossiness](https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Archived/KHR_materials_pbrSpecularGlossiness): support `diffuseTexture` only
  */
 @OptIn(ExperimentalStdlibApi::class)
 class GltfLoader(private val context: Context) {
@@ -410,38 +410,51 @@ class GltfLoader(private val context: Context) {
     }
 
     private fun materialOf(gltf: Gltf, buffers: List<ByteBuffer>, index: Int): Material {
-        val material = gltf.materials[index]
-
-        return Material(
-            name = material.name ?: "",
-            alphaMode = material.alphaMode ?: AlphaMode.OPAQUE,
-            alphaCutoff = material.alphaCutoff ?: 0.5f,
-            doubleSided = material.doubleSided ?: false,
-            baseColorFactor = material.pbrMetallicRoughness?.baseColorFactor,
-            baseColorTexture = material.pbrMetallicRoughness?.baseColorTexture?.let {
+        val materialData = gltf.materials[index]
+        val material = Material(
+            name = materialData.name ?: "",
+            alphaMode = materialData.alphaMode ?: AlphaMode.OPAQUE,
+            alphaCutoff = materialData.alphaCutoff ?: 0.5f,
+            doubleSided = materialData.doubleSided ?: false,
+            baseColorFactor = materialData.pbrMetallicRoughness?.baseColorFactor,
+            baseColorTexture = materialData.pbrMetallicRoughness?.baseColorTexture?.let {
                 textureOf(gltf, buffers, it.index)
             },
-            baseColorTextureCoord = material.pbrMetallicRoughness?.baseColorTexture?.texCoord,
-            metallicFactor = material.pbrMetallicRoughness?.metallicFactor ?: 1f,
-            roughnessFactor = material.pbrMetallicRoughness?.roughnessFactor ?: 1f,
-            metallicRoughnessTexture = material.pbrMetallicRoughness?.metallicRoughnessTexture?.let {
+            baseColorTextureCoord = materialData.pbrMetallicRoughness?.baseColorTexture?.texCoord,
+            metallicFactor = materialData.pbrMetallicRoughness?.metallicFactor ?: 1f,
+            roughnessFactor = materialData.pbrMetallicRoughness?.roughnessFactor ?: 1f,
+            metallicRoughnessTexture = materialData.pbrMetallicRoughness?.metallicRoughnessTexture?.let {
                 textureOf(gltf, buffers, it.index)
             },
-            metallicRoughnessTextureCoord = material.pbrMetallicRoughness?.metallicRoughnessTexture?.texCoord,
-            normalTexture = material.normalTexture?.let {
+            metallicRoughnessTextureCoord = materialData.pbrMetallicRoughness?.metallicRoughnessTexture?.texCoord,
+            normalTexture = materialData.normalTexture?.let {
                 textureOf(gltf, buffers, it.index)
             },
-            normalTextureCoord = material.normalTexture?.texCoord,
-            occlusionTexture = material.occlusionTexture?.let {
+            normalTextureCoord = materialData.normalTexture?.texCoord,
+            occlusionTexture = materialData.occlusionTexture?.let {
                 textureOf(gltf, buffers, it.index)
             },
-            occulsionTextureCoord = material.occlusionTexture?.texCoord,
-            emissiveFactor = material.emissiveFactor ?: Color.black(),
-            emissiveTexture = material.emissiveTexture?.let {
+            occulsionTextureCoord = materialData.occlusionTexture?.texCoord,
+            emissiveFactor = materialData.emissiveFactor ?: Color.black(),
+            emissiveTexture = materialData.emissiveTexture?.let {
                 textureOf(gltf, buffers, it.index)
             },
-            emissiveTextureCoord = material.emissiveTexture?.texCoord,
+            emissiveTextureCoord = materialData.emissiveTexture?.texCoord,
         )
+
+        materialData.extensions?.let { extensions ->
+            extensions.pbrSpecularGlossiness?.let { pbrSpecularGlossiness ->
+                pbrSpecularGlossiness.diffuseTexture?.let { textureInfo ->
+                    material.baseColorTexture = textureOf(gltf, buffers, textureInfo.index)
+                    material.baseColorTextureCoord = textureInfo.texCoord
+                }
+                pbrSpecularGlossiness.diffuseFactor?.let { factor ->
+                    material.baseColorFactor = factor
+                }
+            }
+        }
+
+        return material
     }
 
     private fun textureOf(gltf: Gltf, buffers: List<ByteBuffer>, index: Int): Texture {
@@ -533,9 +546,9 @@ private data class Accessor(
 
 private data class Material(
     val name: String,
-    val baseColorFactor: Color?,
-    val baseColorTexture: Texture?,
-    val baseColorTextureCoord: Int?,
+    var baseColorFactor: Color?,
+    var baseColorTexture: Texture?,
+    var baseColorTextureCoord: Int?,
     val metallicFactor: Float?,
     val roughnessFactor: Float?,
     val metallicRoughnessTexture: Texture?,
@@ -573,6 +586,7 @@ private data class Gltf(
     val scene: Int,
     val scenes: List<Scene>,
     val textures: List<Texture>,
+    val extensionsUsed: List<String>,
 ) {
     data class Accessor(
         val bufferView: Int,
@@ -621,6 +635,7 @@ private data class Gltf(
         val alphaMode: AlphaMode?,
         val alphaCutoff: Float?,
         val doubleSided: Boolean?,
+        val extensions: MaterialExtensions?,
     )
 
     data class MaterialPbrMetallicRoughness(
@@ -673,5 +688,20 @@ private data class Gltf(
         val name: String?,
         val sampler: Int,
         val source: Int,
+    )
+
+    // Material Extension
+    data class MaterialExtensions(
+        @SerializedName("KHR_materials_pbrSpecularGlossiness")
+        val pbrSpecularGlossiness: ExtMaterialPbrSpecularGlossiness?,
+    )
+
+    // Extension: KHR_materials_pbrSpecularGlossiness
+    data class ExtMaterialPbrSpecularGlossiness(
+        val diffuseFactor: Color?,
+        val diffuseTexture: TextureInfo?,
+        val glossinessFactor: Float?,
+        val specularFactor: Color?,
+        val specularGlossinessTexture: TextureInfo?,
     )
 }
