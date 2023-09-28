@@ -2,8 +2,10 @@ package me.rerere.k3d.renderer
 
 import android.opengl.GLES20
 import android.opengl.GLES30
+import android.opengl.GLES31
 import android.opengl.GLUtils
 import me.rerere.k3d.renderer.resource.Attribute
+import me.rerere.k3d.renderer.resource.DrawMode
 import me.rerere.k3d.renderer.resource.Texture
 import me.rerere.k3d.renderer.resource.Uniform
 import me.rerere.k3d.renderer.resource.VertexArray
@@ -57,15 +59,15 @@ class GLES3Renderer : Renderer {
     private val cameraPositionUniform = Uniform.Vec3f(Vec3(0f, 0f, 0f))
 
     override fun render(scene: Scene, camera: Camera) {
-        GLES30.glClearColor(0f, 0f, 0f, 0f)
-        GLES30.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
+        GLES20.glClearColor(0f, 0f, 0f, 0f)
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
 
-        GLES30.glViewport(0, 0, viewportSize.width, viewportSize.height)
+        GLES20.glViewport(0, 0, viewportSize.width, viewportSize.height)
 
-        GLES30.glEnable(GLES30.GL_DEPTH_TEST)
-        GLES30.glEnable(GLES30.GL_CULL_FACE)
-        GLES30.glEnable(GLES30.GL_BLEND)
-        GLES30.glBlendFunc(GLES30.GL_SRC_ALPHA, GLES30.GL_ONE_MINUS_SRC_ALPHA)
+        GLES20.glEnable(GLES30.GL_BLEND)
+        GLES20.glBlendFunc(GLES30.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
+
+        GLES20.glEnable(GLES20.GL_DEPTH_TEST)
 
         if (camera.dirty) {
             camera.updateMatrix()
@@ -96,13 +98,21 @@ class GLES3Renderer : Renderer {
         }
 
         // render transparent actors
+        GLES20.glDepthMask(false)
         transparentActors.forEach { actor ->
             renderPrimitive(actor, camera, scene)
         }
+        GLES20.glDepthMask(true)
     }
 
     private fun renderPrimitive(actor: Primitive, camera: Camera, scene: Scene) {
-        // GLES20.glDepthMask(actor.material.alphaMode == AlphaMode.OPAQUE)
+        // TODO: Fix double sided
+        // https://sketchfab.com/3d-models/ship-in-a-bottle-9ddbc5b32da94bafbfdb56e1f6be9a38
+        if(actor.material.doubleSided) {
+            GLES20.glDisable(GLES20.GL_CULL_FACE)
+        } else {
+            GLES20.glEnable(GLES20.GL_CULL_FACE)
+        }
 
         resourceManager.useProgram(actor.material.program) {
             // Apply uniforms
@@ -160,13 +170,13 @@ class GLES3Renderer : Renderer {
 
             resourceManager.useVertexArray(this, actor.geometry.vao) {
                 if (actor.geometry.getIndices() == null) {
-                    GLES30.glDrawArrays(
+                    GLES20.glDrawArrays(
                         actor.mode.value,
                         0,
                         actor.count
                     )
                 } else {
-                    GLES30.glDrawElements(
+                    GLES20.glDrawElements(
                         actor.mode.value,
                         actor.count,
                         GLES30.GL_UNSIGNED_INT,

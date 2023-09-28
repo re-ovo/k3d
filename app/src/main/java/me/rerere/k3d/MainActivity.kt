@@ -1,6 +1,7 @@
 package me.rerere.k3d
 
 import android.content.Context
+import android.graphics.PixelFormat
 import android.opengl.GLSurfaceView
 import android.os.Bundle
 import android.util.AttributeSet
@@ -47,7 +48,7 @@ import kotlin.time.TimeSource
 class MainActivity : ComponentActivity() {
     private val render = GLES3Renderer()
     private val camera = PerspectiveCamera().apply {
-        position.set(0f, 50f, 5f)
+        position.set(0f, 5f, 5f)
     }
     private val cubeMaterial = CookTorranceMaterial().apply {
         baseColor = Color(1f, 0f, 0f)
@@ -107,9 +108,9 @@ class MainActivity : ComponentActivity() {
                         TextButton(
                             onClick = {
                                 val result = GltfLoader.load(
-                                    inputStream = assets.open("sofa_combination.glb")
+                                    inputStream = assets.open("ship_in_a_bottle.glb")
                                 )
-                                result.defaultScene.scale.set(0.5f, 0.5f, 0.5f)
+                                // result.defaultScene.scale.set(0.1f, 0.1f, 0.1f)
                                 scene.addChild(result.defaultScene)
                                 model = result.defaultScene
                             }

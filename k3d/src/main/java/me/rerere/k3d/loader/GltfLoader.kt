@@ -263,6 +263,7 @@ object GltfLoader {
             val material = CookTorranceMaterial().apply {
                 alphaMode = materialData?.alphaMode ?: AlphaMode.OPAQUE
                 alphaCutoff = materialData?.alphaCutoff ?: 0.5f
+                doubleSided = materialData?.doubleSided ?: false
 
                 baseColor = materialData?.baseColorFactor ?: Color.white()
                 baseColorTexture = materialData?.baseColorTexture?.toTexture2d()

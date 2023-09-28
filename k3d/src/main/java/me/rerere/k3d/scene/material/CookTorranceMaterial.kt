@@ -153,6 +153,9 @@ private val programSource = ShaderProgramSource(
                 opacity *= texture(u_textureBase, v_texCoordBase).a;
             #endif
             
+            fragColor = vec4(albedo, opacity);
+            return;
+            
             #ifdef HAS_TEXTURE_u_textureNormal
                 vec3 normal = getNormal();
             #else
