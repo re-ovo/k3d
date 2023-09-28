@@ -108,4 +108,5 @@ enum class BuiltInUniformName(val uniformName: String) {
 
     CAMERA_POSITION("u_cameraPos"),
     ALPHA_CUTOFF("u_alphaCutoff"),
+    POINT_SIZE("u_pointSize"),
 }

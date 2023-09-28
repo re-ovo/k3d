@@ -29,7 +29,9 @@ import me.rerere.k3d.renderer.GLES3Renderer
 import me.rerere.k3d.renderer.GLESAutoConfigChooser
 import me.rerere.k3d.renderer.ViewportSize
 import me.rerere.k3d.renderer.resource.Uniform
+import me.rerere.k3d.renderer.shader.BuiltInAttributeName
 import me.rerere.k3d.scene.actor.Mesh
+import me.rerere.k3d.scene.actor.Point
 import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.camera.PerspectiveCamera
 import me.rerere.k3d.scene.geometry.CubeGeometry
@@ -41,6 +43,7 @@ import me.rerere.k3d.util.Color
 import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.rotation.Euler
 import me.rerere.k3d.util.math.rotation.toRadian
+import me.rerere.k3d.util.toFloatBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlin.time.TimeSource

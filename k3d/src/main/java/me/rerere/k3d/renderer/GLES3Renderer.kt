@@ -486,12 +486,14 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
         GLES30.glBindVertexArray(vao)
         vertexArray.getAttributes().forEach { (_, attribute) ->
             attribute.cleanIfDirty { // update attribute buffer if dirty
+                println("[K3D:Resource] update attribute buffer: $attribute")
                 val vbo = vertexArraysAttributesBuffer[attribute] ?: return@forEach
                 GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vbo)
+                attribute.data.rewind()
                 GLES30.glBufferSubData(
                     GLES30.GL_ARRAY_BUFFER,
                     0,
-                    attribute.data.capacity() * attribute.type.size,
+                    attribute.data.sizeInBytes(),
                     attribute.data,
                 )
             }

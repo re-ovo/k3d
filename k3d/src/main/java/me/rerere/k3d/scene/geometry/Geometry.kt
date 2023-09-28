@@ -3,6 +3,7 @@ package me.rerere.k3d.scene.geometry
 import me.rerere.k3d.renderer.resource.Attribute
 import me.rerere.k3d.renderer.resource.DataType
 import me.rerere.k3d.renderer.resource.VertexArray
+import me.rerere.k3d.renderer.shader.BuiltInAttributeName
 import java.nio.Buffer
 
 open class BufferGeometry {
@@ -14,6 +15,10 @@ open class BufferGeometry {
 
     fun getAttribute(name: String): Attribute? {
         return vao.getAttribute(name)
+    }
+
+    fun getAttribute(attr: BuiltInAttributeName): Attribute? {
+        return vao.getAttribute(attr.attributeName)
     }
 
     fun getIndices(): Buffer? {
