@@ -10,8 +10,6 @@ import java.nio.ByteBuffer
  * @property itemSize The size of each item in this attribute
  * @property type The data type of this attribute
  * @property normalized Whether the data should be normalized
- * @property stride The stride of this attribute
- * @property offset The offset of this attribute
  * @property count The count of elements in this attribute, not to be confused with the number of
  *                 bytes or number of components. For example, if itemSize is 3 (triangle), then count will be
  *                 the number of triangles.
@@ -22,14 +20,12 @@ class Attribute(
     val type: DataType,
     val normalized: Boolean,
     val count: Int,
-    val stride: Int = 0,
-    val offset: Int = 0,
     val data: ByteBuffer
 ) : Dirty {
     override var dirty: Boolean = false
 
     override fun toString(): String {
-        return "Attribute(itemSize=$itemSize, type=$type, normalized=$normalized, count=$count, stride=$stride, offset=$offset, data=$data)"
+        return "Attribute(itemSize=$itemSize, type=$type, normalized=$normalized, count=$count, data=$data)"
     }
 }
 

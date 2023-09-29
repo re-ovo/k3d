@@ -11,9 +11,7 @@ import java.nio.IntBuffer
 import kotlin.math.sqrt
 
 internal fun Attribute.readFloatData(count: Int): List<FloatArray> {
-    val floatBuffer =
-        ((data as ByteBuffer).position(offset) as ByteBuffer)
-            .slice()
+    val floatBuffer = data
             .order(ByteOrder.nativeOrder())
             .asFloatBuffer()
     val itemSize = itemSize
@@ -111,9 +109,7 @@ internal fun BufferGeometry.computeTangent(vertCount: Int, indicesCount: Int) {
         BuiltInAttributeName.TANGENT.attributeName, Attribute(
             itemSize = 3,
             data = tangentData.toByteBuffer(),
-            offset = 0,
             normalized = false,
-            stride = 0,
             type = DataType.FLOAT,
             count = vertCount
         )

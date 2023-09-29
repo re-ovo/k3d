@@ -523,8 +523,8 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
                         attribute.itemSize,
                         attribute.type.value,
                         attribute.normalized,
-                        attribute.stride,
-                        attribute.offset
+                        0,
+                        0
                     )
                 } else {
                     println("location not found for $name")

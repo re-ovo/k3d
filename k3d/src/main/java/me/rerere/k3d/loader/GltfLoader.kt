@@ -382,16 +382,22 @@ class GltfLoader(private val context: Context) {
         }
 
         val buffer = bufferView.buffer.sliceSafely(
-            start = bufferView.byteOffset, end = bufferView.byteOffset + bufferView.byteLength
+            start = bufferView.byteOffset + this.byteOffset,
+            end = bufferView.byteOffset + bufferView.byteLength
         )
+
+        val itemSize = gltfAccessorItemSizeOf(type)
+        val dataType = gltfAccessorComponentTypeToDataType(componentType)
+
+        require(bufferView.byteStride == itemSize * dataType.size) {
+            "BufferView byteStride != itemSize * dataType.size, this is not supported"
+        }
 
         return name to Attribute(
             data = buffer,
-            itemSize = gltfAccessorItemSizeOf(type),
-            type = gltfAccessorComponentTypeToDataType(componentType),
+            itemSize = itemSize,
+            type = dataType,
             normalized = false,
-            stride = bufferView.byteStride,
-            offset = byteOffset,
             count = count,
         )
     }
