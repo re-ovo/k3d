@@ -5,6 +5,7 @@ import me.rerere.k3d.util.Color
 class PointLight(
     intensity: Float = 1f,
     color: Color,
-    val distance: Float = 0f,
-    val decay: Float = 2f
+    var constant: Float = 1f,
+    var linear: Float = 0.09f,
+    var quadratic: Float = 0.032f
 ) : Light(intensity, color)

@@ -41,7 +41,7 @@ class ShaderProcessor {
 
         // Add precision
         if (type == ShaderType.FRAGMENT_SHADER && lines.none { it.startsWith("precision ") }) {
-            header.append("precision mediump float;\n")
+            header.append("precision mediump float;\n\n")
         }
 
         // Add marco definitions
@@ -52,6 +52,7 @@ class ShaderProcessor {
             }
             header.append("\n")
         }
+        header.append("\n")
 
         // Add includes
         lines.forEach {
@@ -62,7 +63,7 @@ class ShaderProcessor {
                     "Include $includeName not found"
                 }
                 header.append(include)
-                header.append("\n")
+                header.append("\n\n")
 
                 // Remove the include line
                 trimmed.deleteRange(

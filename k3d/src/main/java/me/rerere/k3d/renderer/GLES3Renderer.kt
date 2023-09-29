@@ -109,13 +109,16 @@ class GLES3Renderer : Renderer {
     }
 
     private fun renderPrimitive(actor: Primitive, camera: Camera, scene: Scene) {
-        if(actor.material.doubleSided) {
+        if (actor.material.doubleSided) {
             GLES20.glDisable(GLES20.GL_CULL_FACE)
         } else {
             GLES20.glEnable(GLES20.GL_CULL_FACE)
         }
 
         resourceManager.useProgram(actor.material.program) {
+            // Apply Lights
+            resourceManager.useLights(this, scene)
+
             // Apply uniforms
             actor.material.uniforms.forEach { (name, uniform) ->
                 resourceManager.useUniform(actor.material.program, uniform, name)
@@ -154,9 +157,6 @@ class GLES3Renderer : Renderer {
                 },
                 BuiltInUniformName.CAMERA_POSITION.uniformName
             )
-
-            // Apply Lights
-            resourceManager.useLights(this, scene)
 
             // Apply textures
             actor.material.textures.entries.forEachIndexed { index, mutableEntry ->
@@ -348,8 +348,81 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
             }
         }
 
+        // point light
         val pointLights = scene.lights.filterIsInstance<PointLight>()
+        uniformLocationOf(programId, "pointLightCount") {
+            GLES30.glUniform1i(it, pointLights.size)
+        }
+        if(pointLights.isNotEmpty()) {
+            pointLights.forEachIndexed { index, t ->
+                require(index < 4) { "Point light count must be less than 4" }
+
+                uniformLocationOf(programId, "pointLight[$index].position") {
+                    GLES30.glUniform3f(
+                        it,
+                        t.position.x,
+                        t.position.y,
+                        t.position.z
+                    )
+                }
+                uniformLocationOf(programId, "pointLight[$index].color") {
+                    GLES30.glUniform3f(it, t.color.r, t.color.g, t.color.b)
+                }
+                uniformLocationOf(programId, "pointLight[$index].intensity") {
+                    GLES30.glUniform1f(it, t.intensity)
+                }
+                uniformLocationOf(programId, "pointLight[$index].constant") {
+                    GLES30.glUniform1f(it, t.constant)
+                }
+                uniformLocationOf(programId, "pointLight[$index].linear") {
+                    GLES30.glUniform1f(it, t.linear)
+                }
+                uniformLocationOf(programId, "pointLight[$index].quadratic") {
+                    GLES30.glUniform1f(it, t.quadratic)
+                }
+            }
+        }
+
+        // spot light
         val spotLights = scene.lights.filterIsInstance<SpotLight>()
+        uniformLocationOf(programId, "spotLightCount") {
+            GLES30.glUniform1i(it, spotLights.size)
+        }
+        if(spotLights.isNotEmpty()) {
+            spotLights.forEachIndexed { index, t ->
+                require(index < 4) { "Spot light count must be less than 4" }
+
+                uniformLocationOf(programId, "spotLight[$index].position") {
+                    GLES30.glUniform3f(
+                        it,
+                        t.position.x,
+                        t.position.y,
+                        t.position.z
+                    )
+                }
+                uniformLocationOf(programId, "spotLight[$index].target") {
+                    GLES30.glUniform3f(it, t.target.x, t.target.y, t.target.z)
+                }
+                uniformLocationOf(programId, "spotLight[$index].color") {
+                    GLES30.glUniform3f(it, t.color.r, t.color.g, t.color.b)
+                }
+                uniformLocationOf(programId, "spotLight[$index].intensity") {
+                    GLES30.glUniform1f(it, t.intensity)
+                }
+                uniformLocationOf(programId, "spotLight[$index].distance") {
+                    GLES30.glUniform1f(it, t.distance)
+                }
+                uniformLocationOf(programId, "spotLight[$index].decay") {
+                    GLES30.glUniform1f(it, t.decay)
+                }
+                uniformLocationOf(programId, "spotLight[$index].angle") {
+                    GLES30.glUniform1f(it, t.angle)
+                }
+                uniformLocationOf(programId, "spotLight[$index].penumbra") {
+                    GLES30.glUniform1f(it, t.penumbra)
+                }
+            }
+        }
     }
 
     private inline fun uniformLocationOf(programId: Int, name: String, scope: (Int) -> Unit) {
@@ -362,8 +435,6 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
     fun createProgram(program: ShaderProgramSource): Result<Int> = runCatching {
         require(!programs.containsKey(program)) { "Program already exists" }
         val programProcessResult = shaderProcessor.process(program)
-        // println(programProcessResult.vertexShader)
-        // println(programProcessResult.fragmentShader)
         val vertexShader = createShader(GLES20.GL_VERTEX_SHADER, programProcessResult.vertexShader)
             .getOrThrow()
         val fragmentShader =
@@ -371,6 +442,9 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
                 .getOrThrow()
         val programId = createProgram(vertexShader, fragmentShader)
             .getOrThrow()
+        // println(programProcessResult.vertexShader)
+        println(programProcessResult.fragmentShader)
+        println("ID: $programId")
         programs[program] = programId
         programId
     }

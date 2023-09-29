@@ -168,26 +168,20 @@ private val programSource: () -> ShaderProgramSource = {
         vec3 albedo = u_materialColor.rgb;
         float opacity = u_materialColor.a;
         
+        // texture base
         #ifdef HAS_TEXTURE_u_textureBase
             albedo *= toLinear(texture(u_textureBase, v_texCoordBase).rgb);
             opacity *= texture(u_textureBase, v_texCoordBase).a;
         #endif 
 
+        // normal
         #ifdef HAS_TEXTURE_u_textureNormal
             vec3 normal = getNormal();
         #else
             vec3 normal = normalize(v_normal);
         #endif
-            
-        // ambient
-        vec3 ambient = ambientLight.color * ambientLight.intensity * albedo;
-        #ifdef HAS_TEXTURE_u_textureOcclusion
-            ambient *= texture(u_textureOcclusion, v_texCoordOcclusion).r;
-        #endif
         
-        // directional light
-        vec3 lightDir = -normalize(directionalLight.target - directionalLight.position);
-        vec3 viewDir = -normalize(v_fragPos - u_cameraPos);
+        // roughness & metallic
         float roughness = u_materialRoughness;
         #ifdef HAS_TEXTURE_u_textureRoughness
             roughness *= texture(u_textureRoughness, v_texCoordRoughness).g;
@@ -196,10 +190,40 @@ private val programSource: () -> ShaderProgramSource = {
         #ifdef HAS_TEXTURE_u_textureMetallic
             metallic *= texture(u_textureMetallic, v_texCoordMetallic).b;
         #endif
-        vec3 cookTorrance = cookTorranceBRDF(lightDir, viewDir, normal, albedo, metallic, roughness, directionalLight.color, directionalLight.intensity);
+       
+        // ambient
+        vec3 ambient = ambientLight.color * ambientLight.intensity * albedo;
+        #ifdef HAS_TEXTURE_u_textureOcclusion
+            ambient *= texture(u_textureOcclusion, v_texCoordOcclusion).r;
+        #endif
         
-        // combine results
-        vec3 result = (ambient + cookTorrance);
+        vec3 lighting = vec3(0.0);
+        
+        // directional light
+        {
+            vec3 lightDir = -normalize(directionalLight.target - directionalLight.position);
+            vec3 viewDir = -normalize(v_fragPos - u_cameraPos);
+            vec3 cookTorrance = cookTorranceBRDF(lightDir, viewDir, normal, albedo, metallic, roughness, directionalLight.color, directionalLight.intensity);
+            lighting += max(cookTorrance, vec3(0.0));
+        }
+        
+        // point light
+        {
+            for(int i = 0; i < pointLightCount; i++) {
+                vec3 lightDir = -normalize(v_fragPos - pointLight[i].position);
+                vec3 viewDir = -normalize(v_fragPos - u_cameraPos);
+                
+                float distance = length(v_fragPos - pointLight[i].position);
+                float attenuation = 1.0 / (pointLight[i].constant + pointLight[i].linear * distance + pointLight[i].quadratic * distance * distance);
+                float intensity = pointLight[i].intensity * attenuation;
+                
+                vec3 cookTorrance = cookTorranceBRDF(lightDir, viewDir, normal, albedo, metallic, roughness, pointLight[i].color, intensity);
+                lighting += max(cookTorrance, vec3(0.0));
+            }
+        }
+        
+        // combine
+        vec3 result = ambient + lighting;
         
         // emissive
         #ifdef HAS_TEXTURE_u_textureEmissive

@@ -18,8 +18,9 @@ struct PointLight {
     vec3 position;
     vec3 color;
     float intensity;
-    float distance;
-    float decay;
+    float constant;
+    float linear;
+    float quadratic;
 };
 
 struct SpotLight {

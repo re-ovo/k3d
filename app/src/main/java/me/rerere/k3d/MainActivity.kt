@@ -37,6 +37,7 @@ import me.rerere.k3d.scene.geometry.CubeGeometry
 import me.rerere.k3d.scene.geometry.PlaneGeometry
 import me.rerere.k3d.scene.light.AmbientLight
 import me.rerere.k3d.scene.light.DirectionalLight
+import me.rerere.k3d.scene.light.PointLight
 import me.rerere.k3d.scene.material.BlinnPhongMaterial
 import me.rerere.k3d.scene.material.StandardMaterial
 import me.rerere.k3d.ui.theme.K3dTheme
@@ -53,31 +54,12 @@ class MainActivity : ComponentActivity() {
         position.set(0f, 5f, 5f)
     }
 
-    private val cubeMaterial = StandardMaterial().apply {
-        baseColor = Color.white()
-    }
-    private val cube = Mesh(
-        geometry = CubeGeometry(
-            depth = 1f,
-            height = 1f,
-            width = 1f
-        ),
-        material = cubeMaterial,
-        count = 36
-    ).apply {
-        // position.set(3f, 3f, 3f)
-        position.set(0f, 0f, 0f)
-        rotation.set(Euler(0f, 10f.toRadian(), 0f).toQuaternion())
-    }
-
-    private val groundPlane = Mesh(
-        geometry = PlaneGeometry(
-            height = 3f,
-            width = 3f
-        ),
+    private val plane = Mesh(
+        geometry = PlaneGeometry(5f, 5f),
         material = StandardMaterial().apply {
-            baseColor = Color.white()
-            // doubleSided = true
+            baseColor = Color.fromRGBHex("#ff0000")
+            roughness = 0.1f
+            metallic = 0.8f
         },
         count = 6
     ).apply {
@@ -85,6 +67,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private var model: Scene? = null
+
     private val ambientLight = AmbientLight(
         color = Color.fromRGBHex("#ffffff"),
         intensity = 0.1f
@@ -96,11 +79,17 @@ class MainActivity : ComponentActivity() {
     ).apply {
         position.set(30f, 30f, 30f)
     }
+    private val pointLight = PointLight(
+        color = Color.fromRGBHex("#ffffff"),
+    ).apply {
+        position.set(0f, 5f, 0f)
+    }
+
     private val scene = Scene().apply {
-        addChild(cube)
-        addChild(groundPlane)
+        addChild(plane)
         addChild(ambientLight)
-        addChild(directionalLight)
+        // addChild(directionalLight)
+        addChild(pointLight)
     }
     private lateinit var controls: OrbitController
 
@@ -185,6 +174,16 @@ class MainActivity : ComponentActivity() {
                         setter = {
                             ambientLight.intensity = it
                         },
+                        max = 10f
+                    )
+
+                    K3DFloatController(
+                        label = "Point Light (Intensity)",
+                        getter = { pointLight.intensity },
+                        setter = {
+                            pointLight.intensity = it
+                        },
+                        max = 10f
                     )
                 }
             }
