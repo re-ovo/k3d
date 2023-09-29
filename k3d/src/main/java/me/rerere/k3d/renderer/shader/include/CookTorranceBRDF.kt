@@ -21,8 +21,6 @@ float distributionGGX(vec3 N, vec3 H, float roughness){
     return a2 / denom;
 }
 
-// geometry function
-// calculate the "G" term in the Cook-Torrance BRDF
 float geometrySchlickGGX(float NdotV, float roughness){
     float r = (roughness + 1.0);
     float k = (r*r) / 8.0;
@@ -32,6 +30,8 @@ float geometrySchlickGGX(float NdotV, float roughness){
     return NdotV / denom;
 }
 
+// geometry function
+// calculate the "G" term in the Cook-Torrance BRDF
 float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness){
     float NdotV = max(dot(N, V), 0.0);
     float NdotL = max(dot(N, L), 0.0);

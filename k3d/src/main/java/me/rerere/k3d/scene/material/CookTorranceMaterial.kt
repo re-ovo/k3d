@@ -22,10 +22,10 @@ class CookTorranceMaterial : ShaderMaterial(programSource()) {
 
     var normalTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_NORMAL)
 
-    var metallic by floatUniformOf(BuiltInUniformName.MATERIAL_ROUGHNESS, 1.0f)
+    var metallic by floatUniformOf(BuiltInUniformName.MATERIAL_METALLIC, 1.0f)
     var metallicTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_METALLIC)
 
-    var roughness by floatUniformOf(BuiltInUniformName.MATERIAL_METALLIC, 1.0f)
+    var roughness by floatUniformOf(BuiltInUniformName.MATERIAL_ROUGHNESS, 1.0f)
     var roughnessTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_ROUGHNESS)
 
     var occlusionTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_OCCLUSION)
@@ -160,8 +160,9 @@ private val programSource: () -> ShaderProgramSource = {
         vec3 kD = vec3(1.0) - kS;
         kD *= 1.0 - metallic;	  
         vec3 diffuse = kD * albedo / 3.14159265358979323846;
-
-        return (diffuse + specular) * max(dot(N, L), 0.0) * lightColor * lightIntensity;
+        
+        float NdotL = max(dot(N, L), 0.0);
+        return (diffuse + specular) * NdotL * lightColor * lightIntensity;
     }
     
     void main() {
