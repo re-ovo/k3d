@@ -12,12 +12,21 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
@@ -96,7 +105,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private val scene = Scene().apply {
-        addChild(plane)
+        // addChild(plane)
         addChild(ambientLight)
         addChild(directionalLight)
         addChild(pointLight)
@@ -122,19 +131,58 @@ class MainActivity : ComponentActivity() {
                 TopAppBar(
                     title = { Text("K3D Demo") },
                     actions = {
-                        TextButton(
-                            onClick = {
-                                lifecycleScope.launch(Dispatchers.IO) {
-                                    val result = GltfLoader(this@MainActivity).load(
-                                        inputStream = assets.open("无标题.glb")
-                                    )
-                                    //result.defaultScene.scale.set(0.1f, 0.1f, 0.1f)
-                                    scene.addChild(result.defaultScene)
-                                    model = result.defaultScene
+                        var showLoaderMenu by remember {
+                            mutableStateOf(false)
+                        }
+                        val modelList = remember {
+                            mutableStateListOf<String>()
+                        }
+                        var loading by remember {
+                            mutableStateOf(false)
+                        }
+                        LaunchedEffect(Unit) {
+                            modelList.clear()
+                            assets.list("")?.forEach {
+                                if (it.endsWith(".gltf") || it.endsWith(".glb")) {
+                                    modelList.add(it)
                                 }
                             }
+                        }
+                        DropdownMenu(
+                            expanded = showLoaderMenu,
+                            onDismissRequest = { showLoaderMenu = false }
                         ) {
-                            Text("Load")
+                            modelList.forEach {
+                                DropdownMenuItem(
+                                    text = { Text(text = it) },
+                                    onClick = {
+                                        lifecycleScope.launch(Dispatchers.IO) {
+                                            loading = true
+                                            showLoaderMenu = false
+
+                                            val result = GltfLoader(this@MainActivity).load(
+                                                inputStream = assets.open(it)
+                                            )
+                                            //result.defaultScene.scale.set(0.1f, 0.1f, 0.1f)
+                                            scene.addChild(result.defaultScene)
+                                            model = result.defaultScene
+
+                                            loading = false
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                        if(loading) {
+                            CircularProgressIndicator()
+                        } else {
+                            TextButton(
+                                onClick = {
+                                    showLoaderMenu = true
+                                }
+                            ) {
+                                Text("Load")
+                            }
                         }
                     }
                 )
