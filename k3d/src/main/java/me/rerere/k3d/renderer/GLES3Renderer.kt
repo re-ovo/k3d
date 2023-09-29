@@ -32,6 +32,7 @@ import me.rerere.k3d.util.cleanIfDirty
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.math.Vec3
 import java.nio.Buffer
+import java.nio.ByteBuffer
 import java.util.IdentityHashMap
 
 /**
@@ -108,8 +109,6 @@ class GLES3Renderer : Renderer {
     }
 
     private fun renderPrimitive(actor: Primitive, camera: Camera, scene: Scene) {
-        // TODO: Fix double sided
-        // https://sketchfab.com/3d-models/ship-in-a-bottle-9ddbc5b32da94bafbfdb56e1f6be9a38
         if(actor.material.doubleSided) {
             GLES20.glDisable(GLES20.GL_CULL_FACE)
         } else {
@@ -549,13 +548,6 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
     }
 }
 
-private fun Buffer.sizeInBytes(): Int {
-    return this.remaining() * when (this) {
-        is java.nio.ByteBuffer -> 1
-        is java.nio.ShortBuffer -> 2
-        is java.nio.IntBuffer -> 4
-        is java.nio.FloatBuffer -> 4
-        is java.nio.DoubleBuffer -> 8
-        else -> throw IllegalStateException("Unknown buffer type")
-    }
+private fun ByteBuffer.sizeInBytes(): Int {
+    return this.remaining()
 }

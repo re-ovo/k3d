@@ -21,6 +21,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import me.rerere.k3d.controller.OrbitController
 import me.rerere.k3d.loader.GltfLoader
 import me.rerere.k3d.renderer.Clock
@@ -31,9 +34,11 @@ import me.rerere.k3d.scene.actor.Mesh
 import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.camera.PerspectiveCamera
 import me.rerere.k3d.scene.geometry.CubeGeometry
+import me.rerere.k3d.scene.geometry.PlaneGeometry
 import me.rerere.k3d.scene.light.AmbientLight
 import me.rerere.k3d.scene.light.DirectionalLight
-import me.rerere.k3d.scene.material.CookTorranceMaterial
+import me.rerere.k3d.scene.material.BlinnPhongMaterial
+import me.rerere.k3d.scene.material.StandardMaterial
 import me.rerere.k3d.ui.theme.K3dTheme
 import me.rerere.k3d.util.Color
 import me.rerere.k3d.util.math.Vec3
@@ -47,16 +52,15 @@ class MainActivity : ComponentActivity() {
     private val camera = PerspectiveCamera().apply {
         position.set(0f, 5f, 5f)
     }
-    private val cubeMaterial = CookTorranceMaterial().apply {
-        baseColor = Color(1f, 0f, 0f)
-        roughness = 0.5f
-        metallic = 0.5f
+
+    private val cubeMaterial = StandardMaterial().apply {
+        baseColor = Color.white()
     }
     private val cube = Mesh(
         geometry = CubeGeometry(
-            depth = 0.1f,
-            height = 0.1f,
-            width = 0.1f
+            depth = 1f,
+            height = 1f,
+            width = 1f
         ),
         material = cubeMaterial,
         count = 36
@@ -65,6 +69,21 @@ class MainActivity : ComponentActivity() {
         position.set(0f, 0f, 0f)
         rotation.set(Euler(0f, 10f.toRadian(), 0f).toQuaternion())
     }
+
+    private val groundPlane = Mesh(
+        geometry = PlaneGeometry(
+            height = 3f,
+            width = 3f
+        ),
+        material = StandardMaterial().apply {
+            baseColor = Color.white()
+            // doubleSided = true
+        },
+        count = 6
+    ).apply {
+        position.set(0f, 0f, 0f)
+    }
+
     private var model: Scene? = null
     private val ambientLight = AmbientLight(
         color = Color.fromRGBHex("#ffffff"),
@@ -79,6 +98,7 @@ class MainActivity : ComponentActivity() {
     }
     private val scene = Scene().apply {
         addChild(cube)
+        addChild(groundPlane)
         addChild(ambientLight)
         addChild(directionalLight)
     }
@@ -104,12 +124,14 @@ class MainActivity : ComponentActivity() {
                     actions = {
                         TextButton(
                             onClick = {
-                                val result = GltfLoader(this@MainActivity).load(
-                                    inputStream = assets.open("free_isometric_cafe.glb")
-                                )
-                                //result.defaultScene.scale.set(0.1f, 0.1f, 0.1f)
-                                scene.addChild(result.defaultScene)
-                                model = result.defaultScene
+                                lifecycleScope.launch(Dispatchers.IO) {
+                                    val result = GltfLoader(this@MainActivity).load(
+                                        inputStream = assets.open("axe.glb")
+                                    )
+                                    //result.defaultScene.scale.set(0.1f, 0.1f, 0.1f)
+                                    scene.addChild(result.defaultScene)
+                                    model = result.defaultScene
+                                }
                             }
                         ) {
                             Text("Load")
@@ -138,7 +160,7 @@ class MainActivity : ComponentActivity() {
 
                                 controls = OrbitController(
                                     camera,
-                                    Vec3(),
+                                    Vec3(0f,0f,0f),
                                     this
                                 )
                             }
@@ -162,31 +184,6 @@ class MainActivity : ComponentActivity() {
                         getter = { ambientLight.intensity },
                         setter = {
                             ambientLight.intensity = it
-                        },
-                    )
-
-                    K3DFloatController(
-                        label = "Cube Color (R)",
-                        getter = { cubeMaterial.baseColor.r },
-                        setter = {
-                            cubeMaterial.baseColor = cubeMaterial.baseColor.copy(r = it)
-                        },
-                        max = 1f
-                    )
-
-                    K3DFloatController(
-                        label = "Roughness",
-                        getter = { cubeMaterial.roughness },
-                        setter = {
-                            cubeMaterial.roughness = it
-                        },
-                    )
-
-                    K3DFloatController(
-                        label = "Metallic",
-                        getter = { cubeMaterial.metallic },
-                        setter = {
-                            cubeMaterial.metallic = it
                         },
                     )
                 }

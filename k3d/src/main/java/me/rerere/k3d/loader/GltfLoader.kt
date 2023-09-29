@@ -207,7 +207,7 @@ class GltfLoader(private val context: Context) {
             val indicesAccessor = primitive.indices?.let {
                 accessorOf(gltf, buffers, it)
             }
-            val indicesBuffer: Pair<Buffer, DataType>? = primitive.indices?.let {
+            val indicesBuffer: Pair<ByteBuffer, DataType>? = primitive.indices?.let {
                 val accessor = accessorOf(gltf, buffers, it)
                 val bufferView = accessor.bufferView ?: error("Accessor bufferView is null")
 
