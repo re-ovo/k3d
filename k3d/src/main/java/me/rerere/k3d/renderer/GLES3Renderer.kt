@@ -437,8 +437,8 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
         val programId = createProgram(vertexShader, fragmentShader)
             .getOrThrow()
         // println(programProcessResult.vertexShader)
-        println(programProcessResult.fragmentShader)
-        println("ID: $programId")
+        // println(programProcessResult.fragmentShader)
+        // println("ID: $programId")
         programs[program] = programId
         programId
     }

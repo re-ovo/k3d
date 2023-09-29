@@ -21,6 +21,7 @@ import me.rerere.k3d.scene.material.AlphaMode
 import me.rerere.k3d.scene.material.StandardMaterial
 import me.rerere.k3d.util.Color
 import me.rerere.k3d.util.math.Matrix4
+import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.transform.setModelMatrix
 import java.io.DataInputStream
 import java.io.InputStream
@@ -148,8 +149,20 @@ class GltfLoader(private val context: Context) {
         val group = ActorGroup().apply {
             name = gltfNode.name
 
+            // Load rotation/scale/translation from matrix
             gltfNode.matrix?.let {
-                setModelMatrix(Matrix4.fromColumnMajor(it.toFloatArray()))
+                setModelMatrix(Matrix4.fromColumnMajor(it))
+            }
+
+            // Load rotation/scale/translation from individual properties
+            gltfNode.rotation?.let {
+                rotation.set(it[0], it[1], it[2], it[3])
+            }
+            gltfNode.scale?.let {
+                scale.set(it.x, it.y, it.z)
+            }
+            gltfNode.translation?.let {
+                position.set(it.x, it.y, it.z)
             }
         }
 
@@ -670,6 +683,9 @@ private data class Gltf(
         val matrix: List<Float>?,
         val children: List<Int>?,
         val mesh: Int?,
+        val rotation: List<Float>?,
+        val scale: Vec3?,
+        val translation: Vec3?,
     )
 
     data class Sampler(

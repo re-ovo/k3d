@@ -36,8 +36,8 @@ class ShaderProgramSource(
         require(vertexShader.isNotBlank() && fragmentShader.isNotBlank()) {
             "Shader source cannot be blank"
         }
-        println(vertexShader.trimIndent())
-        println(fragmentShader.trimIndent())
+        // println(vertexShader.trimIndent())
+        // println(fragmentShader.trimIndent())
     }
 
     override var dirty: Boolean = false

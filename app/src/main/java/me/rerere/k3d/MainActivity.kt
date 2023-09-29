@@ -82,13 +82,14 @@ class MainActivity : ComponentActivity() {
     }
     private val pointLight = PointLight(
         color = Color.fromRGBHex("#ffffff"),
+        intensity = 0f
     ).apply {
         position.set(0f, 5f, 0f)
     }
     private val spotLight = SpotLight(
         color = Color.fromRGBHex("#ffffff"),
         target = Vec3(0f, 0f, 0f),
-        intensity = 1.0f,
+        intensity = 0f,
         angle = 45f.toRadian()
     ).apply {
         position.set(0f, 5f, 0f)
@@ -97,8 +98,8 @@ class MainActivity : ComponentActivity() {
     private val scene = Scene().apply {
         addChild(plane)
         addChild(ambientLight)
-        // addChild(directionalLight)
-        // addChild(pointLight)
+        addChild(directionalLight)
+        addChild(pointLight)
         addChild(spotLight)
     }
     private lateinit var controls: OrbitController
@@ -125,7 +126,7 @@ class MainActivity : ComponentActivity() {
                             onClick = {
                                 lifecycleScope.launch(Dispatchers.IO) {
                                     val result = GltfLoader(this@MainActivity).load(
-                                        inputStream = assets.open("axe.glb")
+                                        inputStream = assets.open("无标题.glb")
                                     )
                                     //result.defaultScene.scale.set(0.1f, 0.1f, 0.1f)
                                     scene.addChild(result.defaultScene)

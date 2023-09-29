@@ -29,6 +29,18 @@ class Matrix4(vararg val data: Float) {
                 data[3], data[7], data[11], data[15]
             )
         }
+
+        fun fromColumnMajor(data: List<Float>): Matrix4 {
+            if (data.size != 16) {
+                throw IllegalArgumentException("Matrix4 must have 16 elements")
+            }
+            return Matrix4(
+                data[0], data[4], data[8], data[12],
+                data[1], data[5], data[9], data[13],
+                data[2], data[6], data[10], data[14],
+                data[3], data[7], data[11], data[15]
+            )
+        }
     }
 
     fun set(data: FloatArray) {
