@@ -2,6 +2,7 @@ package me.rerere.k3d.renderer.resource
 
 import me.rerere.k3d.util.Dirty
 import java.nio.Buffer
+import java.nio.ByteBuffer
 
 /**
  * This class represents a single attribute(such as position, normal, uv, etc.)
@@ -23,7 +24,7 @@ class Attribute(
     val count: Int,
     val stride: Int = 0,
     val offset: Int = 0,
-    val data: Buffer
+    val data: ByteBuffer
 ) : Dirty {
     override var dirty: Boolean = false
 

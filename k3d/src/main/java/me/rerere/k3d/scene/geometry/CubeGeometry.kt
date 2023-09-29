@@ -3,6 +3,7 @@ package me.rerere.k3d.scene.geometry
 import me.rerere.k3d.renderer.resource.Attribute
 import me.rerere.k3d.renderer.resource.DataType
 import me.rerere.k3d.renderer.shader.BuiltInAttributeName
+import me.rerere.k3d.util.newByteBuffer
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
 
@@ -53,12 +54,12 @@ class CubeGeometry(
             itemSize = 3,
             type = DataType.FLOAT,
             normalized = false,
-            data = FloatBuffer.allocate(6 * 3 * 4),
+            data = newByteBuffer(DataType.FLOAT, 6 * 3 * 4),
             count = 6 * 4
         )
         val buffer = attribute.data as FloatBuffer
         buffer.apply {
-            clear()
+            rewind()
 
             // Front face
             put(-1.0f * width).put(-1.0f * height).put(1.0f * depth)
@@ -108,12 +109,12 @@ class CubeGeometry(
             itemSize = 3,
             type = DataType.FLOAT,
             normalized = false,
-            data = FloatBuffer.allocate(6 * 3 * 4),
+            data = newByteBuffer(DataType.FLOAT, 6 * 3 * 4),
             count = 6 * 4
         )
         val buffer = attribute.data as FloatBuffer
         buffer.apply {
-            clear()
+            rewind()
 
             // Front face
             repeat(4) {

@@ -110,7 +110,7 @@ internal fun BufferGeometry.computeTangent(vertCount: Int, indicesCount: Int) {
     setAttribute(
         BuiltInAttributeName.TANGENT.attributeName, Attribute(
             itemSize = 3,
-            data = FloatBuffer.wrap(tangentData),
+            data = tangentData.toByteBuffer(),
             offset = 0,
             normalized = false,
             stride = 0,
