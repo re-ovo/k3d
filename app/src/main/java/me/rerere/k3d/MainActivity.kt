@@ -38,6 +38,7 @@ import me.rerere.k3d.scene.geometry.PlaneGeometry
 import me.rerere.k3d.scene.light.AmbientLight
 import me.rerere.k3d.scene.light.DirectionalLight
 import me.rerere.k3d.scene.light.PointLight
+import me.rerere.k3d.scene.light.SpotLight
 import me.rerere.k3d.scene.material.BlinnPhongMaterial
 import me.rerere.k3d.scene.material.StandardMaterial
 import me.rerere.k3d.ui.theme.K3dTheme
@@ -84,12 +85,21 @@ class MainActivity : ComponentActivity() {
     ).apply {
         position.set(0f, 5f, 0f)
     }
+    private val spotLight = SpotLight(
+        color = Color.fromRGBHex("#ffffff"),
+        target = Vec3(0f, 0f, 0f),
+        intensity = 1.0f,
+        angle = 45f.toRadian()
+    ).apply {
+        position.set(0f, 5f, 0f)
+    }
 
     private val scene = Scene().apply {
         addChild(plane)
         addChild(ambientLight)
         // addChild(directionalLight)
-        addChild(pointLight)
+        // addChild(pointLight)
+        addChild(spotLight)
     }
     private lateinit var controls: OrbitController
 
@@ -184,6 +194,33 @@ class MainActivity : ComponentActivity() {
                             pointLight.intensity = it
                         },
                         max = 10f
+                    )
+
+                    K3DFloatController(
+                        label = "Spot Light (Intensity)",
+                        getter = { spotLight.intensity },
+                        setter = {
+                            spotLight.intensity = it
+                        },
+                        max = 10f
+                    )
+
+                    K3DFloatController(
+                        label = "Spot Light (Angle)",
+                        getter = { spotLight.angle },
+                        setter = {
+                            spotLight.angle = it
+                        },
+                        max = 90f.toRadian()
+                    )
+
+                    K3DFloatController(
+                        label = "Spot Light (penumbra)",
+                        getter = { spotLight.penumbra },
+                        setter = {
+                            spotLight.penumbra = it
+                        },
+                        max = 1f
                     )
                 }
             }

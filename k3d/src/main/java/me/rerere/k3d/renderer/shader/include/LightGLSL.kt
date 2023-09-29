@@ -28,8 +28,6 @@ struct SpotLight {
     vec3 target;
     vec3 color;
     float intensity;
-    float distance;
-    float decay;
     float angle;
     float penumbra;
 };

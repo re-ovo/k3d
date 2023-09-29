@@ -222,6 +222,27 @@ private val programSource: () -> ShaderProgramSource = {
             }
         }
         
+        // spot light
+        {
+            for(int i = 0; i < spotLightCount; i++) {
+                vec3 lightDir = -normalize(v_fragPos - spotLight[i].position);
+                vec3 viewDir = -normalize(v_fragPos - u_cameraPos);
+                
+                float penumbra = spotLight[i].penumbra; // spot light penumbra (0.0 ~ 1.0)
+                float angle = spotLight[i].angle; // spot light angle in radians
+                
+                float angleMin = cos(angle);
+                float angleMax = cos(angle * (1.0 - penumbra));
+                float cosAngle = dot(lightDir, normalize(spotLight[i].position - spotLight[i].target));
+                float spotEffect = smoothstep(angleMin, angleMax, cosAngle);
+                
+                float intensity = spotLight[i].intensity * spotEffect;
+                
+                vec3 cookTorrance = cookTorranceBRDF(lightDir, viewDir, normal, albedo, metallic, roughness, spotLight[i].color, intensity);
+                lighting += max(cookTorrance, vec3(0.0));
+            }
+        }
+        
         // combine
         vec3 result = ambient + lighting;
         

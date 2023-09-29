@@ -409,12 +409,6 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
                 uniformLocationOf(programId, "spotLight[$index].intensity") {
                     GLES30.glUniform1f(it, t.intensity)
                 }
-                uniformLocationOf(programId, "spotLight[$index].distance") {
-                    GLES30.glUniform1f(it, t.distance)
-                }
-                uniformLocationOf(programId, "spotLight[$index].decay") {
-                    GLES30.glUniform1f(it, t.decay)
-                }
                 uniformLocationOf(programId, "spotLight[$index].angle") {
                     GLES30.glUniform1f(it, t.angle)
                 }
