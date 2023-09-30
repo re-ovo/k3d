@@ -78,15 +78,19 @@ class MarcoDefinition(
 enum class BuiltInAttributeName(val attributeName: String) {
     POSITION("a_pos"),
     NORMAL("a_normal"),
+    COLOR("a_color"), // vertex color
+    TANGENT("a_tangent"),
+    BITANGENT("a_bitangent"),
+
+    JOINTS("a_joints"),
+    WEIGHTS("a_weights"),
+
     TEXCOORD_BASE("a_texCoordBase"),
     TEXCOORD_NORMAL("a_texCoordNormal"),
     TEXCOORD_METALLIC("a_texCoordMetallic"),
     TEXCOORD_ROUGHNESS("a_texCoordRoughness"),
     TEXCOORD_OCCLUSION("a_texCoordOcclusion"),
     TEXCOORD_EMISSIVE("a_texCoordEmissive"),
-    COLOR("a_color"), // vertex color
-    TANGENT("a_tangent"),
-    BITANGENT("a_bitangent")
 }
 
 enum class BuiltInUniformName(val uniformName: String) {
@@ -109,4 +113,12 @@ enum class BuiltInUniformName(val uniformName: String) {
     CAMERA_POSITION("u_cameraPos"),
     ALPHA_CUTOFF("u_alphaCutoff"),
     POINT_SIZE("u_pointSize"),
+
+    SKIN_JOINTS_MATRIX("u_skinJointsMatrix"),
+}
+
+enum class BuiltInMarcoDefinition(
+    val marcoDefinition: String
+) {
+    SKIN_BONE_COUNT("SKIN_BONE_COUNT"),
 }

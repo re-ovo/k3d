@@ -20,6 +20,7 @@ import me.rerere.k3d.renderer.shader.genVertexArray
 import me.rerere.k3d.scene.actor.Actor
 import me.rerere.k3d.scene.actor.Primitive
 import me.rerere.k3d.scene.actor.Scene
+import me.rerere.k3d.scene.actor.SkinMesh
 import me.rerere.k3d.scene.actor.traverse
 import me.rerere.k3d.scene.camera.Camera
 import me.rerere.k3d.scene.light.AmbientLight
@@ -122,6 +123,11 @@ class GLES3Renderer : Renderer {
             // Apply uniforms
             actor.material.uniforms.forEach { (name, uniform) ->
                 resourceManager.useUniform(actor.material.program, uniform, name)
+            }
+
+            // Apply skin uniforms
+            if(actor is SkinMesh) {
+                resourceManager.useSkinBones(this, actor)
             }
 
             // Apply built-in uniforms
@@ -416,6 +422,27 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
                     GLES30.glUniform1f(it, t.penumbra)
                 }
             }
+        }
+    }
+
+    fun useSkinBones(shaderProgramSource: ShaderProgramSource, actor: SkinMesh) {
+        val programId = getProgram(shaderProgramSource) ?: return
+        val skeleton = actor.skeleton
+        uniformLocationOf(programId, BuiltInUniformName.SKIN_JOINTS_MATRIX.uniformName) {
+            val data = FloatArray(skeleton.bones.size * 16)
+            skeleton.bones.forEachIndexed { index, bone ->
+                val matrix = bone.node.worldMatrix * bone.inverseBindMatrix
+                matrix.data.forEachIndexed { i, v ->
+                    data[index * 16 + i] = v
+                }
+            }
+            GLES30.glUniformMatrix4fv(
+                it,
+                skeleton.bones.size,
+                true,
+                data,
+                0
+            )
         }
     }
 

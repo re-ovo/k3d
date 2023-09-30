@@ -7,6 +7,5 @@ import me.rerere.k3d.scene.material.PointMaterial
 class Point(
     geometry: BufferGeometry,
     material: PointMaterial,
-    mode: DrawMode = DrawMode.POINTS,
     count: Int = 0
-) : Primitive(geometry, material, mode, count)
+) : Primitive(geometry, material, DrawMode.POINTS, count)

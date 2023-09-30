@@ -1,8 +1,11 @@
 package me.rerere.k3d.scene.actor
 
 import me.rerere.k3d.renderer.resource.DrawMode
+import me.rerere.k3d.renderer.shader.BuiltInAttributeName
+import me.rerere.k3d.renderer.shader.BuiltInMarcoDefinition
 import me.rerere.k3d.scene.geometry.BufferGeometry
 import me.rerere.k3d.scene.material.ShaderMaterial
+import me.rerere.k3d.util.math.Matrix4
 
 /**
  * A mesh is a primitive represents a polygon mesh.
@@ -12,9 +15,29 @@ import me.rerere.k3d.scene.material.ShaderMaterial
  * @property mode The draw mode of this mesh
  * @property count The count of this mesh
  */
-class Mesh(
+open class Mesh(
     geometry: BufferGeometry,
     material: ShaderMaterial,
-    mode: DrawMode = DrawMode.TRIANGLES,
     count: Int = 0
-) : Primitive(geometry, material, mode, count)
+) : Primitive(geometry, material, DrawMode.TRIANGLES, count)
+
+class SkinMesh(
+    geometry: BufferGeometry,
+    material: ShaderMaterial,
+    val skeleton: Skeleton,
+    count: Int = 0
+) : Mesh(geometry, material, count) {
+    init {
+        material.program.addMarcoDefinition(
+            BuiltInMarcoDefinition.SKIN_BONE_COUNT.marcoDefinition,
+            skeleton.bones.size.toString()
+        )
+    }
+}
+
+class Skeleton(val bones: List<Bone>) {
+    class Bone(
+        val node: Actor,
+        val inverseBindMatrix: Matrix4
+    )
+}

@@ -219,6 +219,14 @@ class MainActivity : ComponentActivity() {
 
                 K3DController {
                     K3DFloatController(
+                        label = "Scale",
+                        getter = { model?.scale?.x ?: 0f },
+                        setter = {
+                            model?.scale?.set(it, it, it)
+                        },
+                    )
+
+                    K3DFloatController(
                         label = "Directional Light",
                         getter = { directionalLight.intensity },
                         setter = {

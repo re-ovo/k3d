@@ -16,6 +16,9 @@ import me.rerere.k3d.scene.actor.Actor
 import me.rerere.k3d.scene.actor.ActorGroup
 import me.rerere.k3d.scene.actor.Mesh
 import me.rerere.k3d.scene.actor.Scene
+import me.rerere.k3d.scene.actor.Skeleton
+import me.rerere.k3d.scene.actor.SkinMesh
+import me.rerere.k3d.scene.actor.traverse
 import me.rerere.k3d.scene.geometry.BufferGeometry
 import me.rerere.k3d.scene.material.AlphaMode
 import me.rerere.k3d.scene.material.StandardMaterial
@@ -25,7 +28,6 @@ import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.transform.setModelMatrix
 import java.io.DataInputStream
 import java.io.InputStream
-import java.nio.Buffer
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.UUID
@@ -125,26 +127,52 @@ class GltfLoader(private val context: Context) {
         println("Default scene: $defaultScene")
 
         defaultScene.dump() // for debug purpose, remove it in the future
-
         return GltfLoadResult(
             scenes = scenes, defaultScene = defaultScene
         )
     }
 
     private fun parseScenes(gltf: Gltf, buffers: List<ByteBuffer>): List<Scene> {
+        val id2NodeMapping = hashMapOf<Int, Actor>()
+        val node2IdMapping = hashMapOf<Actor, Int>()
+
         return gltf.scenes.map { gltfScene ->
             Scene().apply {
                 name = gltfScene.name
 
+                // Parse Nodes
                 gltfScene.nodes.forEach { nodeIndex ->
-                    val actor = parseNode(gltf, buffers, nodeIndex)
+                    val actor = parseNode(gltf, buffers, nodeIndex, id2NodeMapping, node2IdMapping)
                     addChild(actor)
+                }
+
+                // Parse Meshes
+                traverse { actor ->
+                    if (actor is ActorGroup) {
+                        val nodeIndex = node2IdMapping[actor] ?: return@traverse
+                        val gltfNode = gltf.nodes[nodeIndex]
+
+                        gltfNode.mesh?.let { meshIndex ->
+                            val skin = gltfNode.skin?.let { skinIndex ->
+                                gltf.skins[skinIndex]
+                            }
+
+                            val mesh = parseMesh(gltf, buffers, meshIndex, skin, id2NodeMapping)
+                            actor.addChild(mesh)
+                        }
+                    }
                 }
             }
         }
     }
 
-    private fun parseNode(gltf: Gltf, buffers: List<ByteBuffer>, node: Int): ActorGroup {
+    private fun parseNode(
+        gltf: Gltf,
+        buffers: List<ByteBuffer>,
+        node: Int,
+        id2NodeMap: MutableMap<Int, Actor>,
+        node2IdMap: MutableMap<Actor, Int>
+    ): ActorGroup {
         val gltfNode = gltf.nodes[node]
         val group = ActorGroup().apply {
             name = gltfNode.name
@@ -167,24 +195,27 @@ class GltfLoader(private val context: Context) {
         }
 
         gltfNode.children?.forEach { childNode ->
-            val childActor = parseNode(gltf, buffers, childNode)
+            val childActor = parseNode(gltf, buffers, childNode, id2NodeMap, node2IdMap)
             group.addChild(childActor)
         }
 
-        gltfNode.mesh?.let {
-            val mesh = parseMesh(gltf, buffers, it)
-            group.addChild(mesh)
-        }
+        id2NodeMap[node] = group
+        node2IdMap[group] = node
 
         return group
     }
 
-    private fun parseMesh(gltf: Gltf, buffers: List<ByteBuffer>, mesh: Int): Actor {
-        val gltfMesh = gltf.meshes[mesh]
+    private fun parseMesh(
+        gltf: Gltf,
+        buffers: List<ByteBuffer>,
+        meshIndex: Int,
+        skin: Gltf.Skin?,
+        id2NodeMapping: Map<Int, Actor>
+    ): Actor {
+        val gltfMesh = gltf.meshes[meshIndex]
         val group = ActorGroup().apply {
             name = gltfMesh.name
         }
-
         gltfMesh.primitives.forEach { primitive ->
             // Attributes
             var positionCount = 0 // if there is no indices, use position count for draw count
@@ -207,14 +238,82 @@ class GltfLoader(private val context: Context) {
                     }
 
                     else -> {
-                        println("Unsupported attribute: $key")
+                        val accessor = accessorOf(gltf, buffers, accessorIndex)
+                        println("Unsupported attribute: $key(${accessor.type}/${gltfAccessorComponentTypeToDataType(accessor.componentType)})")
                         null
                     }
                 }
             }.toMutableList()
 
+            // Skin
+            var skeleton: Skeleton? = null
+            if(skin != null) {
+                // Read joints and weights attributes
+                primitive.attributes["JOINTS_0"]?.let {
+                    val accessor = accessorOf(gltf, buffers, it)
+                    attributes += accessor.asAttribute(BuiltInAttributeName.JOINTS.attributeName)
+                }
+
+                primitive.attributes["WEIGHTS_0"]?.let {
+                    val accessor = accessorOf(gltf, buffers, it)
+                    attributes += accessor.asAttribute(BuiltInAttributeName.WEIGHTS.attributeName)
+                }
+
+                require(primitive.attributes["JOINTS_1"] == null) {
+                    "Multiple JOINTS is not supported yet"
+                }
+                require(primitive.attributes["WEIGHTS_1"] == null) {
+                    "Multiple WEIGHTS is not supported yet"
+                }
+
+                // Read inverseBindMatrices
+                val inverseBindMatricesAccessor = skin.inverseBindMatrices?.let {
+                    accessorOf(gltf, buffers, it)
+                }
+                val inverseBindMatrices = inverseBindMatricesAccessor?.let { accessor ->
+                    val bufferView = accessor.bufferView ?: error("Accessor bufferView is null")
+
+                    require(accessor.type == "MAT4") {
+                        "InverseBindMatrices type must be MAT4, but got ${accessor.type}"
+                    }
+                    require(accessor.count >= skin.joints.size) {
+                        "InverseBindMatrices count must >= joints count, but got ${accessor.count} < ${skin.joints.size}"
+                    }
+
+                    val data = FloatArray(accessor.count * 16)
+                    val buffer = bufferView.buffer.sliceSafely(
+                        start = bufferView.byteOffset + accessor.byteOffset,
+                        end = bufferView.byteOffset + bufferView.byteLength + accessor.byteOffset
+                    )
+                    buffer.order(ByteOrder.nativeOrder())
+                    buffer.asFloatBuffer().get(data)
+
+                    buildList {
+                        for (i in 0 until accessor.count) {
+                            val start = i * 16
+                            val end = start + 16
+                            add(Matrix4.fromColumnMajor(data.slice(start until end)))
+                        }
+                    }
+                }
+
+                skeleton = Skeleton(
+                    bones = skin.joints
+                        .map { id2NodeMapping[it] ?: error("No node for joint: $it") }
+                        .mapIndexed { index, actor ->
+                        Skeleton.Bone(
+                            node = actor,
+                            inverseBindMatrix = inverseBindMatrices?.get(index) ?: Matrix4.identity()
+                        )
+                    }
+                )
+            }
+
             // Draw Mode
             val mode = gltfPrimitiveModeToDrawMode(primitive.mode)
+            require(mode == DrawMode.TRIANGLES) {
+                "Draw mode must be TRIANGLES, but got $mode"
+            }
 
             // Indices
             val indicesAccessor = primitive.indices?.let {
@@ -338,14 +437,22 @@ class GltfLoader(private val context: Context) {
                 }
             }
 
-            group.addChild(
+            val mesh = if(skeleton == null) {
                 Mesh(
-                    mode = mode,
                     geometry = geometry,
                     material = material,
                     count = indicesAccessor?.count ?: positionCount
                 )
-            )
+            } else {
+                SkinMesh(
+                    geometry = geometry,
+                    material = material,
+                    skeleton = skeleton,
+                    count = indicesAccessor?.count ?: positionCount
+                )
+            }
+
+            group.addChild(mesh)
         }
 
         return group
@@ -389,8 +496,8 @@ class GltfLoader(private val context: Context) {
         val itemSize = gltfAccessorItemSizeOf(type)
         val dataType = gltfAccessorComponentTypeToDataType(componentType)
 
-        require(bufferView.byteStride == itemSize * dataType.size) {
-            "BufferView byteStride != itemSize * dataType.size, this is not supported"
+        require(bufferView.byteStride == itemSize * dataType.size || bufferView.byteStride == 0) {
+            "BufferView byteStride != itemSize * dataType.size, this is not supported: ${bufferView.byteStride} != ${itemSize * dataType.size}"
         }
 
         return name to Attribute(
@@ -605,6 +712,8 @@ private data class Gltf(
     val scene: Int,
     val scenes: List<Scene>,
     val textures: List<Texture>,
+    val skins: List<Skin>,
+    val animations: List<Animation>,
     val extensionsUsed: List<String>,
 ) {
     data class Accessor(
@@ -689,6 +798,7 @@ private data class Gltf(
         val matrix: List<Float>?,
         val children: List<Int>?,
         val mesh: Int?,
+        val skin: Int?,
         val rotation: List<Float>?,
         val scale: Vec3?,
         val translation: Vec3?,
@@ -711,6 +821,33 @@ private data class Gltf(
         val sampler: Int,
         val source: Int,
     )
+
+    data class Skin(
+        val joints: List<Int>,
+        val skeleton: Int?,
+        val inverseBindMatrices: Int?,
+    )
+
+    data class Animation(
+        val channels: List<Channel>,
+        val samplers: List<Sampler>,
+    ) {
+        data class Channel(
+            val sampler: Int,
+            val target: Target,
+        ) {
+            data class Target(
+                val node: Int?,
+                val path: String,
+            )
+        }
+
+        data class Sampler(
+            val input: Int,
+            val interpolation: String?,
+            val output: Int,
+        )
+    }
 
     // Material Extension
     data class MaterialExtensions(

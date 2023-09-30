@@ -41,6 +41,13 @@ private val programSource: () -> ShaderProgramSource = {
     in vec3 a_normal;
     in vec3 a_tangent;
     
+    in ivec4 a_joints;
+    in vec4 a_weights;
+    
+    #ifdef SKIN_BONE_COUNT
+    uniform mat4 u_skinJointsMatrix[SKIN_BONE_COUNT];
+    #endif
+    
     out vec3 v_fragPos;
     out vec3 v_normal;
     out mat3 TBN;
@@ -64,11 +71,6 @@ private val programSource: () -> ShaderProgramSource = {
     out vec2 v_texCoordEmissive;
 
     void main() {
-        gl_Position = u_projectionMatrix * u_viewMatrix * u_modelMatrix * vec4(a_pos, 1.0);
-        
-        v_normal = mat3(transpose(inverse(u_modelMatrix))) * a_normal;
-        v_fragPos = vec3(u_modelMatrix * vec4(a_pos, 1.0));
-        
         v_texCoordBase = a_texCoordBase;
         v_texCoordNormal = a_texCoordNormal;
         v_texCoordMetallic = a_texCoordMetallic;
@@ -76,6 +78,20 @@ private val programSource: () -> ShaderProgramSource = {
         v_texCoordOcclusion = a_texCoordOcclusion;
         v_texCoordEmissive = a_texCoordEmissive;
         
+        #ifdef SKIN_BONE_COUNT
+            vec4 pos = vec4(a_pos, 1.0);
+            mat4 skinJointsMatrix = u_skinJointsMatrix[a_joints[0]] * a_weights[0];
+            skinJointsMatrix += u_skinJointsMatrix[a_joints[1]] * a_weights[1];
+            skinJointsMatrix += u_skinJointsMatrix[a_joints[2]] * a_weights[2];
+            skinJointsMatrix += u_skinJointsMatrix[a_joints[3]] * a_weights[3];
+            gl_Position = u_projectionMatrix * u_viewMatrix * skinJointsMatrix * pos;
+        #else  
+            gl_Position = u_projectionMatrix * u_viewMatrix * u_modelMatrix * vec4(a_pos, 1.0);
+        #endif
+        
+        v_normal = mat3(transpose(inverse(u_modelMatrix))) * a_normal;
+        v_fragPos = vec3(u_modelMatrix * vec4(a_pos, 1.0));
+
         // calculate TBN matrix for normal mapping
         // assume the scale is equal in all directions
         vec3 T = normalize(mat3(u_modelMatrix) * a_tangent);
