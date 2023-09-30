@@ -79,23 +79,24 @@ private val programSource: () -> ShaderProgramSource = {
         v_texCoordEmissive = a_texCoordEmissive;
         
         #ifdef SKIN_BONE_COUNT
-            vec4 pos = vec4(a_pos, 1.0);
             mat4 skinJointsMatrix = u_skinJointsMatrix[a_joints[0]] * a_weights[0];
             skinJointsMatrix += u_skinJointsMatrix[a_joints[1]] * a_weights[1];
             skinJointsMatrix += u_skinJointsMatrix[a_joints[2]] * a_weights[2];
             skinJointsMatrix += u_skinJointsMatrix[a_joints[3]] * a_weights[3];
-            gl_Position = u_projectionMatrix * u_viewMatrix * skinJointsMatrix * pos;
+            mat4 modelMatrix = skinJointsMatrix;
         #else  
-            gl_Position = u_projectionMatrix * u_viewMatrix * u_modelMatrix * vec4(a_pos, 1.0);
+            mat4 modelMatrix = u_modelMatrix;
         #endif
+
+        gl_Position = u_projectionMatrix * u_viewMatrix * modelMatrix * vec4(a_pos, 1.0);
         
-        v_normal = mat3(transpose(inverse(u_modelMatrix))) * a_normal;
-        v_fragPos = vec3(u_modelMatrix * vec4(a_pos, 1.0));
+        v_normal = mat3(transpose(inverse(modelMatrix))) * a_normal;
+        v_fragPos = vec3(modelMatrix * vec4(a_pos, 1.0));
 
         // calculate TBN matrix for normal mapping
         // assume the scale is equal in all directions
-        vec3 T = normalize(mat3(u_modelMatrix) * a_tangent);
-        vec3 N = normalize(mat3(u_modelMatrix) * a_normal);
+        vec3 T = normalize(mat3(modelMatrix) * a_tangent);
+        vec3 N = normalize(mat3(modelMatrix) * a_normal);
         T = normalize(T - dot(T, N) * N); // Gram-Schmidt
         vec3 B = cross(N, T);
         TBN = mat3(T, B, N);
@@ -182,6 +183,8 @@ private val programSource: () -> ShaderProgramSource = {
     }
     
     void main() {
+        fragColor = vec4(1.0);
+        //return;
         vec3 albedo = u_materialColor.rgb;
         float opacity = u_materialColor.a;
         

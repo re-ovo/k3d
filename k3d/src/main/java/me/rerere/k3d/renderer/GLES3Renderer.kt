@@ -427,8 +427,9 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
 
     fun useSkinBones(shaderProgramSource: ShaderProgramSource, actor: SkinMesh) {
         val programId = getProgram(shaderProgramSource) ?: return
-        val skeleton = actor.skeleton
-        uniformLocationOf(programId, BuiltInUniformName.SKIN_JOINTS_MATRIX.uniformName) {
+
+        uniformLocationOf(programId, BuiltInUniformName.SKIN_JOINTS_MATRIX.uniformName) { location ->
+            val skeleton = actor.skeleton
             val data = FloatArray(skeleton.bones.size * 16)
             skeleton.bones.forEachIndexed { index, bone ->
                 val matrix = bone.node.worldMatrix * bone.inverseBindMatrix
@@ -436,8 +437,8 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
                     data[index * 16 + i] = v
                 }
             }
-            GLES30.glUniformMatrix4fv(
-                it,
+            GLES20.glUniformMatrix4fv(
+                location,
                 skeleton.bones.size,
                 true,
                 data,

@@ -20,6 +20,7 @@ import me.rerere.k3d.scene.actor.Skeleton
 import me.rerere.k3d.scene.actor.SkinMesh
 import me.rerere.k3d.scene.actor.traverse
 import me.rerere.k3d.scene.geometry.BufferGeometry
+import me.rerere.k3d.scene.geometry.CubeGeometry
 import me.rerere.k3d.scene.material.AlphaMode
 import me.rerere.k3d.scene.material.StandardMaterial
 import me.rerere.k3d.util.Color
@@ -127,6 +128,31 @@ class GltfLoader(private val context: Context) {
         println("Default scene: $defaultScene")
 
         defaultScene.dump() // for debug purpose, remove it in the future
+
+        gltf.animations?.forEach {
+            it.samplers.forEach { sampler ->
+                val accessorInput = accessorOf(gltf, buffers, sampler.input)
+                val accessorOutput = accessorOf(gltf, buffers, sampler.output)
+
+                // println("Input: ${accessorInput.type}/${gltfAccessorComponentTypeToDataType(accessorInput.componentType)}/${accessorInput.count}")
+                // println("Output: ${accessorOutput.type}/${gltfAccessorComponentTypeToDataType(accessorOutput.componentType)}/${accessorOutput.count}")
+                // println("Interpolation: ${sampler.interpolation}")
+
+                accessorInput.bufferView?.let { bufferView ->
+                    val buffer = bufferView.buffer.sliceSafely(
+                        start = bufferView.byteOffset + accessorInput.byteOffset,
+                        end = bufferView.byteOffset + bufferView.byteLength + accessorInput.byteOffset
+                    )
+                    buffer.order(ByteOrder.nativeOrder())
+                    buffer.asFloatBuffer().let { floatBuffer ->
+                        val data = FloatArray(accessorInput.count)
+                        floatBuffer.get(data)
+                        // println("Input data: ${data.contentToString()}")
+                    }
+                }
+            }
+        }
+
         return GltfLoadResult(
             scenes = scenes, defaultScene = defaultScene
         )
@@ -154,7 +180,7 @@ class GltfLoader(private val context: Context) {
 
                         gltfNode.mesh?.let { meshIndex ->
                             val skin = gltfNode.skin?.let { skinIndex ->
-                                gltf.skins[skinIndex]
+                                gltf.skins?.get(skinIndex) ?: error("No skin for index: $skinIndex")
                             }
 
                             val mesh = parseMesh(gltf, buffers, meshIndex, skin, id2NodeMapping)
@@ -224,6 +250,7 @@ class GltfLoader(private val context: Context) {
                     "POSITION" -> {
                         val accessor = accessorOf(gltf, buffers, accessorIndex)
                         positionCount = accessor.count
+                        println("Position count: ${accessor.count}")
                         accessor.asAttribute(BuiltInAttributeName.POSITION.attributeName)
                     }
 
@@ -239,7 +266,13 @@ class GltfLoader(private val context: Context) {
 
                     else -> {
                         val accessor = accessorOf(gltf, buffers, accessorIndex)
-                        println("Unsupported attribute: $key(${accessor.type}/${gltfAccessorComponentTypeToDataType(accessor.componentType)})")
+                        println(
+                            "Unsupported attribute: $key(${accessor.type}/${
+                                gltfAccessorComponentTypeToDataType(
+                                    accessor.componentType
+                                )
+                            }/${accessor.count})"
+                        )
                         null
                     }
                 }
@@ -247,7 +280,7 @@ class GltfLoader(private val context: Context) {
 
             // Skin
             var skeleton: Skeleton? = null
-            if(skin != null) {
+            if (skin != null) {
                 // Read joints and weights attributes
                 primitive.attributes["JOINTS_0"]?.let {
                     val accessor = accessorOf(gltf, buffers, it)
@@ -301,11 +334,12 @@ class GltfLoader(private val context: Context) {
                     bones = skin.joints
                         .map { id2NodeMapping[it] ?: error("No node for joint: $it") }
                         .mapIndexed { index, actor ->
-                        Skeleton.Bone(
-                            node = actor,
-                            inverseBindMatrix = inverseBindMatrices?.get(index) ?: Matrix4.identity()
-                        )
-                    }
+                            Skeleton.Bone(
+                                node = actor,
+                                inverseBindMatrix = inverseBindMatrices?.get(index)
+                                    ?: Matrix4.identity()
+                            )
+                        },
                 )
             }
 
@@ -437,7 +471,7 @@ class GltfLoader(private val context: Context) {
                 }
             }
 
-            val mesh = if(skeleton == null) {
+            val mesh = if (skeleton == null) {
                 Mesh(
                     geometry = geometry,
                     material = material,
@@ -622,21 +656,7 @@ class GltfLoader(private val context: Context) {
 private fun gltfPrimitiveModeToDrawMode(gltfMode: Int?) =
     if (gltfMode != null) DrawMode.entries[gltfMode] else DrawMode.TRIANGLES
 
-private fun gltfAccessorComponentTypeToDataType(componentType: Int): DataType {
-    return when (componentType) {
-        5120 -> DataType.BYTE
-        5121 -> DataType.UNSIGNED_BYTE
-        5122 -> DataType.SHORT
-        5123 -> DataType.UNSIGNED_SHORT
-        5125 -> DataType.UNSIGNED_INT
-        5126 -> DataType.FLOAT
-        else -> error("Unsupported component type: $componentType")
-    }.also {
-        require(it.value == componentType) {
-            "DataType value mismatch: ${it.value} != $componentType"
-        }
-    }
-}
+private fun gltfAccessorComponentTypeToDataType(componentType: Int): DataType = DataType.fromValue(componentType)
 
 private fun gltfAccessorItemSizeOf(type: String): Int {
     return when (type) {
@@ -712,9 +732,9 @@ private data class Gltf(
     val scene: Int,
     val scenes: List<Scene>,
     val textures: List<Texture>,
-    val skins: List<Skin>,
-    val animations: List<Animation>,
-    val extensionsUsed: List<String>,
+    val skins: List<Skin>?,
+    val animations: List<Animation>?,
+    val extensionsUsed: List<String>?,
 ) {
     data class Accessor(
         val bufferView: Int,
@@ -838,7 +858,7 @@ private data class Gltf(
         ) {
             data class Target(
                 val node: Int?,
-                val path: String,
+                val path: String, // target property: oneOf("translation", "rotation", "scale", "weights")
             )
         }
 
