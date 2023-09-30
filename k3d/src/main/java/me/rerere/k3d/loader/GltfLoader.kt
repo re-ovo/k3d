@@ -203,6 +203,10 @@ class GltfLoader(private val context: Context) {
         val group = ActorGroup().apply {
             name = gltfNode.name
 
+            require(gltfNode.weights == null) {
+                "node.weights is not supported yet"
+            }
+
             // Load rotation/scale/translation from matrix
             gltfNode.matrix?.let {
                 setModelMatrix(Matrix4.fromColumnMajor(it))
@@ -241,6 +245,10 @@ class GltfLoader(private val context: Context) {
         val gltfMesh = gltf.meshes[meshIndex]
         val group = ActorGroup().apply {
             name = gltfMesh.name
+
+            require(gltfMesh.weights == null) {
+                "mesh.weights is not supported yet: ${gltfMesh.weights}"
+            }
         }
         gltfMesh.primitives.forEach { primitive ->
             // Attributes
@@ -560,6 +568,12 @@ class GltfLoader(private val context: Context) {
     private fun accessorOf(gltf: Gltf, buffers: List<ByteBuffer>, index: Int): Accessor {
         val accessor = gltf.accessors[index]
         val bufferView = bufferViewOf(gltf, buffers, accessor.bufferView)
+
+        require(accessor.sparse == null) {
+            // TODO: support accessor.sparse
+            "Accessor sparse is not supported yet"
+        }
+
         return Accessor(
             bufferView = bufferView,
             componentType = accessor.componentType,
@@ -744,7 +758,12 @@ private data class Gltf(
         val max: List<Float>,
         val min: List<Float>,
         val type: String,
-    )
+        val sparse: Sparse?,
+    ) {
+        data class Sparse(
+            val count: Int,
+        )
+    }
 
     data class Asset(
         val version: String, val generator: String, val extras: JsonObject?
@@ -804,6 +823,7 @@ private data class Gltf(
     data class Mesh(
         val name: String,
         val primitives: List<Primitive>,
+        val weights: List<Float>?,
     )
 
     data class Primitive(
@@ -822,6 +842,7 @@ private data class Gltf(
         val rotation: List<Float>?,
         val scale: Vec3?,
         val translation: Vec3?,
+        val weights: List<Float>?,
     )
 
     data class Sampler(
