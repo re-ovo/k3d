@@ -18,6 +18,13 @@ class Matrix4(vararg val data: Float) {
             0f, 0f, 0f, 1f
         )
 
+        fun zero() = Matrix4(
+            0f, 0f, 0f, 0f,
+            0f, 0f, 0f, 0f,
+            0f, 0f, 0f, 0f,
+            0f, 0f, 0f, 0f
+        )
+
         fun fromColumnMajor(data: FloatArray): Matrix4 {
             if (data.size != 16) {
                 throw IllegalArgumentException("Matrix4 must have 16 elements")

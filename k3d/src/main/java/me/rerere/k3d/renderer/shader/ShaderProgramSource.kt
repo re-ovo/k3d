@@ -115,10 +115,11 @@ enum class BuiltInUniformName(val uniformName: String) {
     POINT_SIZE("u_pointSize"),
 
     SKIN_JOINTS_MATRIX("u_skinJointsMatrix"),
+    SKIN_JOINTS_MATRIX_SIZE("u_skinJointsMatrixSize"), // the width/height of the data texture
 }
 
 enum class BuiltInMarcoDefinition(
     val marcoDefinition: String
 ) {
-    SKIN_BONE_COUNT("SKIN_BONE_COUNT"),
+    USE_SKIN("USE_SKIN"),
 }

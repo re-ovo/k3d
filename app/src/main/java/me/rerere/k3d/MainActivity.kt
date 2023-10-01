@@ -1,6 +1,7 @@
 package me.rerere.k3d
 
 import android.content.Context
+import android.opengl.GLES30
 import android.opengl.GLSurfaceView
 import android.os.Bundle
 import android.util.AttributeSet
@@ -39,21 +40,19 @@ import me.rerere.k3d.renderer.Clock
 import me.rerere.k3d.renderer.GLES3Renderer
 import me.rerere.k3d.renderer.GLESAutoConfigChooser
 import me.rerere.k3d.renderer.ViewportSize
+import me.rerere.k3d.renderer.shader.glGetIntegerv
 import me.rerere.k3d.scene.actor.Mesh
 import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.camera.PerspectiveCamera
-import me.rerere.k3d.scene.geometry.CubeGeometry
 import me.rerere.k3d.scene.geometry.PlaneGeometry
 import me.rerere.k3d.scene.light.AmbientLight
 import me.rerere.k3d.scene.light.DirectionalLight
 import me.rerere.k3d.scene.light.PointLight
 import me.rerere.k3d.scene.light.SpotLight
-import me.rerere.k3d.scene.material.BlinnPhongMaterial
 import me.rerere.k3d.scene.material.StandardMaterial
 import me.rerere.k3d.ui.theme.K3dTheme
 import me.rerere.k3d.util.Color
 import me.rerere.k3d.util.math.Vec3
-import me.rerere.k3d.util.math.rotation.Euler
 import me.rerere.k3d.util.math.rotation.toRadian
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
@@ -61,7 +60,9 @@ import javax.microedition.khronos.opengles.GL10
 class MainActivity : ComponentActivity() {
     private val render = GLES3Renderer()
     private val camera = PerspectiveCamera().apply {
-        position.set(0f, 5f, 5f)
+        position.set(0f, 2f, 2f)
+        far = 1000f
+        near = 0.1f
     }
 
     private val plane = Mesh(
@@ -164,6 +165,7 @@ class MainActivity : ComponentActivity() {
                                                 inputStream = assets.open(it)
                                             )
                                             //result.defaultScene.scale.set(0.1f, 0.1f, 0.1f)
+                                            // result.defaultScene.position.set(1f,1f, 0f)
                                             scene.addChild(result.defaultScene)
                                             model = result.defaultScene
 
@@ -224,6 +226,17 @@ class MainActivity : ComponentActivity() {
                         setter = {
                             model?.scale?.set(it, it, it)
                         },
+                        max = 3f
+                    )
+
+                    K3DFloatController(
+                        label = "Y",
+                        getter = { model?.position?.y ?: 0f },
+                        setter = {
+                            model?.position?.y = it
+                        },
+                        max = 10f,
+                        min = -10f
                     )
 
                     K3DFloatController(
@@ -297,6 +310,15 @@ class MainActivity : ComponentActivity() {
             setRenderer(object : Renderer {
                 override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
                     println("Surface created")
+                    println("MAX_VERTEX_UNIFORM_VECTORS: ${
+                        glGetIntegerv(GLES30.GL_MAX_VERTEX_UNIFORM_VECTORS)
+                    }")
+                    println("MAX_FRAGMENT_UNIFORM_VECTORS: ${
+                        glGetIntegerv(GLES30.GL_MAX_FRAGMENT_UNIFORM_VECTORS)
+                    }")
+                    println("MAX_VERTEX_ATTRIBS: ${
+                        glGetIntegerv(GLES30.GL_MAX_VERTEX_ATTRIBS)
+                    }")
                 }
 
                 override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {

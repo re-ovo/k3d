@@ -1,14 +1,16 @@
 package me.rerere.k3d.renderer
 
+import android.graphics.Bitmap
 import android.opengl.GLES20
 import android.opengl.GLES30
-import android.opengl.GLES31
 import android.opengl.GLUtils
 import me.rerere.k3d.renderer.resource.Attribute
-import me.rerere.k3d.renderer.resource.DrawMode
 import me.rerere.k3d.renderer.resource.Texture
+import me.rerere.k3d.renderer.resource.TextureFilter
+import me.rerere.k3d.renderer.resource.TextureWrap
 import me.rerere.k3d.renderer.resource.Uniform
 import me.rerere.k3d.renderer.resource.VertexArray
+import me.rerere.k3d.renderer.shader.BuiltInAttributeName
 import me.rerere.k3d.renderer.shader.BuiltInUniformName
 import me.rerere.k3d.renderer.shader.ShaderProcessor
 import me.rerere.k3d.renderer.shader.ShaderProgramSource
@@ -17,9 +19,10 @@ import me.rerere.k3d.renderer.shader.createShader
 import me.rerere.k3d.renderer.shader.genBuffer
 import me.rerere.k3d.renderer.shader.genTexture
 import me.rerere.k3d.renderer.shader.genVertexArray
-import me.rerere.k3d.scene.actor.Actor
+import me.rerere.k3d.renderer.shader.glGetIntegerv
 import me.rerere.k3d.scene.actor.Primitive
 import me.rerere.k3d.scene.actor.Scene
+import me.rerere.k3d.scene.actor.Skeleton
 import me.rerere.k3d.scene.actor.SkinMesh
 import me.rerere.k3d.scene.actor.traverse
 import me.rerere.k3d.scene.camera.Camera
@@ -32,9 +35,16 @@ import me.rerere.k3d.util.Disposable
 import me.rerere.k3d.util.cleanIfDirty
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.math.Vec3
-import java.nio.Buffer
+import me.rerere.k3d.util.math.Vec4
+import me.rerere.k3d.util.math.ceilPowerOf2
+import me.rerere.k3d.util.math.transform.clean
+import me.rerere.k3d.util.readFloatData
+import me.rerere.k3d.util.readShortData
+import org.w3c.dom.Text
 import java.nio.ByteBuffer
 import java.util.IdentityHashMap
+import kotlin.math.ceil
+import kotlin.math.sqrt
 
 /**
  * GLES3 Renderer
@@ -126,8 +136,53 @@ class GLES3Renderer : Renderer {
             }
 
             // Apply skin uniforms
-            if(actor is SkinMesh) {
+            if (actor is SkinMesh) {
                 resourceManager.useSkinBones(this, actor)
+
+//                actor.geometry.getAttribute(BuiltInAttributeName.POSITION)?.let { positionAttr ->
+//                    val positions = positionAttr.readFloatData(positionAttr.count)
+//                    val skinIndex = actor.geometry.getAttribute(BuiltInAttributeName.JOINTS)?.readShortData(positionAttr.count)!!
+//                    val skinWeight = actor.geometry.getAttribute(BuiltInAttributeName.WEIGHTS)?.readFloatData(positionAttr.count)!!
+//
+//                    positions.forEachIndexed { index, floats ->
+//                        val (x, y, z) = floats
+//                        val skinIndexs = skinIndex[index]
+//                        val skinWeights = skinWeight[index]
+//
+//
+//
+//                        var matrix = Matrix4.zero()
+//                        repeat(4) { i ->
+//                            val boneIndex = skinIndexs[i].toInt()
+//                            val i = boneIndex * 4
+//                            val x = i % 32
+//                            val y = i / 32
+//
+//                            require(x in 0..31) { "x: $x" }
+//                            require(y in 0..31) { "y: $y" }
+
+//                            val boneWeight = skinWeights[i]
+//                            val bone = actor.skeleton.bones[boneIndex]
+//                            val boneMatrix = bone.node.worldMatrix * bone.inverseBindMatrix
+
+//                            matrix += boneMatrix * boneWeight
+//                        }
+//
+//                        val position = Vec4(x, y, z, 1f)
+//                        val transformed = camera.projectionMatrix * camera.worldMatrixInverse * matrix * position
+//                        val w = transformed.w
+//                        println("w: $w")
+//                        if (w != 0f) {
+//                            position.x = transformed.x / w
+//                            position.y = transformed.y / w
+//                            position.z = transformed.z / w
+//                        } else {
+//                            error("w == 0")
+//                        }
+//
+//                        require(position.z >= -1f && position.z <= 1f) { "z: ${position.z}" }
+//                    }
+//               }
             }
 
             // Apply built-in uniforms
@@ -207,6 +262,9 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
     // texture related resources
     private val textureBuffers = IdentityHashMap<Texture, Int>()
 
+    // bone matrix texture
+    private val boneTextures = IdentityHashMap<Skeleton, Texture>()
+
     inline fun useProgram(program: ShaderProgramSource, scope: ShaderProgramSource.() -> Unit) {
         if (program.dirty) {
             deleteProgram(program)
@@ -285,7 +343,10 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
     fun useTexture(program: ShaderProgramSource, name: String, texture: Texture, index: Int) {
         val programId = getProgram(program) ?: return
         val location = GLES30.glGetUniformLocation(programId, name)
-        val internalIndex = index + 1 // 0 is reserved for default texture
+        val internalIndex = when(texture) { // 0 is reserved for default texture,
+            is Texture.DataTexture -> 1 // 1 is reserved for bone matrix texture
+            else -> index + 2
+        }
         if (location != -1) {
             val textureId = getTextureBuffer(texture) ?: createTextureBuffer(texture)
                 .getOrThrow()
@@ -293,6 +354,7 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
             val target = when (texture) {
                 is Texture.Texture2D -> GLES30.GL_TEXTURE_2D
                 is Texture.TextureCube -> GLES30.GL_TEXTURE_CUBE_MAP
+                is Texture.DataTexture -> GLES30.GL_TEXTURE_2D
             }
             GLES30.glBindTexture(target, textureId)
             GLES30.glUniform1i(location, internalIndex)
@@ -359,7 +421,7 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
         uniformLocationOf(programId, "pointLightCount") {
             GLES30.glUniform1i(it, pointLights.size)
         }
-        if(pointLights.isNotEmpty()) {
+        if (pointLights.isNotEmpty()) {
             pointLights.forEachIndexed { index, t ->
                 require(index < 4) { "Point light count must be less than 4" }
 
@@ -394,7 +456,7 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
         uniformLocationOf(programId, "spotLightCount") {
             GLES30.glUniform1i(it, spotLights.size)
         }
-        if(spotLights.isNotEmpty()) {
+        if (spotLights.isNotEmpty()) {
             spotLights.forEachIndexed { index, t ->
                 require(index < 4) { "Spot light count must be less than 4" }
 
@@ -427,23 +489,47 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
 
     fun useSkinBones(shaderProgramSource: ShaderProgramSource, actor: SkinMesh) {
         val programId = getProgram(shaderProgramSource) ?: return
+        val skeleton = actor.skeleton
 
-        uniformLocationOf(programId, BuiltInUniformName.SKIN_JOINTS_MATRIX.uniformName) { location ->
-            val skeleton = actor.skeleton
-            val data = FloatArray(skeleton.bones.size * 16)
+        // RGBA is a vec4, so we need a RGBA(pixel) * 4 for each bone(4x4 matrix)
+        val bitMapSize = ceilPowerOf2( // ceilPowerOf2: make sure the size is power of 2
+            ceil(sqrt(skeleton.bones.size * 4.0)).toInt()
+        ).coerceAtLeast(4)
+
+        if (!boneTextures.containsKey(skeleton)) {
+            val boneMatrices = FloatArray(bitMapSize * bitMapSize * 4)
             skeleton.bones.forEachIndexed { index, bone ->
-                val matrix = bone.node.worldMatrix * bone.inverseBindMatrix
+                val matrix = (bone.node.worldMatrix * bone.inverseBindMatrix).transpose()
                 matrix.data.forEachIndexed { i, v ->
-                    data[index * 16 + i] = v
+                    boneMatrices[index * 16 + i] = v
                 }
             }
-            GLES20.glUniformMatrix4fv(
-                location,
-                skeleton.bones.size,
-                true,
-                data,
-                0
+            val buffer = ByteBuffer.allocate(boneMatrices.size * 4).apply {
+                order(java.nio.ByteOrder.nativeOrder())
+                asFloatBuffer().put(boneMatrices)
+            }
+            boneTextures[skeleton] = Texture.DataTexture(
+                buffer,
+                bitMapSize,
+                bitMapSize,
+                TextureWrap.CLAMP_TO_EDGE,
+                TextureWrap.CLAMP_TO_EDGE,
+                TextureFilter.LINEAR,
+                TextureFilter.LINEAR
             )
+            println(boneMatrices.contentToString())
+            println("[K3D:Resource] create bone texture: $bitMapSize x $bitMapSize (${skeleton.bones.size} bones)")
+        }
+
+        useTexture(
+            shaderProgramSource,
+            BuiltInUniformName.SKIN_JOINTS_MATRIX.uniformName,
+            boneTextures[skeleton]!!,
+            1
+        )
+
+        uniformLocationOf(programId, BuiltInUniformName.SKIN_JOINTS_MATRIX_SIZE.uniformName) { location ->
+            GLES20.glUniform1i(location, bitMapSize)
         }
     }
 
@@ -492,22 +578,54 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
         val target = when (texture) {
             is Texture.Texture2D -> GLES30.GL_TEXTURE_2D
             is Texture.TextureCube -> GLES30.GL_TEXTURE_CUBE_MAP
+            is Texture.DataTexture -> GLES30.GL_TEXTURE_2D
         }
         GLES30.glBindTexture(target, textureId)
-        GLUtils.texImage2D(
-            target,
-            0,
-            GLES30.GL_RGBA,
-            texture.data,
-            GLES30.GL_UNSIGNED_BYTE,
-            0
-        )
-        GLES30.glGenerateMipmap(target)
+
+        when(texture) {
+            is Texture.Texture2D -> {
+                GLUtils.texImage2D(
+                    target,
+                    0,
+                    GLES30.GL_RGBA,
+                    texture.data,
+                    GLES30.GL_UNSIGNED_BYTE,
+                    0
+                )
+            }
+            is Texture.TextureCube -> {
+                GLUtils.texImage2D(
+                    target,
+                    0,
+                    GLES30.GL_RGBA,
+                    texture.data,
+                    GLES30.GL_UNSIGNED_BYTE,
+                    0
+                )
+            }
+            is Texture.DataTexture -> {
+                GLES20.glTexImage2D(
+                    target,
+                    0,
+                    GLES30.GL_RGBA32F,
+                    texture.width,
+                    texture.height,
+                    0,
+                    GLES30.GL_RGBA,
+                    GLES30.GL_FLOAT,
+                    texture.data
+                )
+            }
+        }
+
+        if(texture !is Texture.DataTexture) GLES30.glGenerateMipmap(target)
+
         GLES30.glTexParameteri(target, GLES30.GL_TEXTURE_MIN_FILTER, texture.minFilter.value)
         GLES30.glTexParameteri(target, GLES30.GL_TEXTURE_MAG_FILTER, texture.magFilter.value)
         GLES30.glTexParameteri(target, GLES30.GL_TEXTURE_WRAP_S, texture.wrapS.value)
         GLES30.glTexParameteri(target, GLES30.GL_TEXTURE_WRAP_T, texture.wrapT.value)
-        GLES30.glBindTexture(target, 0)
+
+        GLES30.glBindTexture(target, 0) // unbind texture
 
         textureId
     }

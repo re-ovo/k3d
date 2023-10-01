@@ -72,3 +72,9 @@ internal fun genTexture(): Result<Int> {
     GLES30.glGenTextures(1, texture, 0)
     return Result.success(texture[0])
 }
+
+fun glGetIntegerv(pname: Int): Int {
+    val result = IntArray(1)
+    GLES30.glGetIntegerv(pname, result, 0)
+    return result[0]
+}

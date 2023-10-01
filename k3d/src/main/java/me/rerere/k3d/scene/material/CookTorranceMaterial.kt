@@ -17,7 +17,10 @@ import me.rerere.k3d.util.Color
 typealias StandardMaterial = CookTorranceMaterial
 
 class CookTorranceMaterial : ShaderMaterial(programSource()) {
-    var baseColor by color4fUniformOf(BuiltInUniformName.MATERIAL_COLOR, Color.fromRGBHex("#FFFFFF"))
+    var baseColor by color4fUniformOf(
+        BuiltInUniformName.MATERIAL_COLOR,
+        Color.fromRGBHex("#FFFFFF")
+    )
     var baseColorTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_BASE)
 
     var normalTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_NORMAL)
@@ -30,7 +33,10 @@ class CookTorranceMaterial : ShaderMaterial(programSource()) {
 
     var occlusionTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_OCCLUSION)
 
-    var emissive by color3fUniformOf(BuiltInUniformName.MATERIAL_EMISSIVE, Color.fromRGBHex("#000000"))
+    var emissive by color3fUniformOf(
+        BuiltInUniformName.MATERIAL_EMISSIVE,
+        Color.fromRGBHex("#000000")
+    )
     var emissiveTexture: Texture? by textureOf(BuiltInUniformName.TEXTURE_EMISSIVE)
 }
 
@@ -41,11 +47,23 @@ private val programSource: () -> ShaderProgramSource = {
     in vec3 a_normal;
     in vec3 a_tangent;
     
+    #ifdef USE_SKIN
     in ivec4 a_joints;
     in vec4 a_weights;
+    uniform highp sampler2D u_skinJointsMatrix;
+    uniform int u_skinJointsMatrixSize;
     
-    #ifdef SKIN_BONE_COUNT
-    uniform mat4 u_skinJointsMatrix[SKIN_BONE_COUNT];
+    mat4 getBoneMatrix(int index) {
+        int i = index * 4;
+        int x = i % u_skinJointsMatrixSize;
+        int y = i / u_skinJointsMatrixSize;
+        return mat4(
+            texelFetch(u_skinJointsMatrix, ivec2(x, y), 0),
+            texelFetch(u_skinJointsMatrix, ivec2(x + 1, y), 0),
+            texelFetch(u_skinJointsMatrix, ivec2(x + 2, y), 0),
+            texelFetch(u_skinJointsMatrix, ivec2(x + 3, y), 0)
+        );
+    }
     #endif
     
     out vec3 v_fragPos;
@@ -69,7 +87,7 @@ private val programSource: () -> ShaderProgramSource = {
     out vec2 v_texCoordRoughness;
     out vec2 v_texCoordOcclusion;
     out vec2 v_texCoordEmissive;
-
+    
     void main() {
         v_texCoordBase = a_texCoordBase;
         v_texCoordNormal = a_texCoordNormal;
@@ -78,12 +96,14 @@ private val programSource: () -> ShaderProgramSource = {
         v_texCoordOcclusion = a_texCoordOcclusion;
         v_texCoordEmissive = a_texCoordEmissive;
         
-        #ifdef SKIN_BONE_COUNT
-            mat4 skinJointsMatrix = u_skinJointsMatrix[a_joints[0]] * a_weights[0];
-            skinJointsMatrix += u_skinJointsMatrix[a_joints[1]] * a_weights[1];
-            skinJointsMatrix += u_skinJointsMatrix[a_joints[2]] * a_weights[2];
-            skinJointsMatrix += u_skinJointsMatrix[a_joints[3]] * a_weights[3];
-            mat4 modelMatrix = skinJointsMatrix;
+        #ifdef USE_SKIN
+            mat4 boneMatrixX = getBoneMatrix(a_joints.x);
+            mat4 boneMatrixY = getBoneMatrix(a_joints.y);
+            mat4 boneMatrixZ = getBoneMatrix(a_joints.z);
+            mat4 boneMatrixW = getBoneMatrix(a_joints.w);
+            
+            mat4 skinMatrix = boneMatrixX * a_weights.x + boneMatrixY * a_weights.y + boneMatrixZ * a_weights.z + boneMatrixW * a_weights.w;
+            mat4 modelMatrix = skinMatrix;
         #else  
             mat4 modelMatrix = u_modelMatrix;
         #endif

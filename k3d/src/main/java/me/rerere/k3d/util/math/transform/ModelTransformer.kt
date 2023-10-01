@@ -21,6 +21,19 @@ internal fun Actor.setModelMatrix(matrix4: Matrix4) {
     this.rotation.set(Quaternion.fromMatrix(copy))
 }
 
+internal fun Matrix4.clean(): Matrix4 {
+    val copy = this.copy()
+
+    val translation = parseTranslationMatrix(copy)
+    val scale = parseScaleMatrix(copy)
+
+    removeScale(copy, scale)
+
+    val rotation = Quaternion.fromMatrix(copy).toMatrix4()
+
+    return translationMatrix(translation) * rotation * scaleMatrix(scale)
+}
+
 internal fun translationMatrix(x: Float, y: Float, z: Float): Matrix4 {
     return Matrix4(
         1f, 0f, 0f, x,

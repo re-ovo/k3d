@@ -28,10 +28,7 @@ class SkinMesh(
     count: Int = 0
 ) : Mesh(geometry, material, count) {
     init {
-        material.program.addMarcoDefinition(
-            BuiltInMarcoDefinition.SKIN_BONE_COUNT.marcoDefinition,
-            skeleton.bones.size.toString()
-        )
+        material.program.addMarcoDefinition(BuiltInMarcoDefinition.USE_SKIN.marcoDefinition)
     }
 }
 
