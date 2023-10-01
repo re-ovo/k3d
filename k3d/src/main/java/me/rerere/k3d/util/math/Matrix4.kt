@@ -75,6 +75,33 @@ class Matrix4(vararg val data: Float) {
         return Matrix4(*result)
     }
 
+    operator fun times(scalar: Float): Matrix4 {
+        val result = FloatArray(16)
+        for (i in 0..15) {
+            result[i] = this.data[i] * scalar
+        }
+        return Matrix4(*result)
+    }
+
+    operator fun times(vector: Vec4): Vec4 {
+        val result = FloatArray(4)
+        for (i in 0..3) {
+            result[i] = 0f
+            for (j in 0..3) {
+                result[i] += this.data[i * 4 + j] * vector[j]
+            }
+        }
+        return Vec4(result[0], result[1], result[2], result[3])
+    }
+
+    operator fun plus(other: Matrix4): Matrix4 {
+        val result = FloatArray(16)
+        for (i in 0..15) {
+            result[i] = this.data[i] + other.data[i]
+        }
+        return Matrix4(*result)
+    }
+
     fun applyMatrix4(other: Matrix4): Matrix4 {
         val result = FloatArray(16)
         for (i in 0..3) {

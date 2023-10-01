@@ -6,7 +6,7 @@ import me.rerere.k3d.util.math.transform.perspectiveMatrix
 import kotlin.math.tan
 
 class PerspectiveCamera(
-    fov: Float = 60f,
+    fov: Float = 50f,
     aspect: Float = 1f,
     near: Float = 0.1f,
     far: Float = 500f

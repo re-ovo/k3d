@@ -29,5 +29,19 @@ class Vec4(
             markDirty()
         }
 
+    operator fun get(index: Int): Float {
+        return when(index) {
+            0 -> x
+            1 -> y
+            2 -> z
+            3 -> w
+            else -> error("Invalid index: $index")
+        }
+    }
+
     override var dirty: Boolean = false
+
+    override fun toString(): String {
+        return "Vec4(x=$x, y=$y, z=$z, w=$w)"
+    }
 }
