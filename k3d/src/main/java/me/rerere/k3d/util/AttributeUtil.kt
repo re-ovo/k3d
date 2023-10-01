@@ -24,6 +24,20 @@ internal fun Attribute.readFloatData(count: Int): List<FloatArray> {
     }
 }
 
+internal fun Attribute.readShortData(count: Int): List<ShortArray> {
+    val shortBuffer = data
+        .order(ByteOrder.nativeOrder())
+        .asShortBuffer()
+    val itemSize = itemSize
+    return buildList {
+        for (i in 0 until count) {
+            val shortArray = ShortArray(itemSize)
+            shortBuffer.get(shortArray)
+            add(shortArray)
+        }
+    }
+}
+
 internal fun BufferGeometry.readIndices(count: Int, indiceType: DataType): IntArray {
     val indices = getIndices()
     return if (indices != null) {
