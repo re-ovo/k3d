@@ -30,6 +30,7 @@ abstract class Actor : Dirty, DirtyUpdate {
             new
         }
     )
+
     val position = Vec3(0f, 0f, 0f)
     val rotation = Quaternion(0f, 0f, 0f, 1f)
     val scale = Vec3(1f, 1f, 1f)
