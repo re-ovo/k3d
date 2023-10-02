@@ -20,8 +20,8 @@ abstract class Camera : Actor() {
     var yaw: Float by dirtyValue(0f)
     var pitch: Float by dirtyValue(
         initialValue = 0f,
-        setter = {
-            it.coerceIn(MIN_PITCH, MAX_PITCH)
+        setter = { _, newValue ->
+            newValue.coerceIn(MIN_PITCH, MAX_PITCH)
         }
     )
     var roll: Float by dirtyValue(0f)

@@ -19,6 +19,10 @@ fun Dirty.dependsOn(dependency: Dirty) {
     DirtyQueue.dependsOn(this, dependency)
 }
 
+fun Dirty.dependsRemove(dependency: Dirty) {
+    DirtyQueue.dependsOn(this, dependency)
+}
+
 /**
  * Mark this object dirty
  */
@@ -29,8 +33,8 @@ fun Dirty.markDirty() {
 val Dirty.currentFrameDirty: Boolean
     get() = DirtyQueue.isCurrentFrameDirty(this)
 
-// TODO: Actor加载后没有更新
 // TODO: 支持/检测循环更新? (updateDirty里面再次调用markDirty)
+// TODO: 多Renderer支持, 现在只支持一个Renderer，每次渲染都会清空DirtyQueue
 object DirtyQueue {
     private val queue = concurrentQueueOf<Dirty>()
     private val dependencyGraph = DependencyGraph<Dirty>()
@@ -45,6 +49,13 @@ object DirtyQueue {
      */
     fun dependsOn(dependent: Dirty, dependency: Dirty) {
         dependencyGraph.addDependency(dependent, dependency)
+    }
+
+    /**
+     * @see [Dirty.dependsRemove]
+     */
+    fun dependsRemove(dependent: Dirty, dependency: Dirty) {
+        dependencyGraph.removeDependency(dependent, dependency)
     }
 
     /**
@@ -85,8 +96,16 @@ object DirtyQueue {
 fun <T> Dirty.dirtyValue(
     initialValue: T,
     getter: (T) -> T = { it },
-    setter: (T) -> T = { it }
+    setter: (oldValue: T, newValue: T) -> T = { _, newValue -> newValue }
 ): DirtyValue<T> {
+    return DirtyValue(this, initialValue, getter, setter)
+}
+
+fun <T> Dirty.dirtyValueNullable(
+    initialValue: T?,
+    getter: (T?) -> T? = { it },
+    setter: (oldValue: T?, newValue: T?) -> T? = { _, newValue -> newValue }
+): DirtyValue<T?> {
     return DirtyValue(this, initialValue, getter, setter)
 }
 
@@ -94,14 +113,14 @@ class DirtyValue<T>(
     private val dirty: Dirty,
     initialValue: T,
     private val getter: (T) -> T,
-    private val setter: (T) -> T
+    private val setter: (oldValue: T, newValue: T) -> T
 ) {
     private var _value = initialValue
 
     var value: T
         get() = getter(_value)
         set(value) {
-            _value = setter(value)
+            _value = setter(_value, value)
             dirty.markDirty()
         }
 
