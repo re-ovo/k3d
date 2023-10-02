@@ -18,15 +18,13 @@ import me.rerere.k3d.util.math.Matrix4
 open class Mesh(
     geometry: BufferGeometry,
     material: ShaderMaterial,
-    count: Int = 0
-) : Primitive(geometry, material, DrawMode.TRIANGLES, count)
+) : Primitive(geometry, material, DrawMode.TRIANGLES)
 
 class SkinMesh(
     geometry: BufferGeometry,
     material: ShaderMaterial,
     val skeleton: Skeleton,
-    count: Int = 0
-) : Mesh(geometry, material, count) {
+) : Mesh(geometry, material) {
     init {
         material.program.addMarcoDefinition(BuiltInMarcoDefinition.USE_SKIN.marcoDefinition)
     }

@@ -29,7 +29,6 @@ abstract class Primitive(
     val geometry: BufferGeometry,
     val material: ShaderMaterial,
     val mode: DrawMode = DrawMode.TRIANGLES,
-    val count: Int = 0,
 ) : Actor() {
     init {
         // Compute tangent if not found
@@ -42,10 +41,7 @@ abstract class Primitive(
                 println("(!) Tangent attribute not found, computing...")
                 val vertCount = geometry.getAttribute(BuiltInAttributeName.POSITION.attributeName)!!.count
                 println("Vertex count: $vertCount")
-                geometry.computeTangent(
-                    vertCount = vertCount,
-                    indicesCount = count
-                )
+                geometry.computeTangent()
             }
         }
     }

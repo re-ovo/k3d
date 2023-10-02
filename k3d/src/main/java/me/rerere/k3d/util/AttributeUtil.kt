@@ -10,7 +10,7 @@ import java.nio.FloatBuffer
 import java.nio.IntBuffer
 import kotlin.math.sqrt
 
-internal fun Attribute.readFloatData(count: Int): List<FloatArray> {
+internal fun Attribute.readFloatData(): List<FloatArray> {
     val floatBuffer = data
             .order(ByteOrder.nativeOrder())
             .asFloatBuffer()
@@ -38,46 +38,61 @@ internal fun Attribute.readShortData(count: Int): List<ShortArray> {
     }
 }
 
-internal fun BufferGeometry.readIndices(count: Int, indiceType: DataType): IntArray {
-    val indices = getIndices()
-    return if (indices != null) {
-        (indices as ByteBuffer).apply {
-            rewind()
-            order(ByteOrder.nativeOrder())
-        }.let { buffer ->
-            when(indiceType) {
-                DataType.UNSIGNED_INT -> {
-                    val result = IntArray(count)
-                    buffer.asIntBuffer().get(result)
-                    result
-                }
-
-                DataType.UNSIGNED_SHORT -> {
-                    val result = ShortArray(count)
-                    buffer.asShortBuffer().get(result)
-                    result.map { it.toInt() }.toIntArray()
-                }
-
-                else -> error("Unsupported indice type: $indiceType")
-            }
+internal fun Attribute.readIntData(count: Int): List<IntArray> {
+    val intBuffer = data
+        .order(ByteOrder.nativeOrder())
+        .asIntBuffer()
+    val itemSize = itemSize
+    return buildList {
+        for (i in 0 until count) {
+            val intArray = IntArray(itemSize)
+            intBuffer.get(intArray)
+            add(intArray)
         }
-
-    } else {
-        IntArray(count) { it }
     }
 }
 
-internal fun BufferGeometry.computeTangent(vertCount: Int, indicesCount: Int) {
+internal fun BufferGeometry.readIndices(): IntArray {
+    val indices = getIndices()
+    return if (indices != null) {
+        val buffer = indices.data.apply {
+            rewind()
+            order(ByteOrder.nativeOrder())
+        }
+        when(indices.type) {
+            DataType.UNSIGNED_INT -> {
+                val result = IntArray(indices.count)
+                buffer.asIntBuffer().get(result)
+                result
+            }
+
+            DataType.UNSIGNED_SHORT -> {
+                val result = ShortArray(indices.count)
+                buffer.asShortBuffer().get(result)
+                result.map { it.toInt() }.toIntArray()
+            }
+
+            else -> error("Unsupported indice type: ${indices.type}")
+        }
+    } else {
+        IntArray(drawCount) { it }
+    }
+}
+
+internal fun BufferGeometry.computeTangent() {
     val positions =
-        getAttribute(BuiltInAttributeName.POSITION.attributeName)?.readFloatData(vertCount)
+        getAttribute(BuiltInAttributeName.POSITION.attributeName)?.readFloatData()
             ?: return
     val uvs =
-        getAttribute(BuiltInAttributeName.TEXCOORD_NORMAL.attributeName)?.readFloatData(vertCount)
+        getAttribute(BuiltInAttributeName.TEXCOORD_NORMAL.attributeName)?.readFloatData()
             ?: return
-    val indices = readIndices(indicesCount, vao.getIndiceType())
+    val vertCount = getAttribute(BuiltInAttributeName.POSITION.attributeName)?.count ?: return
+    val indices = readIndices()
 
     require(indices.size % 3 == 0) { "Indices size must be a multiple of 3" }
-    require(indices.all { it < vertCount }) { "Indices must be less than vertex count" }
+    require(indices.all {
+        it in 0..<vertCount
+    }) { "Indices must be less than vertex count" }
 
     val tangentData = FloatArray(vertCount * 3)
 
@@ -132,9 +147,4 @@ internal fun BufferGeometry.computeTangent(vertCount: Int, indicesCount: Int) {
 
 private operator fun FloatArray.minus(other: FloatArray): FloatArray {
     return FloatArray(size) { this[it] - other[it] }
-}
-
-private fun FloatArray.length(): Double {
-    val sum = sumOf { it * it.toDouble() }
-    return sqrt(sum)
 }

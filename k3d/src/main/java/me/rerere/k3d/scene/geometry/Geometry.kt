@@ -4,11 +4,18 @@ import me.rerere.k3d.renderer.resource.Attribute
 import me.rerere.k3d.renderer.resource.DataType
 import me.rerere.k3d.renderer.resource.VertexArray
 import me.rerere.k3d.renderer.shader.BuiltInAttributeName
+import me.rerere.k3d.util.toByteBuffer
 import java.nio.Buffer
 import java.nio.ByteBuffer
 
 open class BufferGeometry {
     internal val vao = VertexArray()
+
+    val drawCount: Int
+        get() {
+            return getIndices()?.count ?: getAttribute(BuiltInAttributeName.POSITION)?.count
+            ?: error("Invalid geometry: no indices or position attribute found")
+        }
 
     fun setAttribute(name: String, attribute: Attribute) {
         vao.setAttribute(name, attribute)
@@ -26,15 +33,22 @@ open class BufferGeometry {
         return vao.getAttribute(attr.attributeName)
     }
 
-    fun getIndices(): Buffer? {
+    fun getIndices(): Attribute? {
         return vao.getIndices()
     }
 
-    fun setIndices(indices: ByteBuffer) {
+    fun setIndices(indices: Attribute) {
         vao.setIndices(indices)
     }
 
-    fun setIndiceType(type: DataType) {
-        vao.setIndiceType(type)
+    fun setIndices(indices: IntArray) {
+        setIndices(
+            Attribute(
+            itemSize = 1,
+            normalized = false,
+            count = indices.size,
+            data = indices.toByteBuffer(),
+            type = DataType.INT
+        ))
     }
 }

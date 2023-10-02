@@ -10,5 +10,4 @@ class GridHelper(
     geometry: BufferGeometry,
     material: ShaderMaterial,
     mode: DrawMode = DrawMode.TRIANGLES,
-    count: Int = 0
-) : Primitive(geometry, material, mode, count)
+) : Primitive(geometry, material, mode)

@@ -20,7 +20,6 @@ import me.rerere.k3d.scene.actor.Skeleton
 import me.rerere.k3d.scene.actor.SkinMesh
 import me.rerere.k3d.scene.actor.traverse
 import me.rerere.k3d.scene.geometry.BufferGeometry
-import me.rerere.k3d.scene.geometry.CubeGeometry
 import me.rerere.k3d.scene.material.AlphaMode
 import me.rerere.k3d.scene.material.StandardMaterial
 import me.rerere.k3d.util.Color
@@ -474,8 +473,13 @@ class GltfLoader(private val context: Context) {
                     setAttribute(name, attr)
                 }
                 indicesBuffer?.let {
-                    setIndices(it.first)
-                    setIndiceType(it.second)
+                    setIndices(Attribute(
+                        itemSize = 1,
+                        type = it.second,
+                        normalized = false,
+                        count = indicesAccessor?.count ?: error("No indices count"),
+                        data = it.first
+                    ))
                 }
             }
 
@@ -483,14 +487,12 @@ class GltfLoader(private val context: Context) {
                 Mesh(
                     geometry = geometry,
                     material = material,
-                    count = indicesAccessor?.count ?: positionCount
                 )
             } else {
                 SkinMesh(
                     geometry = geometry,
                     material = material,
                     skeleton = skeleton,
-                    count = indicesAccessor?.count ?: positionCount
                 )
             }
 
@@ -670,7 +672,8 @@ class GltfLoader(private val context: Context) {
 private fun gltfPrimitiveModeToDrawMode(gltfMode: Int?) =
     if (gltfMode != null) DrawMode.entries[gltfMode] else DrawMode.TRIANGLES
 
-private fun gltfAccessorComponentTypeToDataType(componentType: Int): DataType = DataType.fromValue(componentType)
+private fun gltfAccessorComponentTypeToDataType(componentType: Int): DataType =
+    DataType.fromValue(componentType)
 
 private fun gltfAccessorItemSizeOf(type: String): Int {
     return when (type) {

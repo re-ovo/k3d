@@ -230,18 +230,19 @@ class GLES3Renderer : Renderer {
                 )
             }
 
-            resourceManager.useVertexArray(this, actor.geometry.vao) {
+            resourceManager.useVertexArray(this, actor.geometry.vao) { // bind vao
+                // Draw call
                 if (actor.geometry.getIndices() == null) {
                     GLES20.glDrawArrays(
                         actor.mode.value,
                         0,
-                        actor.count
+                        actor.geometry.drawCount
                     )
                 } else {
                     GLES20.glDrawElements(
                         actor.mode.value,
-                        actor.count,
-                        actor.geometry.vao.getIndiceType().value,
+                        actor.geometry.drawCount,
+                        actor.geometry.vao.getIndices()?.type?.value ?: error("Invalid indice type"),
                         0
                     )
                 }
@@ -682,11 +683,11 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
                 println("[K3D:Resource] stream indices buffer: $indices")
                 vertexArraysIndicesBuffer[vertexArray] = buffer
                 GLES30.glBindBuffer(GLES30.GL_ELEMENT_ARRAY_BUFFER, buffer)
-                indices.rewind()
+                indices.data.rewind()
                 GLES30.glBufferData(
                     GLES30.GL_ELEMENT_ARRAY_BUFFER,
-                    indices.sizeInBytes(),
-                    indices,
+                    indices.data.sizeInBytes(),
+                    indices.data,
                     GLES30.GL_STATIC_DRAW
                 )
             }

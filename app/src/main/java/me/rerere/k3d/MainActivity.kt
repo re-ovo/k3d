@@ -72,7 +72,6 @@ class MainActivity : ComponentActivity() {
             roughness = 0.1f
             metallic = 0.8f
         },
-        count = 6
     ).apply {
         position.set(0f, 0f, 0f)
     }

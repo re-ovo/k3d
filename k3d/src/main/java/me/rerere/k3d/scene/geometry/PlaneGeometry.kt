@@ -17,7 +17,7 @@ class PlaneGeometry(
         setIndices(intArrayOf(
             0, 1, 2,
             0, 2, 3
-        ).toByteBuffer())
+        ))
     }
 
     private fun updatePositionBuffer() {
