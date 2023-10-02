@@ -1,6 +1,6 @@
 package me.rerere.k3d.util.math
 
-import me.rerere.k3d.util.Dirty
+import me.rerere.k3d.util.system.Dirty
 import kotlin.math.sqrt
 
 class Vec3(

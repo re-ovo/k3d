@@ -2,7 +2,7 @@
 
 package me.rerere.k3d.scene.actor
 
-import me.rerere.k3d.util.Dirty
+import me.rerere.k3d.util.system.Dirty
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.rotation.Quaternion

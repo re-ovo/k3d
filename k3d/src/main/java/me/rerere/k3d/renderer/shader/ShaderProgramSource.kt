@@ -1,6 +1,6 @@
 package me.rerere.k3d.renderer.shader
 
-import me.rerere.k3d.util.Dirty
+import me.rerere.k3d.util.system.Dirty
 
 class ShaderProgramSource(
     vertexShader: String,

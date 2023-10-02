@@ -1,7 +1,6 @@
 package me.rerere.k3d.renderer.resource
 
-import me.rerere.k3d.util.Dirty
-import java.nio.Buffer
+import me.rerere.k3d.util.system.Dirty
 import java.nio.ByteBuffer
 
 /**

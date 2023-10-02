@@ -1,6 +1,6 @@
 package me.rerere.k3d.util.math.rotation
 
-import me.rerere.k3d.util.Dirty
+import me.rerere.k3d.util.system.Dirty
 import me.rerere.k3d.util.math.Matrix4
 import kotlin.math.asin
 import kotlin.math.atan2

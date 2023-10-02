@@ -1,6 +1,5 @@
 package me.rerere.k3d.renderer
 
-import android.graphics.Bitmap
 import android.opengl.GLES20
 import android.opengl.GLES30
 import android.opengl.GLUtils
@@ -10,7 +9,6 @@ import me.rerere.k3d.renderer.resource.TextureFilter
 import me.rerere.k3d.renderer.resource.TextureWrap
 import me.rerere.k3d.renderer.resource.Uniform
 import me.rerere.k3d.renderer.resource.VertexArray
-import me.rerere.k3d.renderer.shader.BuiltInAttributeName
 import me.rerere.k3d.renderer.shader.BuiltInUniformName
 import me.rerere.k3d.renderer.shader.ShaderProcessor
 import me.rerere.k3d.renderer.shader.ShaderProgramSource
@@ -19,7 +17,6 @@ import me.rerere.k3d.renderer.shader.createShader
 import me.rerere.k3d.renderer.shader.genBuffer
 import me.rerere.k3d.renderer.shader.genTexture
 import me.rerere.k3d.renderer.shader.genVertexArray
-import me.rerere.k3d.renderer.shader.glGetIntegerv
 import me.rerere.k3d.scene.actor.Primitive
 import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.actor.Skeleton
@@ -31,16 +28,11 @@ import me.rerere.k3d.scene.light.DirectionalLight
 import me.rerere.k3d.scene.light.PointLight
 import me.rerere.k3d.scene.light.SpotLight
 import me.rerere.k3d.scene.material.AlphaMode
-import me.rerere.k3d.util.Disposable
-import me.rerere.k3d.util.cleanIfDirty
+import me.rerere.k3d.util.system.Disposable
+import me.rerere.k3d.util.system.cleanIfDirty
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.math.Vec3
-import me.rerere.k3d.util.math.Vec4
 import me.rerere.k3d.util.math.ceilPowerOf2
-import me.rerere.k3d.util.math.transform.clean
-import me.rerere.k3d.util.readFloatData
-import me.rerere.k3d.util.readShortData
-import org.w3c.dom.Text
 import java.nio.ByteBuffer
 import java.util.IdentityHashMap
 import kotlin.math.ceil

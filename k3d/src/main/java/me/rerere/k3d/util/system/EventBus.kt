@@ -1,4 +1,4 @@
-package me.rerere.k3d.util
+package me.rerere.k3d.util.system
 
 /**
  * Global EventBus
@@ -9,20 +9,19 @@ package me.rerere.k3d.util
  * @see me.rerere.k3d.renderer.Renderer
  */
 object EventBus {
-    private val listeners = mutableMapOf<Class<*>, MutableList<K3DEventListener<*>>>()
+    private val listeners = mutableMapOf<Class<*>, MutableList<K3DEventListener>>()
 
-    fun <T : K3DEvent> register(clazz: Class<T>, listener: K3DEventListener<T>) {
+    fun register(clazz: Class<*>, listener: K3DEventListener) {
         listeners.getOrPut(clazz) { mutableListOf() }.add(listener)
     }
 
-    fun <T : K3DEvent> unregister(clazz: Class<T>, listener: K3DEventListener<T>) {
+    fun unregister(clazz: Class<*>, listener: K3DEventListener) {
         listeners[clazz]?.remove(listener)
     }
 
     fun <T : K3DEvent> post(event: T) {
         listeners[event::class.java]?.forEach {
-            @Suppress("UNCHECKED_CAST")
-            (it as K3DEventListener<T>).onEvent(event)
+            it.onEvent(event)
         }
     }
 }
@@ -35,6 +34,6 @@ interface K3DEvent
 /**
  * Event listener
  */
-interface K3DEventListener<T : K3DEvent> {
-    fun onEvent(event: T)
+interface K3DEventListener {
+    fun onEvent(event: K3DEvent)
 }
