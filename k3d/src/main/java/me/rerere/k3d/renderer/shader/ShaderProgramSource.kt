@@ -1,22 +1,17 @@
 package me.rerere.k3d.renderer.shader
 
 import me.rerere.k3d.util.system.Dirty
+import me.rerere.k3d.util.system.dirtyValue
+import me.rerere.k3d.util.system.markDirty
 
 class ShaderProgramSource(
     vertexShader: String,
     fragmentShader: String,
     marcoDefinitions: Set<MarcoDefinition> = emptySet()
 ) : Dirty {
-    var vertexShader: String = vertexShader
-        set(value) {
-            field = value
-            markDirty()
-        }
-    var fragmentShader: String = fragmentShader
-        set(value) {
-            field = value
-            markDirty()
-        }
+    var vertexShader: String by dirtyValue(vertexShader)
+    var fragmentShader: String by dirtyValue(fragmentShader)
+
     private val _marcoDefinitions: MutableSet<MarcoDefinition> = marcoDefinitions.toMutableSet()
     val marcoDefinitions: Set<MarcoDefinition> = _marcoDefinitions
 
@@ -36,11 +31,7 @@ class ShaderProgramSource(
         require(vertexShader.isNotBlank() && fragmentShader.isNotBlank()) {
             "Shader source cannot be blank"
         }
-        // println(vertexShader.trimIndent())
-        // println(fragmentShader.trimIndent())
     }
-
-    override var dirty: Boolean = false
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

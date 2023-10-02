@@ -1,10 +1,16 @@
 package me.rerere.k3d.util.system
 
-import java.util.Collections
+import com.google.common.collect.MapMaker
+import java.nio.channels.FileChannel.MapMode
+import java.util.Stack
 import java.util.WeakHashMap
+import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.read
+import kotlin.concurrent.write
 
 internal class DependencyGraph<T> {
-    private val graph = WeakHashMap<T, MutableSet<T>>()
+    private val graph = MapMaker().weakKeys().makeMap<T, MutableSet<T>>()
+    private val lock = ReentrantReadWriteLock()
 
     /**
      * Add a dependency
@@ -17,7 +23,9 @@ internal class DependencyGraph<T> {
     fun addDependency(dependent: T, dependency: T) {
         checkCyclicDependency(dependent, dependency)
 
-        graph.getOrPut(dependent) { weakSetOf() }.add(dependency)
+        lock.write {
+            graph.getOrPut(dependent) { weakIdentityHashSetOf() }.add(dependency)
+        }
     }
 
     /**
@@ -36,7 +44,7 @@ internal class DependencyGraph<T> {
      * @param dependent The object that depends on the dependency
      * @return The dependencies of the dependent
      */
-    fun getDependencies(dependent: T): Set<T> {
+    private fun getDependencies(dependent: T): Set<T> {
         return graph[dependent] ?: emptySet()
     }
 
@@ -47,32 +55,28 @@ internal class DependencyGraph<T> {
      * @return The dependents of the dependency
      */
     fun getDependents(dependency: T): Set<T> {
-        return graph.filterValues { it.contains(dependency) }.keys
+        lock.read {
+            return graph.filterValues { it.contains(dependency) }.keys
+        }
     }
 
-    fun getDependentsRecursive(dependency: T): Set<T> {
-        val dependents = mutableSetOf<T>()
-        val queue = ArrayDeque<T>()
-        queue.add(dependency)
+    fun getDependentsRecursive(dependency: T): List<T> {
+        val result = arrayListOf<T>()
+
+        val queue = Stack<T>()
+        queue.push(dependency)
+
         while (queue.isNotEmpty()) {
-            val current = queue.removeFirst()
-            dependents.add(current)
+            val current = queue.pop()
+            if(current !== dependency) {
+                result.add(current)
+            }
             queue.addAll(getDependents(current))
         }
-        return dependents
+
+        return result
     }
 
-    fun getDependenciesRecursive(dependent: T): Set<T> {
-        val dependencies = mutableSetOf<T>()
-        val queue = ArrayDeque<T>()
-        queue.add(dependent)
-        while (queue.isNotEmpty()) {
-            val current = queue.removeFirst()
-            dependencies.add(current)
-            queue.addAll(getDependencies(current))
-        }
-        return dependencies
-    }
 
     /**
      * Clear the graph
@@ -92,7 +96,3 @@ internal class DependencyGraph<T> {
     }
 }
 
-// Create a weak set
-private fun <T> weakSetOf(): MutableSet<T> {
-    return Collections.newSetFromMap(WeakHashMap())
-}

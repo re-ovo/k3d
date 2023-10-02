@@ -7,6 +7,8 @@ import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.rotation.Euler
 import me.rerere.k3d.util.math.transform.rotationMatrix
 import me.rerere.k3d.util.math.transform.translationMatrix
+import me.rerere.k3d.util.system.dirtyValue
+import me.rerere.k3d.util.system.markDirty
 import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.atan2
@@ -14,30 +16,15 @@ import kotlin.math.atan2
 private const val MIN_PITCH = -Math.PI.toFloat() / 2
 private const val MAX_PITCH = Math.PI.toFloat() / 2
 
-abstract class Camera : Actor(), Dirty {
-    var yaw: Float = 0f
-        set(value) {
-            field = value
-            markDirty()
+abstract class Camera : Actor() {
+    var yaw: Float by dirtyValue(0f)
+    var pitch: Float by dirtyValue(
+        initialValue = 0f,
+        setter = {
+            it.coerceIn(MIN_PITCH, MAX_PITCH)
         }
-    var pitch: Float = 0f
-        set(value) {
-            field = value.coerceIn(MIN_PITCH, MAX_PITCH)
-            markDirty()
-        }
-    var roll: Float = 0f
-        set(value) {
-            field = value
-            markDirty()
-        }
-    override var dirty: Boolean = false
-        get() {
-            return field || super.dirty
-        }
-        set(value) {
-            field = value
-            super.dirty = value
-        }
+    )
+    var roll: Float by dirtyValue(0f)
 
     val worldMatrixInverse = Matrix4.identity()
     abstract val projectionMatrix: Matrix4
@@ -50,8 +37,7 @@ abstract class Camera : Actor(), Dirty {
                 position.z
             ) * rotationMatrix(pitch, yaw, roll)
         )
-        rotation.set(Euler(pitch, yaw, roll).toQuaternion())
-        // super.updateMatrix()
+        // rotation.set(Euler(pitch, yaw, roll).toQuaternion())
         worldMatrixInverse.set(worldMatrix.inverse())
     }
 
@@ -68,7 +54,7 @@ abstract class Camera : Actor(), Dirty {
             asin(direction.y)
         }
 
-        if(abs(direction.x) > 1e-2 || abs(direction.z) > 1e-2) {
+        if (abs(direction.x) > 1e-2 || abs(direction.z) > 1e-2) {
             yaw = atan2(-direction.x, -direction.z)
         }
     }

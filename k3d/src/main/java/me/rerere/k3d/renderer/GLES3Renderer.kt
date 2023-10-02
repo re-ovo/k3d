@@ -28,11 +28,12 @@ import me.rerere.k3d.scene.light.DirectionalLight
 import me.rerere.k3d.scene.light.PointLight
 import me.rerere.k3d.scene.light.SpotLight
 import me.rerere.k3d.scene.material.AlphaMode
-import me.rerere.k3d.util.system.Disposable
-import me.rerere.k3d.util.system.cleanIfDirty
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.ceilPowerOf2
+import me.rerere.k3d.util.system.DirtyQueue
+import me.rerere.k3d.util.system.Disposable
+import me.rerere.k3d.util.system.currentFrameDirty
 import java.nio.ByteBuffer
 import java.util.IdentityHashMap
 import kotlin.math.ceil
@@ -63,6 +64,15 @@ class GLES3Renderer : Renderer {
     private val cameraPositionUniform = Uniform.Vec3f(Vec3(0f, 0f, 0f))
 
     override fun render(scene: Scene, camera: Camera) {
+        // update dirty actors
+        DirtyQueue.frameStart()
+
+        this.render0(scene, camera)
+
+        DirtyQueue.frameEnd()
+    }
+
+    private fun render0(scene: Scene, camera: Camera) {
         GLES20.glClearColor(0f, 0f, 0f, 0f)
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
 
@@ -73,20 +83,10 @@ class GLES3Renderer : Renderer {
 
         GLES20.glEnable(GLES20.GL_DEPTH_TEST)
 
-        if (camera.dirty) {
-            camera.updateMatrix()
-            camera.markClean()
-        }
-
         val opaqueActors = arrayListOf<Primitive>()
         val transparentActors = arrayListOf<Primitive>()
 
         scene.traverse { actor ->
-            if (actor.dirty) {
-                actor.updateMatrix()
-                actor.markClean()
-            }
-
             if (actor is Primitive) {
                 when (actor.material.alphaMode) {
                     AlphaMode.OPAQUE -> opaqueActors.add(actor)
@@ -259,9 +259,8 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
     private val boneTextures = IdentityHashMap<Skeleton, Texture>()
 
     inline fun useProgram(program: ShaderProgramSource, scope: ShaderProgramSource.() -> Unit) {
-        if (program.dirty) {
+        if (program.currentFrameDirty) {
             deleteProgram(program)
-            program.markClean()
             println("Update program: $program due to dirty")
         }
 
@@ -691,7 +690,7 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
         val vao = vertexArrays[vertexArray] ?: return
         GLES30.glBindVertexArray(vao)
         vertexArray.getAttributes().forEach { (_, attribute) ->
-            attribute.cleanIfDirty { // update attribute buffer if dirty
+            attribute.takeIf { it.currentFrameDirty }?.let { // update attribute buffer if dirty
                 println("[K3D:Resource] update attribute buffer: $attribute")
                 val vbo = vertexArraysAttributesBuffer[attribute] ?: return@forEach
                 GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vbo)

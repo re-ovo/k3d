@@ -8,24 +8,28 @@ import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.rotation.Quaternion
 import me.rerere.k3d.util.math.transform.scaleMatrix
 import me.rerere.k3d.util.math.transform.translationMatrix
+import me.rerere.k3d.util.system.DirtyUpdate
+import me.rerere.k3d.util.system.dependsOn
 import java.util.UUID
 
-abstract class Actor : Dirty {
+abstract class Actor : Dirty, DirtyUpdate {
     private val _id = UUID.randomUUID()
-    override var dirty: Boolean = false
-        get() = field || position.dirty || rotation.dirty || scale.dirty
-        set(value) {
-            field = value
-            position.dirty = value
-            rotation.dirty = value
-            scale.dirty = value
-        }
     var name: String = ""
 
     var parent: Actor? = null
     val position = Vec3(0f, 0f, 0f)
     val rotation = Quaternion(0f, 0f, 0f, 1f)
     val scale = Vec3(1f, 1f, 1f)
+
+    init {
+        this.dependsOn(position)
+        this.dependsOn(rotation)
+        this.dependsOn(scale)
+    }
+
+    override fun updateDirty() {
+        this.updateMatrix()
+    }
 
     private var _localMatrix = Matrix4.identity()
     val localMatrix: Matrix4

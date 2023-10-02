@@ -2,6 +2,7 @@ package me.rerere.k3d.util.math.rotation
 
 import me.rerere.k3d.util.system.Dirty
 import me.rerere.k3d.util.math.Matrix4
+import me.rerere.k3d.util.system.dirtyValue
 import kotlin.math.asin
 import kotlin.math.atan2
 import kotlin.math.sqrt
@@ -28,27 +29,10 @@ class Quaternion(
     z: Float = 0f,
     w: Float = 1f
 ) : Dirty {
-    override var dirty: Boolean = false
-    var x = x
-        set(value) {
-            field = value
-            markDirty()
-        }
-    var y = y
-        set(value) {
-            field = value
-            markDirty()
-        }
-    var z = z
-        set(value) {
-            field = value
-            markDirty()
-        }
-    var w = w
-        set(value) {
-            field = value
-            markDirty()
-        }
+    var x by dirtyValue(x)
+    var y by dirtyValue(y)
+    var z by dirtyValue(z)
+    var w by dirtyValue(w)
 
     companion object {
         @JvmStatic

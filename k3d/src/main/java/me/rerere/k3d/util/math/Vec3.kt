@@ -1,6 +1,7 @@
 package me.rerere.k3d.util.math
 
 import me.rerere.k3d.util.system.Dirty
+import me.rerere.k3d.util.system.dirtyValue
 import kotlin.math.sqrt
 
 class Vec3(
@@ -8,23 +9,9 @@ class Vec3(
     y: Float = 0.0f,
     z: Float = 0.0f
 ) : Dirty {
-    var x = x
-        set(value) {
-            field = value
-            markDirty()
-        }
-    var y = y
-        set(value) {
-            field = value
-            markDirty()
-        }
-    var z = z
-        set(value) {
-            field = value
-            markDirty()
-        }
-
-    override var dirty: Boolean = false
+    var x by dirtyValue(x)
+    var y by dirtyValue(y)
+    var z by dirtyValue(z)
 
     fun set(x: Float, y: Float, z: Float): Vec3 {
         this.x = x

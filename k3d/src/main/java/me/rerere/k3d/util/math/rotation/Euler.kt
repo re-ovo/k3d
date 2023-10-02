@@ -1,6 +1,7 @@
 package me.rerere.k3d.util.math.rotation
 
 import me.rerere.k3d.util.system.Dirty
+import me.rerere.k3d.util.system.dirtyValue
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -24,29 +25,15 @@ class Euler(
     y: Float = 0f,
     z: Float = 0f,
 ): Dirty {
-    var x: Float = x
-        set(value) {
-            field = value
-            this.markDirty()
-        }
-    var y: Float = y
-        set(value) {
-            field = value
-            this.markDirty()
-        }
-    var z: Float = z
-        set(value) {
-            field = value
-            this.markDirty()
-        }
+    var x: Float by dirtyValue(x)
+    var y: Float by dirtyValue(y)
+    var z: Float by dirtyValue(z)
 
     fun set(x: Float, y: Float, z: Float) {
         this.x = x
         this.y = y
         this.z = z
     }
-
-    override var dirty: Boolean = false
 
     fun toQuaternion(): Quaternion {
         val c1 = cos(x / 2)
