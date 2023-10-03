@@ -34,8 +34,8 @@ import me.rerere.k3d.util.math.ceilPowerOf2
 import me.rerere.k3d.util.system.DirtyQueue
 import me.rerere.k3d.util.system.Disposable
 import me.rerere.k3d.util.system.currentFrameDirty
+import me.rerere.k3d.util.system.dependsOn
 import me.rerere.k3d.util.system.fastForeach
-import me.rerere.k3d.util.system.markCurrentFrameDirty
 import me.rerere.k3d.util.system.withoutMarkDirty
 import java.nio.ByteBuffer
 import java.util.IdentityHashMap
@@ -532,12 +532,17 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
                 TextureWrap.CLAMP_TO_EDGE,
                 TextureFilter.LINEAR,
                 TextureFilter.LINEAR
-            )
+            ).also { texture ->
+                // Mark texture dirty when skeleton dirty
+                // Skeleton depends on bone node
+                // So when bone node dirty, the texture will be marked dirty
+                texture.dependsOn(skeleton)
+            }
             println("[K3D:Resource] create bone texture: $bitMapSize x $bitMapSize (${skeleton.bones.size} bones)")
         }
 
         val texture = boneTextures[skeleton] ?: return
-        if(skeleton.bones.any { it.node.currentFrameDirty }) {
+        if(skeleton.currentFrameDirty) {
             val buffer = texture.data.asFloatBuffer()
             val boneMatrices = FloatArray(skeleton.bones.size * 16)
             buffer.get(boneMatrices)
@@ -549,7 +554,6 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
             }
             buffer.rewind()
             buffer.put(boneMatrices)
-            texture.markCurrentFrameDirty()
         }
 
         useTexture(

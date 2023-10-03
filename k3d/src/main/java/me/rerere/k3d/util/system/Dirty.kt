@@ -1,7 +1,6 @@
 package me.rerere.k3d.util.system
 
 import java.util.concurrent.locks.ReentrantLock
-import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.withLock
 import kotlin.reflect.KProperty
 
@@ -33,13 +32,12 @@ fun Dirty.dependsRemove(dependency: Dirty) {
 
 /**
  * Mark this object dirty
+ *
+ * It will be added to the dirty queue and will be updated in the next frame. The dependents of this
+ * object will be marked dirty too.
  */
 fun Dirty.markDirty() {
     DirtyQueue.markDirty(this)
-}
-
-fun Dirty.markCurrentFrameDirty() {
-    DirtyQueue.markCurrentFrameDirty(this)
 }
 
 /**
@@ -80,19 +78,6 @@ object DirtyQueue {
             dependencyGraph.getDependentsRecursive(dirty).fastForeach {
                 if (nonUpdateDirty.contains(it)) return@fastForeach
                 queue.add(it)
-            }
-        }
-    }
-
-    fun markCurrentFrameDirty(dirty: Dirty) {
-        if (nonUpdateDirty.contains(dirty)) return
-        currentFrameDirty += dirty
-
-        // Mark all dependents dirty
-        lock.withLock {
-            dependencyGraph.getDependentsRecursive(dirty).fastForeach {
-                if (nonUpdateDirty.contains(it)) return@fastForeach
-                currentFrameDirty += it
             }
         }
     }

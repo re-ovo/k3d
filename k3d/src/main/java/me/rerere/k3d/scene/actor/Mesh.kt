@@ -6,6 +6,8 @@ import me.rerere.k3d.renderer.shader.BuiltInMarcoDefinition
 import me.rerere.k3d.scene.geometry.BufferGeometry
 import me.rerere.k3d.scene.material.ShaderMaterial
 import me.rerere.k3d.util.math.Matrix4
+import me.rerere.k3d.util.system.Dirty
+import me.rerere.k3d.util.system.dependsOn
 
 /**
  * A mesh is a primitive represents a polygon mesh.
@@ -30,9 +32,16 @@ class SkinMesh(
     }
 }
 
-class Skeleton(val bones: List<Bone>) {
+class Skeleton(val bones: List<Bone>): Dirty {
     class Bone(
         val node: Actor,
         val inverseBindMatrix: Matrix4
     )
+
+    init {
+        // mark dirty when any bone is dirty
+        bones.forEach {
+            this.dependsOn(it.node)
+        }
+    }
 }
