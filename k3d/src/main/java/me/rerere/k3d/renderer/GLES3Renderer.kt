@@ -53,6 +53,9 @@ class GLES3Renderer : Renderer {
 
     override var viewportSize: ViewportSize = ViewportSize(0, 0)
 
+    private val _opaqueActors = arrayListOf<Primitive>()
+    private val _transparentActors = arrayListOf<Primitive>()
+
     override fun dispose() {
         this.resourceManager.dispose()
     }
@@ -347,6 +350,8 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
         index: Int,
         directIndex: Boolean
     ) {
+        this.updateTextureBuffer(texture)
+
         val programId = getProgram(program) ?: return
         val location = GLES30.glGetUniformLocation(programId, name)
         val internalIndex = if (directIndex) index else index + 2
@@ -366,9 +371,19 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
         }
     }
 
+    private val _ambientLights = arrayListOf<AmbientLight>()
+    private val _directionalLights = arrayListOf<DirectionalLight>()
+    private val _pointLights = arrayListOf<PointLight>()
+    private val _spotLights = arrayListOf<SpotLight>()
+
     fun useLights(program: ShaderProgramSource, scene: Scene) {
         if (scene.lights.isEmpty()) return
         val programId = getProgram(program) ?: return
+
+        scene.lights.filterIsInstanceTo(_ambientLights)
+        scene.lights.filterIsInstanceTo(_directionalLights)
+        scene.lights.filterIsInstanceTo(_pointLights)
+        scene.lights.filterIsInstanceTo(_spotLights)
 
         // ambient light
         val ambientLights = scene.lights.filterIsInstance<AmbientLight>()
