@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.K3d"
         tools:targetApi="31">
+
+        <profileable android:shell="true" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

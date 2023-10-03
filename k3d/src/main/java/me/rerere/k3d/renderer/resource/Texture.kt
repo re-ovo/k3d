@@ -1,6 +1,7 @@
 package me.rerere.k3d.renderer.resource
 
 import android.graphics.Bitmap
+import me.rerere.k3d.util.system.Dirty
 import java.nio.ByteBuffer
 
 sealed class Texture(
@@ -10,7 +11,7 @@ sealed class Texture(
     val wrapT: TextureWrap,
     val minFilter: TextureFilter,
     val magFilter: TextureFilter,
-) {
+): Dirty {
     class Texture2D(
         val data: Bitmap,
         width: Int,

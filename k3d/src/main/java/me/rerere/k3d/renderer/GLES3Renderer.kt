@@ -34,6 +34,9 @@ import me.rerere.k3d.util.math.ceilPowerOf2
 import me.rerere.k3d.util.system.DirtyQueue
 import me.rerere.k3d.util.system.Disposable
 import me.rerere.k3d.util.system.currentFrameDirty
+import me.rerere.k3d.util.system.fastForeach
+import me.rerere.k3d.util.system.markCurrentFrameDirty
+import me.rerere.k3d.util.system.withoutMarkDirty
 import java.nio.ByteBuffer
 import java.util.IdentityHashMap
 import kotlin.math.ceil
@@ -72,6 +75,9 @@ class GLES3Renderer : Renderer {
         DirtyQueue.frameEnd()
     }
 
+    private val _opaqueActors = arrayListOf<Primitive>()
+    private val _transparentActors = arrayListOf<Primitive>()
+
     private fun render0(scene: Scene, camera: Camera) {
         GLES20.glClearColor(0f, 0f, 0f, 0f)
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT or GLES20.GL_DEPTH_BUFFER_BIT)
@@ -83,15 +89,12 @@ class GLES3Renderer : Renderer {
 
         GLES20.glEnable(GLES20.GL_DEPTH_TEST)
 
-        val opaqueActors = arrayListOf<Primitive>()
-        val transparentActors = arrayListOf<Primitive>()
-
         scene.traverse { actor ->
             if (actor is Primitive) {
                 when (actor.material.alphaMode) {
-                    AlphaMode.OPAQUE -> opaqueActors.add(actor)
-                    AlphaMode.BLEND -> transparentActors.add(actor)
-                    AlphaMode.MASK -> transparentActors.add(actor).also {
+                    AlphaMode.OPAQUE -> _opaqueActors.add(actor)
+                    AlphaMode.BLEND -> _transparentActors.add(actor)
+                    AlphaMode.MASK -> _transparentActors.add(actor).also {
                         error("AlphaMode.MASK is not supported yet")
                     }
                 }
@@ -99,16 +102,19 @@ class GLES3Renderer : Renderer {
         }
 
         // render opaque actors
-        opaqueActors.forEach { actor ->
+        _opaqueActors.fastForeach { actor ->
             renderPrimitive(actor, camera, scene)
         }
 
         // render transparent actors
         GLES20.glDepthMask(false)
-        transparentActors.forEach { actor ->
+        _transparentActors.fastForeach { actor ->
             renderPrimitive(actor, camera, scene)
         }
         GLES20.glDepthMask(true)
+
+        _opaqueActors.clear()
+        _transparentActors.clear()
     }
 
     private fun renderPrimitive(actor: Primitive, camera: Camera, scene: Scene) {
@@ -202,7 +208,7 @@ class GLES3Renderer : Renderer {
             resourceManager.useUniform(
                 actor.material.program,
                 cameraPositionUniform.apply {
-                    value.apply {
+                    value.withoutMarkDirty {
                         x = camera.position.x
                         y = camera.position.y
                         z = camera.position.z
@@ -218,7 +224,8 @@ class GLES3Renderer : Renderer {
                     actor.material.program,
                     name,
                     texture,
-                    index
+                    index,
+                    false
                 )
             }
 
@@ -234,7 +241,8 @@ class GLES3Renderer : Renderer {
                     GLES20.glDrawElements(
                         actor.mode.value,
                         actor.geometry.drawCount,
-                        actor.geometry.vao.getIndices()?.type?.value ?: error("Invalid indice type"),
+                        actor.geometry.vao.getIndices()?.type?.value
+                            ?: error("Invalid indice type"),
                         0
                     )
                 }
@@ -256,7 +264,7 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
     private val textureBuffers = IdentityHashMap<Texture, Int>()
 
     // bone matrix texture
-    private val boneTextures = IdentityHashMap<Skeleton, Texture>()
+    private val boneTextures = IdentityHashMap<Skeleton, Texture.DataTexture>()
 
     inline fun useProgram(program: ShaderProgramSource, scope: ShaderProgramSource.() -> Unit) {
         if (program.currentFrameDirty) {
@@ -332,14 +340,19 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
         }
     }
 
-    fun useTexture(program: ShaderProgramSource, name: String, texture: Texture, index: Int) {
+    fun useTexture(
+        program: ShaderProgramSource,
+        name: String,
+        texture: Texture,
+        index: Int,
+        directIndex: Boolean
+    ) {
         val programId = getProgram(program) ?: return
         val location = GLES30.glGetUniformLocation(programId, name)
-        val internalIndex = when(texture) { // 0 is reserved for default texture,
-            is Texture.DataTexture -> 1 // 1 is reserved for bone matrix texture
-            else -> index + 2
-        }
+        val internalIndex = if (directIndex) index else index + 2
         if (location != -1) {
+            this.updateTextureBuffer(texture)
+
             val textureId = getTextureBuffer(texture) ?: createTextureBuffer(texture)
                 .getOrThrow()
             GLES30.glActiveTexture(GLES30.GL_TEXTURE0 + internalIndex)
@@ -509,18 +522,36 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
                 TextureFilter.LINEAR,
                 TextureFilter.LINEAR
             )
-            println(boneMatrices.contentToString())
             println("[K3D:Resource] create bone texture: $bitMapSize x $bitMapSize (${skeleton.bones.size} bones)")
+        }
+
+        val texture = boneTextures[skeleton] ?: return
+        if(skeleton.bones.any { it.node.currentFrameDirty }) {
+            val buffer = texture.data.asFloatBuffer()
+            val boneMatrices = FloatArray(skeleton.bones.size * 16)
+            buffer.get(boneMatrices)
+            skeleton.bones.forEachIndexed { index, bone ->
+                val matrix = (bone.node.worldMatrix * bone.inverseBindMatrix).transpose()
+                matrix.data.forEachIndexed { i, v ->
+                    boneMatrices[index * 16 + i] = v
+                }
+            }
+            buffer.rewind()
+            buffer.put(boneMatrices)
+            texture.markCurrentFrameDirty()
         }
 
         useTexture(
             shaderProgramSource,
             BuiltInUniformName.SKIN_JOINTS_MATRIX.uniformName,
-            boneTextures[skeleton]!!,
-            1
+            texture,
+            1,
+            true
         )
-
-        uniformLocationOf(programId, BuiltInUniformName.SKIN_JOINTS_MATRIX_SIZE.uniformName) { location ->
+        uniformLocationOf(
+            programId,
+            BuiltInUniformName.SKIN_JOINTS_MATRIX_SIZE.uniformName
+        ) { location ->
             GLES20.glUniform1i(location, bitMapSize)
         }
     }
@@ -574,7 +605,7 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
         }
         GLES30.glBindTexture(target, textureId)
 
-        when(texture) {
+        when (texture) {
             is Texture.Texture2D -> {
                 GLUtils.texImage2D(
                     target,
@@ -585,6 +616,7 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
                     0
                 )
             }
+
             is Texture.TextureCube -> {
                 GLUtils.texImage2D(
                     target,
@@ -595,6 +627,7 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
                     0
                 )
             }
+
             is Texture.DataTexture -> {
                 GLES20.glTexImage2D(
                     target,
@@ -610,7 +643,7 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
             }
         }
 
-        if(texture !is Texture.DataTexture) GLES30.glGenerateMipmap(target)
+        if (texture !is Texture.DataTexture) GLES30.glGenerateMipmap(target)
 
         GLES30.glTexParameteri(target, GLES30.GL_TEXTURE_MIN_FILTER, texture.minFilter.value)
         GLES30.glTexParameteri(target, GLES30.GL_TEXTURE_MAG_FILTER, texture.magFilter.value)
@@ -620,6 +653,64 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
         GLES30.glBindTexture(target, 0) // unbind texture
 
         textureId
+    }
+
+    fun updateTextureBuffer(texture: Texture) {
+        if (!texture.currentFrameDirty) return
+
+        println("[K3D:Resource] update texture buffer: $texture")
+
+        val textureId = textureBuffers[texture] ?: return
+        val target = when (texture) {
+            is Texture.Texture2D -> GLES30.GL_TEXTURE_2D
+            is Texture.TextureCube -> GLES30.GL_TEXTURE_CUBE_MAP
+            is Texture.DataTexture -> GLES30.GL_TEXTURE_2D
+        }
+
+        GLES30.glBindTexture(target, textureId)
+        when (texture) {
+            is Texture.Texture2D -> {
+                GLUtils.texSubImage2D(
+                    target,
+                    0,
+                    0,
+                    0,
+                    texture.data,
+                    GLES30.GL_RGBA,
+                    GLES30.GL_UNSIGNED_BYTE
+                )
+                GLES20.glGenerateMipmap(target)
+            }
+
+            is Texture.TextureCube -> {
+                GLUtils.texSubImage2D(
+                    target,
+                    0,
+                    0,
+                    0,
+                    texture.data,
+                    GLES30.GL_RGBA,
+                    GLES30.GL_UNSIGNED_BYTE
+                )
+                GLES20.glGenerateMipmap(target)
+            }
+
+            is Texture.DataTexture -> {
+                GLES20.glTexSubImage2D(
+                    target,
+                    0,
+                    0,
+                    0,
+                    texture.width,
+                    texture.height,
+                    GLES30.GL_RGBA,
+                    GLES30.GL_FLOAT,
+                    texture.data.rewind()
+                )
+            }
+        }
+
+        GLES30.glBindTexture(target, 0) // unbind texture
     }
 
     fun deleteTextureBuffer(texture: Texture) {

@@ -37,7 +37,6 @@ abstract class Camera : Actor() {
                 position.z
             ) * rotationMatrix(pitch, yaw, roll)
         )
-        // rotation.set(Euler(pitch, yaw, roll).toQuaternion())
         worldMatrixInverse.set(worldMatrix.inverse())
     }
 

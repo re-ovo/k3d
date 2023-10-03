@@ -1,6 +1,6 @@
 package me.rerere.k3d.scene.actor
 
-import java.util.Stack
+import me.rerere.k3d.util.system.fastForeach
 
 /**
  * ActorGroup is a group of actors, it can be used to group actors together.
@@ -42,15 +42,12 @@ open class ActorGroup : Actor() {
 }
 
 fun ActorGroup.traverse(action: (Actor) -> Unit) {
-    val stack = Stack<Actor>()
-    stack.push(this)
-    while (stack.isNotEmpty()) {
-        val actor = stack.pop()
-        action(actor)
-        if (actor is ActorGroup) {
-            actor.getChildren().forEach {
-                stack.push(it)
-            }
+    action(this)
+    val children = this.getChildren()
+    children.fastForeach { child: Actor ->
+        action(child)
+        if (child is ActorGroup) {
+            child.traverse(action)
         }
     }
 }
