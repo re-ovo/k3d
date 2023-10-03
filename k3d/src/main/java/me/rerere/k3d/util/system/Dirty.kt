@@ -1,5 +1,8 @@
 package me.rerere.k3d.util.system
 
+import java.util.concurrent.locks.ReentrantLock
+import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.withLock
 import kotlin.reflect.KProperty
 
 interface Dirty
@@ -56,10 +59,9 @@ inline fun <T : Dirty> T.withoutMarkDirty(block: T.() -> Unit) {
 val Dirty.currentFrameDirty: Boolean
     get() = DirtyQueue.isCurrentFrameDirty(this)
 
-// TODO: 支持/检测循环更新? (updateDirty里面再次调用markDirty)
-// TODO: 多Renderer支持, 现在只支持一个Renderer，每次渲染都会清空DirtyQueue
 object DirtyQueue {
     private val dependencyGraph = DependencyGraph<Dirty>()
+    private val lock = ReentrantLock()
 
     private val queue = concurrentQueueOf<Dirty>()
     private val currentFrameDirty = weakIdentityHashSetOf<Dirty>()
@@ -74,9 +76,11 @@ object DirtyQueue {
         queue.add(dirty)
 
         // Mark all dependents dirty
-        dependencyGraph.getDependentsRecursive(dirty).forEach {
-            if (nonUpdateDirty.contains(it)) return@forEach
-            queue.add(it)
+        lock.withLock {
+            dependencyGraph.getDependentsRecursive(dirty).fastForeach {
+                if (nonUpdateDirty.contains(it)) return@fastForeach
+                queue.add(it)
+            }
         }
     }
 
@@ -85,9 +89,11 @@ object DirtyQueue {
         currentFrameDirty += dirty
 
         // Mark all dependents dirty
-        dependencyGraph.getDependentsRecursive(dirty).forEach {
-            if (nonUpdateDirty.contains(it)) return@forEach
-            currentFrameDirty += it
+        lock.withLock {
+            dependencyGraph.getDependentsRecursive(dirty).fastForeach {
+                if (nonUpdateDirty.contains(it)) return@fastForeach
+                currentFrameDirty += it
+            }
         }
     }
 
@@ -122,8 +128,6 @@ object DirtyQueue {
                     updateDirty()
                 }
             }
-
-            // println("dirty: ${element.javaClass.simpleName}")
 
             element = queue.poll()
         }

@@ -72,6 +72,7 @@ class GLES3Renderer : Renderer {
     override fun render(scene: Scene, camera: Camera) {
         // update dirty actors
         DirtyQueue.frameStart()
+
         this.render0(scene, camera)
 
         DirtyQueue.frameEnd()

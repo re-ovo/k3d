@@ -8,9 +8,16 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
 
-internal class DependencyGraph<T> {
-    private val graph = MapMaker().weakKeys().makeMap<T, MutableSet<T>>()
-    private val lock = ReentrantReadWriteLock()
+/**
+ * Object dependency graph
+ *
+ * Note: This class is not thread-safe
+ *
+ * @param T The type of the object
+ */
+internal class DependencyGraph<T : Any> {
+    private val dependents2dependency = MapMaker().weakKeys().makeMap<T, MutableSet<T>>()
+    private val dependency2dependents = MapMaker().weakKeys().makeMap<T, MutableSet<T>>()
 
     /**
      * Add a dependency
@@ -22,10 +29,8 @@ internal class DependencyGraph<T> {
      */
     fun addDependency(dependent: T, dependency: T) {
         checkCyclicDependency(dependent, dependency)
-
-        lock.write {
-            graph.getOrPut(dependent) { weakIdentityHashSetOf() }.add(dependency)
-        }
+        dependents2dependency.getOrPut(dependent) { weakIdentityHashSetOf() }.add(dependency)
+        dependency2dependents.getOrPut(dependency) { weakIdentityHashSetOf() }.add(dependent)
     }
 
     /**
@@ -35,7 +40,8 @@ internal class DependencyGraph<T> {
      * @param dependency The object that the dependent depends on
      */
     fun removeDependency(dependent: T, dependency: T) {
-        graph[dependent]?.remove(dependency)
+        dependents2dependency[dependent]?.remove(dependency)
+        dependency2dependents[dependency]?.remove(dependent)
     }
 
     /**
@@ -45,7 +51,7 @@ internal class DependencyGraph<T> {
      * @return The dependencies of the dependent
      */
     private fun getDependencies(dependent: T): Set<T> {
-        return graph[dependent] ?: emptySet()
+        return dependents2dependency[dependent] ?: emptySet()
     }
 
     /**
@@ -55,44 +61,51 @@ internal class DependencyGraph<T> {
      * @return The dependents of the dependency
      */
     fun getDependents(dependency: T): Set<T> {
-        lock.read {
-            return graph.filterValues { it.contains(dependency) }.keys
-        }
+        return dependency2dependents[dependency] ?: emptySet()
     }
 
+    private val _dependentsRecursiveCache = arrayListOf<T>() // avoid allocation
+
+    /**
+     * Get all dependents of the dependency recursively
+     *
+     * Note that this method is not thread-safe, because it reuse a list to avoid object allocation
+     *
+     * @param dependency The object that the dependent depends on
+     * @return The dependents of the dependency recursively
+     */
     fun getDependentsRecursive(dependency: T): List<T> {
-        val result = arrayListOf<T>()
-
-        val queue = Stack<T>()
-        queue.push(dependency)
-
-        while (queue.isNotEmpty()) {
-            val current = queue.pop()
-            if(current !== dependency) {
-                result.add(current)
+        _dependentsRecursiveCache.clear()
+        fun dfs(d: T) {
+            if(d !== dependency) _dependentsRecursiveCache += d
+            getDependents(d).forEach {
+                if (it !in _dependentsRecursiveCache) {
+                    dfs(it)
+                }
             }
-            queue.addAll(getDependents(current))
         }
-
-        return result
+        dfs(dependency)
+        return _dependentsRecursiveCache
     }
-
 
     /**
      * Clear the graph
      */
     fun clear() {
-        graph.clear()
+        dependents2dependency.clear()
+        dependency2dependents.clear()
     }
 
     // Check if the dependency is cyclic
     private fun checkCyclicDependency(dependent: T, dependency: T) {
-        if (dependent == dependency) {
-            throw IllegalArgumentException("Cyclic dependency detected: $dependent -> $dependency")
-        }
-        if (dependency in getDependencies(dependent)) {
-            throw IllegalArgumentException("Cyclic dependency detected: $dependent -> $dependency")
+        if (dependency in getDependentsRecursive(dependent)) {
+            throw CyclicDependencyException(dependent, dependency)
         }
     }
 }
+
+/**
+ * Exception thrown when a cyclic dependency is detected
+ */
+class CyclicDependencyException(dependent: Any, dependency: Any) : RuntimeException("Cyclic dependency detected: $dependent -> $dependency")
 
