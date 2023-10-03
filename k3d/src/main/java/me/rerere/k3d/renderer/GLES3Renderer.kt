@@ -72,14 +72,10 @@ class GLES3Renderer : Renderer {
     override fun render(scene: Scene, camera: Camera) {
         // update dirty actors
         DirtyQueue.frameStart()
-
         this.render0(scene, camera)
 
         DirtyQueue.frameEnd()
     }
-
-    private val _opaqueActors = arrayListOf<Primitive>()
-    private val _transparentActors = arrayListOf<Primitive>()
 
     private fun render0(scene: Scene, camera: Camera) {
         GLES20.glClearColor(0f, 0f, 0f, 0f)
@@ -356,8 +352,6 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
         val location = GLES30.glGetUniformLocation(programId, name)
         val internalIndex = if (directIndex) index else index + 2
         if (location != -1) {
-            this.updateTextureBuffer(texture)
-
             val textureId = getTextureBuffer(texture) ?: createTextureBuffer(texture)
                 .getOrThrow()
             GLES30.glActiveTexture(GLES30.GL_TEXTURE0 + internalIndex)
@@ -386,9 +380,8 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
         scene.lights.filterIsInstanceTo(_spotLights)
 
         // ambient light
-        val ambientLights = scene.lights.filterIsInstance<AmbientLight>()
-        if (ambientLights.isNotEmpty()) {
-            val theLight = ambientLights[0]
+        if (_ambientLights.isNotEmpty()) {
+            val theLight = _ambientLights[0]
             uniformLocationOf(programId, "ambientLight.position") {
                 GLES30.glUniform3f(
                     it,
@@ -410,9 +403,8 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
         }
 
         // directional light
-        val directionalLights = scene.lights.filterIsInstance<DirectionalLight>()
-        if (directionalLights.isNotEmpty()) {
-            val theLight = directionalLights[0]
+        if (_directionalLights.isNotEmpty()) {
+            val theLight = _directionalLights[0]
             uniformLocationOf(programId, "directionalLight.position") {
                 GLES30.glUniform3f(
                     it,
@@ -437,12 +429,11 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
         }
 
         // point light
-        val pointLights = scene.lights.filterIsInstance<PointLight>()
         uniformLocationOf(programId, "pointLightCount") {
-            GLES30.glUniform1i(it, pointLights.size)
+            GLES30.glUniform1i(it, _pointLights.size)
         }
-        if (pointLights.isNotEmpty()) {
-            pointLights.forEachIndexed { index, t ->
+        if (_pointLights.isNotEmpty()) {
+            _pointLights.forEachIndexed { index, t ->
                 require(index < 4) { "Point light count must be less than 4" }
 
                 uniformLocationOf(programId, "pointLight[$index].position") {
@@ -472,12 +463,11 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
         }
 
         // spot light
-        val spotLights = scene.lights.filterIsInstance<SpotLight>()
         uniformLocationOf(programId, "spotLightCount") {
-            GLES30.glUniform1i(it, spotLights.size)
+            GLES30.glUniform1i(it, _spotLights.size)
         }
-        if (spotLights.isNotEmpty()) {
-            spotLights.forEachIndexed { index, t ->
+        if (_spotLights.isNotEmpty()) {
+            _spotLights.forEachIndexed { index, t ->
                 require(index < 4) { "Spot light count must be less than 4" }
 
                 uniformLocationOf(programId, "spotLight[$index].position") {
@@ -505,6 +495,11 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
                 }
             }
         }
+
+        _ambientLights.clear()
+        _directionalLights.clear()
+        _pointLights.clear()
+        _spotLights.clear()
     }
 
     fun useSkinBones(shaderProgramSource: ShaderProgramSource, actor: SkinMesh) {
@@ -524,7 +519,7 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
                     boneMatrices[index * 16 + i] = v
                 }
             }
-            val buffer = ByteBuffer.allocate(boneMatrices.size * 4).apply {
+            val buffer = ByteBuffer.allocateDirect(boneMatrices.size * 4).apply {
                 order(java.nio.ByteOrder.nativeOrder())
                 asFloatBuffer().put(boneMatrices)
             }
