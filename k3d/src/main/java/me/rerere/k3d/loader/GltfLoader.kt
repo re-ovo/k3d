@@ -19,6 +19,10 @@ import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.actor.Skeleton
 import me.rerere.k3d.scene.actor.SkinMesh
 import me.rerere.k3d.scene.actor.traverse
+import me.rerere.k3d.scene.animation.AnimationClip
+import me.rerere.k3d.scene.animation.AnimationTarget
+import me.rerere.k3d.scene.animation.Interpolation
+import me.rerere.k3d.scene.animation.KeyframeTrack
 import me.rerere.k3d.scene.geometry.BufferGeometry
 import me.rerere.k3d.scene.material.AlphaMode
 import me.rerere.k3d.scene.material.StandardMaterial
@@ -120,7 +124,10 @@ class GltfLoader(private val context: Context) {
     }
 
     private fun parse(gltf: Gltf, buffers: List<ByteBuffer>): GltfLoadResult {
-        val scenes = parseScenes(gltf, buffers)
+        val id2NodeMapping = hashMapOf<Int, Actor>()
+        val node2IdMapping = hashMapOf<Actor, Int>()
+
+        val scenes = parseScenes(gltf, buffers, id2NodeMapping, node2IdMapping)
         val defaultScene = scenes[gltf.scene]
 
         println("Scenes: $scenes")
@@ -128,39 +135,85 @@ class GltfLoader(private val context: Context) {
 
         defaultScene.dump() // for debug purpose, remove it in the future
 
-        gltf.animations?.forEach {
-            it.samplers.forEach { sampler ->
+        val animations = arrayListOf<AnimationClip>()
+        gltf.animations?.forEach { animationClip ->
+            val tracks = arrayListOf<KeyframeTrack>()
+
+            animationClip.channels.forEach { channel ->
+                val node = id2NodeMapping[channel.target.node]
+                    ?: error("No node for index: ${channel.target.node}")
+                val target = when (channel.target.path) {
+                    "translation" -> AnimationTarget.Position(node)
+                    "rotation" -> AnimationTarget.Rotation(node)
+                    "scale" -> AnimationTarget.Scale(node)
+                    else -> error("Unsupported animation target path: ${channel.target.path}")
+                }
+                val sampler = animationClip.samplers[channel.sampler]
+
                 val accessorInput = accessorOf(gltf, buffers, sampler.input)
                 val accessorOutput = accessorOf(gltf, buffers, sampler.output)
 
-                // println("Input: ${accessorInput.type}/${gltfAccessorComponentTypeToDataType(accessorInput.componentType)}/${accessorInput.count}")
-                // println("Output: ${accessorOutput.type}/${gltfAccessorComponentTypeToDataType(accessorOutput.componentType)}/${accessorOutput.count}")
-                // println("Interpolation: ${sampler.interpolation}")
-
+                val input = FloatArray(accessorInput.count)
                 accessorInput.bufferView?.let { bufferView ->
                     val buffer = bufferView.buffer.sliceSafely(
                         start = bufferView.byteOffset + accessorInput.byteOffset,
                         end = bufferView.byteOffset + bufferView.byteLength + accessorInput.byteOffset
                     )
                     buffer.order(ByteOrder.nativeOrder())
-                    buffer.asFloatBuffer().let { floatBuffer ->
-                        val data = FloatArray(accessorInput.count)
-                        floatBuffer.get(data)
-                        // println("Input data: ${data.contentToString()}")
+                    buffer.asFloatBuffer().get(input)
+                }
+
+                require(gltfAccessorComponentTypeToDataType(accessorOutput.componentType) == DataType.FLOAT) {
+                    "Animation output data type must be FLOAT, but got ${gltfAccessorComponentTypeToDataType(accessorOutput.componentType)}"
+                }
+                val itemSize = gltfAccessorItemSizeOf(accessorOutput.type)
+                val output = FloatArray(accessorOutput.count * itemSize)
+                accessorOutput.bufferView?.let { bufferView ->
+                    val buffer = bufferView.buffer.sliceSafely(
+                        start = bufferView.byteOffset + accessorOutput.byteOffset,
+                        end = bufferView.byteOffset + bufferView.byteLength + accessorOutput.byteOffset
+                    )
+                    buffer.order(ByteOrder.nativeOrder())
+                    buffer.asFloatBuffer().get(output)
+                }
+                val frames = buildList {
+                    for (i in 0 until accessorOutput.count) {
+                        val start = i * itemSize
+                        val end = start + itemSize
+                        add(input[i] to output.slice(start until end).toFloatArray())
                     }
                 }
+                tracks += KeyframeTrack(
+                    target = target,
+                    keyframes = frames,
+                    interpolation = Interpolation.fromString(
+                        sampler.interpolation ?: "LINEAR"
+                    ),
+                )
             }
+
+            val duration = tracks.maxOfOrNull { it.keyframes.last().first } ?: 0f
+
+            animations += AnimationClip(
+                name = animationClip.name ?: "",
+                tracks = tracks,
+                duration = duration,
+            )
         }
 
         return GltfLoadResult(
-            scenes = scenes, defaultScene = defaultScene
+            scenes = scenes,
+            defaultScene = defaultScene,
+            animations = animations,
         )
     }
 
-    private fun parseScenes(gltf: Gltf, buffers: List<ByteBuffer>): List<Scene> {
-        val id2NodeMapping = hashMapOf<Int, Actor>()
-        val node2IdMapping = hashMapOf<Actor, Int>()
-
+    private fun parseScenes(
+        gltf: Gltf,
+        buffers: List<ByteBuffer>,
+        id2NodeMapping: MutableMap<Int, Actor>,
+        node2IdMapping: MutableMap<Actor, Int>
+    ): List<Scene> {
         return gltf.scenes.map { gltfScene ->
             Scene().apply {
                 name = gltfScene.name
@@ -370,8 +423,9 @@ class GltfLoader(private val context: Context) {
                 }
 
                 if (bufferView.byteStride > 0) {
-                    error("BufferView byteStride > 0 is not supported yet for indices")
+                    error("BufferView byteStride > 0 is not supported yet for indices: ${bufferView.byteStride}")
                 }
+
                 bufferView.buffer.sliceSafely(
                     start = bufferView.byteOffset + accessor.byteOffset,
                     end = bufferView.byteOffset + bufferView.byteLength + accessor.byteOffset
@@ -473,13 +527,15 @@ class GltfLoader(private val context: Context) {
                     setAttribute(name, attr)
                 }
                 indicesBuffer?.let {
-                    setIndices(Attribute(
-                        itemSize = 1,
-                        type = it.second,
-                        normalized = false,
-                        count = indicesAccessor?.count ?: error("No indices count"),
-                        data = it.first
-                    ))
+                    setIndices(
+                        Attribute(
+                            itemSize = 1,
+                            type = it.second,
+                            normalized = false,
+                            count = indicesAccessor?.count ?: error("No indices count"),
+                            data = it.first
+                        )
+                    )
                 }
             }
 
@@ -689,7 +745,9 @@ private fun gltfAccessorItemSizeOf(type: String): Int {
 }
 
 data class GltfLoadResult(
-    val scenes: List<Scene>, val defaultScene: Scene
+    val scenes: List<Scene>,
+    val defaultScene: Scene,
+    val animations: List<AnimationClip>,
 )
 
 private data class BufferView(
@@ -873,6 +931,7 @@ private data class Gltf(
     )
 
     data class Animation(
+        val name: String?,
         val channels: List<Channel>,
         val samplers: List<Sampler>,
     ) {

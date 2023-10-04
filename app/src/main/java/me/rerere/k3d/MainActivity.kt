@@ -43,6 +43,7 @@ import me.rerere.k3d.renderer.ViewportSize
 import me.rerere.k3d.renderer.shader.glGetIntegerv
 import me.rerere.k3d.scene.actor.Mesh
 import me.rerere.k3d.scene.actor.Scene
+import me.rerere.k3d.scene.animation.AnimationPlayer
 import me.rerere.k3d.scene.camera.PerspectiveCamera
 import me.rerere.k3d.scene.geometry.PlaneGeometry
 import me.rerere.k3d.scene.light.AmbientLight
@@ -112,6 +113,7 @@ class MainActivity : ComponentActivity() {
         addChild(spotLight)
     }
     private lateinit var controls: OrbitController
+    private var animationPlayer: AnimationPlayer? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -167,6 +169,12 @@ class MainActivity : ComponentActivity() {
                                             // result.defaultScene.position.set(1f,1f, 0f)
                                             scene.addChild(result.defaultScene)
                                             model = result.defaultScene
+
+                                            result.animations.getOrNull(0)?.let {
+                                                animationPlayer = AnimationPlayer(
+                                                    it
+                                                ).also { it.play() }
+                                            }
 
                                             loading = false
                                         }
@@ -329,8 +337,8 @@ class MainActivity : ComponentActivity() {
                 override fun onDrawFrame(gl: GL10?) {
                     clock.tick()
 
-                    val speed = 360f.toRadian() * clock.getDelta()
-                    // model?.rotation?.applyRotation(Euler(0f, speed, 0f).toQuaternion())
+                    val delta = clock.getDelta()
+                    animationPlayer?.update(delta)
 
                     render.render(scene, camera)
                 }

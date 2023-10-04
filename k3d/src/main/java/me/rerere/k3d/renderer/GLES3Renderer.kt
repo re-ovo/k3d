@@ -632,7 +632,7 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
     fun updateTextureBuffer(texture: Texture) {
         if (!texture.currentFrameDirty) return
 
-        println("[K3D:Resource] update texture buffer: $texture")
+        // println("[K3D:Resource] update texture buffer: $texture")
 
         val textureId = textureBuffers[texture] ?: return
         val target = when (texture) {
