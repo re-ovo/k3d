@@ -12,11 +12,18 @@ private val hexColorFormat by lazy {
     }
 }
 
-enum class ColorSpace {
-    SRGB,
-    LINEAR_SRGB
-}
-
+/**
+ * Represent a color in linear sRGB color space
+ *
+ * Note the color is in linear sRGB color space, if you want to create a color in sRGB color space,
+ * use [Color.fromSRGB] instead, or use [Color.fromRGBAHex]/[Color.fromRGBHex] to create a color from
+ * hex string.
+ *
+ * @property r red
+ * @property g green
+ * @property b blue
+ * @property a alpha
+ */
 data class Color(
     var r: Float,
     var g: Float,
@@ -48,6 +55,16 @@ data class Color(
             val g = ((value shr 8) and 0xFF) / 255f
             val b = (value and 0xFF) / 255f
             return Color(r.srgbToLinear(), g.srgbToLinear(), b.srgbToLinear(), 1f)
+        }
+
+        @JvmStatic
+        fun fromSRGB(
+            r: Float,
+            g: Float,
+            b: Float,
+            a: Float = 1f
+        ): Color {
+            return Color(r.srgbToLinear(), g.srgbToLinear(), b.srgbToLinear(), a)
         }
 
         @JvmStatic
