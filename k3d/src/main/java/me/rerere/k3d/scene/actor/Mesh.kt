@@ -21,7 +21,6 @@ open class Mesh(
     geometry: BufferGeometry,
     material: ShaderMaterial,
 ) : Primitive(geometry, material, DrawMode.TRIANGLES)
-
 class SkinMesh(
     geometry: BufferGeometry,
     material: ShaderMaterial,

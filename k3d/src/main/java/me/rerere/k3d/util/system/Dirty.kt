@@ -139,6 +139,15 @@ fun <T> Dirty.dirtyValueNullable(
     return DirtyValue(this, initialValue, getter, setter)
 }
 
+// avoid Float boxing
+fun Dirty.dirtyFloatValue(
+    initialValue: Float,
+    getter: FloatUnaryMapper = FloatUnaryMapper { it },
+    setter: FloatBinaryMapper = FloatBinaryMapper { _, newValue -> newValue }
+): DirtyFloatValue {
+    return DirtyFloatValue(this, initialValue, getter, setter)
+}
+
 class DirtyValue<T>(
     private val dirty: Dirty,
     initialValue: T,
@@ -159,6 +168,31 @@ class DirtyValue<T>(
     }
 
     operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
+        this.value = value
+    }
+}
+
+class DirtyFloatValue(
+    private val dirty: Dirty,
+    initialValue: Float,
+    private val getter: FloatUnaryMapper,
+    private val setter: FloatBinaryMapper,
+) {
+    private var _value = initialValue
+
+    var value: Float
+        get() = getter.map(_value)
+
+        set(value) {
+            _value = setter.map(_value, value)
+            dirty.markDirty()
+        }
+
+    operator fun getValue(thisRef: Any?, property: KProperty<*>): Float {
+        return value
+    }
+
+    operator fun setValue(thisRef: Any?, property: KProperty<*>, value: Float) {
         this.value = value
     }
 }

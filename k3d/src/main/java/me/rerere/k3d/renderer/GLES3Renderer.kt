@@ -136,86 +136,10 @@ class GLES3Renderer : Renderer {
             // Apply skin uniforms
             if (actor is SkinMesh) {
                 resourceManager.useSkinBones(this, actor)
-
-//                actor.geometry.getAttribute(BuiltInAttributeName.POSITION)?.let { positionAttr ->
-//                    val positions = positionAttr.readFloatData(positionAttr.count)
-//                    val skinIndex = actor.geometry.getAttribute(BuiltInAttributeName.JOINTS)?.readShortData(positionAttr.count)!!
-//                    val skinWeight = actor.geometry.getAttribute(BuiltInAttributeName.WEIGHTS)?.readFloatData(positionAttr.count)!!
-//
-//                    positions.forEachIndexed { index, floats ->
-//                        val (x, y, z) = floats
-//                        val skinIndexs = skinIndex[index]
-//                        val skinWeights = skinWeight[index]
-//
-//
-//
-//                        var matrix = Matrix4.zero()
-//                        repeat(4) { i ->
-//                            val boneIndex = skinIndexs[i].toInt()
-//                            val i = boneIndex * 4
-//                            val x = i % 32
-//                            val y = i / 32
-//
-//                            require(x in 0..31) { "x: $x" }
-//                            require(y in 0..31) { "y: $y" }
-
-//                            val boneWeight = skinWeights[i]
-//                            val bone = actor.skeleton.bones[boneIndex]
-//                            val boneMatrix = bone.node.worldMatrix * bone.inverseBindMatrix
-
-//                            matrix += boneMatrix * boneWeight
-//                        }
-//
-//                        val position = Vec4(x, y, z, 1f)
-//                        val transformed = camera.projectionMatrix * camera.worldMatrixInverse * matrix * position
-//                        val w = transformed.w
-//                        println("w: $w")
-//                        if (w != 0f) {
-//                            position.x = transformed.x / w
-//                            position.y = transformed.y / w
-//                            position.z = transformed.z / w
-//                        } else {
-//                            error("w == 0")
-//                        }
-//
-//                        require(position.z >= -1f && position.z <= 1f) { "z: ${position.z}" }
-//                    }
-//               }
             }
 
             // Apply built-in uniforms
-            resourceManager.useUniform(
-                actor.material.program,
-                worldMatrixUniform.apply {
-                    value = actor.worldMatrix
-                },
-                BuiltInUniformName.MODEL_MATRIX.uniformName
-            )
-            resourceManager.useUniform(
-                actor.material.program,
-                viewMatrixUniform.apply {
-                    value = camera.worldMatrixInverse
-                },
-                BuiltInUniformName.VIEW_MATRIX.uniformName
-            )
-            resourceManager.useUniform(
-                actor.material.program,
-                projectionMatrixUniform.apply {
-                    value = camera.projectionMatrix
-                },
-                BuiltInUniformName.PROJECTION_MATRIX.uniformName
-            )
-            resourceManager.useUniform(
-                actor.material.program,
-                cameraPositionUniform.apply {
-                    value.withoutMarkDirty {
-                        x = camera.position.x
-                        y = camera.position.y
-                        z = camera.position.z
-                    }
-                },
-                BuiltInUniformName.CAMERA_POSITION.uniformName
-            )
+            applyCameraUniforms(actor, camera)
 
             // Apply textures
             actor.material.textures.entries.forEachIndexed { index, mutableEntry ->
@@ -248,6 +172,41 @@ class GLES3Renderer : Renderer {
                 }
             }
         }
+    }
+
+    private fun applyCameraUniforms(actor: Primitive, camera: Camera) {
+        resourceManager.useUniform(
+            actor.material.program,
+            worldMatrixUniform.apply {
+                value = actor.worldMatrix
+            },
+            BuiltInUniformName.MODEL_MATRIX.uniformName
+        )
+        resourceManager.useUniform(
+            actor.material.program,
+            viewMatrixUniform.apply {
+                value = camera.worldMatrixInverse
+            },
+            BuiltInUniformName.VIEW_MATRIX.uniformName
+        )
+        resourceManager.useUniform(
+            actor.material.program,
+            projectionMatrixUniform.apply {
+                value = camera.projectionMatrix
+            },
+            BuiltInUniformName.PROJECTION_MATRIX.uniformName
+        )
+        resourceManager.useUniform(
+            actor.material.program,
+            cameraPositionUniform.apply {
+                value.withoutMarkDirty {
+                    x = camera.position.x
+                    y = camera.position.y
+                    z = camera.position.z
+                }
+            },
+            BuiltInUniformName.CAMERA_POSITION.uniformName
+        )
     }
 }
 

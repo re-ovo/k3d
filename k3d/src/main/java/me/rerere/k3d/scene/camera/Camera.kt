@@ -1,14 +1,12 @@
 package me.rerere.k3d.scene.camera
 
 import me.rerere.k3d.scene.actor.Actor
-import me.rerere.k3d.util.system.Dirty
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.math.Vec3
-import me.rerere.k3d.util.math.rotation.Euler
 import me.rerere.k3d.util.math.transform.rotationMatrix
 import me.rerere.k3d.util.math.transform.translationMatrix
+import me.rerere.k3d.util.system.dirtyFloatValue
 import me.rerere.k3d.util.system.dirtyValue
-import me.rerere.k3d.util.system.markDirty
 import kotlin.math.abs
 import kotlin.math.asin
 import kotlin.math.atan2
@@ -17,14 +15,14 @@ private const val MIN_PITCH = -Math.PI.toFloat() / 2
 private const val MAX_PITCH = Math.PI.toFloat() / 2
 
 abstract class Camera : Actor() {
-    var yaw: Float by dirtyValue(0f)
-    var pitch: Float by dirtyValue(
+    var yaw: Float by dirtyFloatValue(0f)
+    var pitch: Float by dirtyFloatValue(
         initialValue = 0f,
         setter = { _, newValue ->
             newValue.coerceIn(MIN_PITCH, MAX_PITCH)
         }
     )
-    var roll: Float by dirtyValue(0f)
+    var roll: Float by dirtyFloatValue(0f)
 
     val worldMatrixInverse = Matrix4.identity()
     abstract val projectionMatrix: Matrix4
