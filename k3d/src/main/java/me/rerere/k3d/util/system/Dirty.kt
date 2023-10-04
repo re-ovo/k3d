@@ -123,14 +123,40 @@ object DirtyQueue {
     }
 }
 
+/**
+ * Create a dirty property delegate
+ *
+ * It will automatically mark the owner object dirty when the property is changed
+ *
+ * Note this is a generic function, so it will box the primitive type, use dirtyXXXValue instead
+ *
+ * @param initialValue the initial value of the property
+ * @param getter the getter of the property
+ * @param setter the setter of the property
+ * @receiver the owner object
+ */
 fun <T> Dirty.dirtyValue(
     initialValue: T,
     getter: (T) -> T = { it },
     setter: (oldValue: T, newValue: T) -> T = { _, newValue -> newValue }
 ): DirtyValue<T> {
+    require(initialValue !is Float) {
+        "Use `dirtyFloatValue()` instead to avoid boxing"
+    }
+
     return DirtyValue(this, initialValue, getter, setter)
 }
 
+/**
+ * Create a nullable dirty property delegate
+ *
+ * It will automatically mark the owner object dirty when the property is changed
+ *
+ * @param initialValue the initial value of the property
+ * @param getter the getter of the property
+ * @param setter the setter of the property
+ * @receiver the owner object
+ */
 fun <T> Dirty.dirtyValueNullable(
     initialValue: T?,
     getter: (T?) -> T? = { it },
@@ -139,7 +165,16 @@ fun <T> Dirty.dirtyValueNullable(
     return DirtyValue(this, initialValue, getter, setter)
 }
 
-// avoid Float boxing
+/**
+ * Create a dirty [Float] property delegate
+ *
+ * It will automatically mark the owner object dirty when the property is changed
+ *
+ * @param initialValue the initial value of the property
+ * @param getter the getter of the property
+ * @param setter the setter of the property
+ * @receiver the owner object
+ */
 fun Dirty.dirtyFloatValue(
     initialValue: Float,
     getter: FloatUnaryMapper = FloatUnaryMapper { it },
@@ -148,7 +183,7 @@ fun Dirty.dirtyFloatValue(
     return DirtyFloatValue(this, initialValue, getter, setter)
 }
 
-class DirtyValue<T>(
+class DirtyValue<T> internal constructor(
     private val dirty: Dirty,
     initialValue: T,
     private val getter: (T) -> T,

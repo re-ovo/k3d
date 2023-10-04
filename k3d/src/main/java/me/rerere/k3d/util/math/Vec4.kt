@@ -1,7 +1,7 @@
 package me.rerere.k3d.util.math
 
 import me.rerere.k3d.util.system.Dirty
-import me.rerere.k3d.util.system.dirtyValue
+import me.rerere.k3d.util.system.dirtyFloatValue
 
 class Vec4(
     x: Float = 0.0f,
@@ -9,10 +9,10 @@ class Vec4(
     z: Float = 0.0f,
     w: Float = 0.0f,
 ) : Dirty {
-    var x by dirtyValue(x)
-    var y by dirtyValue(y)
-    var z by dirtyValue(z)
-    var w by dirtyValue(w)
+    var x by dirtyFloatValue(x)
+    var y by dirtyFloatValue(y)
+    var z by dirtyFloatValue(z)
+    var w by dirtyFloatValue(w)
 
     operator fun get(index: Int): Float {
         return when(index) {

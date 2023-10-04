@@ -1,7 +1,7 @@
 package me.rerere.k3d.util.math.rotation
 
 import me.rerere.k3d.util.system.Dirty
-import me.rerere.k3d.util.system.dirtyValue
+import me.rerere.k3d.util.system.dirtyFloatValue
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -25,9 +25,9 @@ class Euler(
     y: Float = 0f,
     z: Float = 0f,
 ): Dirty {
-    var x: Float by dirtyValue(x)
-    var y: Float by dirtyValue(y)
-    var z: Float by dirtyValue(z)
+    var x: Float by dirtyFloatValue(x)
+    var y: Float by dirtyFloatValue(y)
+    var z: Float by dirtyFloatValue(z)
 
     fun set(x: Float, y: Float, z: Float) {
         this.x = x
