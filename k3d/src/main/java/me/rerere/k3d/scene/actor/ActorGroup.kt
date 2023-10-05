@@ -39,6 +39,11 @@ open class ActorGroup : Actor() {
     fun getChildren(): List<Actor> {
         return children
     }
+
+    override fun updateMatrix() {
+        super.updateMatrix()
+        children.fastForeach { it.updateMatrix() }
+    }
 }
 
 fun ActorGroup.traverse(action: (Actor) -> Unit) {

@@ -9,10 +9,21 @@ class Vec4(
     z: Float = 0.0f,
     w: Float = 0.0f,
 ) : Dirty {
+    private var _dirty = false
+
     var x by dirtyFloatValue(x)
     var y by dirtyFloatValue(y)
     var z by dirtyFloatValue(z)
     var w by dirtyFloatValue(w)
+
+    override fun isDirty(): Boolean = _dirty
+    override fun updateDirty() {}
+    override fun markDirtyNew() {
+        _dirty = true
+    }
+    override fun clearDirty() {
+        _dirty = false
+    }
 
     operator fun get(index: Int): Float {
         return when(index) {

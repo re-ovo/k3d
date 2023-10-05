@@ -30,10 +30,33 @@ class Quaternion(
     z: Float = 0f,
     w: Float = 1f
 ) : Dirty {
+    private var _dirty = false
+
     var x by dirtyFloatValue(x)
     var y by dirtyFloatValue(y)
     var z by dirtyFloatValue(z)
     var w by dirtyFloatValue(w)
+    private var _matrix = Matrix4.identity()
+
+    init {
+        updateMatrix4()
+    }
+
+    override fun isDirty(): Boolean {
+        return _dirty
+    }
+
+    override fun markDirtyNew() {
+        _dirty = true
+    }
+
+    override fun clearDirty() {
+        _dirty = false
+    }
+
+    override fun updateDirty() {
+        updateMatrix4()
+    }
 
     companion object {
         @JvmStatic
@@ -159,7 +182,7 @@ class Quaternion(
         }
     }
 
-    fun toMatrix4(): Matrix4 {
+    private fun updateMatrix4() {
         val xx = x * x
         val xy = x * y
         val xz = x * z
@@ -169,12 +192,16 @@ class Quaternion(
         val yw = y * w
         val zz = z * z
         val zw = z * w
-        return Matrix4(
+        this._matrix = Matrix4(
             1f - 2f * (yy + zz), 2f * (xy - zw), 2f * (xz + yw), 0f,
             2f * (xy + zw), 1f - 2f * (xx + zz), 2f * (yz - xw), 0f,
             2f * (xz - yw), 2f * (yz + xw), 1f - 2f * (xx + yy), 0f,
             0f, 0f, 0f, 1f
         )
+    }
+
+    fun toMatrix4(): Matrix4 {
+        return this._matrix
     }
 
     override fun toString(): String {

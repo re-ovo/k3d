@@ -12,6 +12,22 @@ sealed class Texture(
     val minFilter: TextureFilter,
     val magFilter: TextureFilter,
 ): Dirty {
+    private var _dirty = false
+
+    override fun isDirty(): Boolean {
+        return _dirty
+    }
+
+    override fun markDirtyNew() {
+        _dirty = true
+    }
+
+    override fun clearDirty() {
+        _dirty = false
+    }
+
+    override fun updateDirty() {}
+
     class Texture2D(
         val data: Bitmap,
         width: Int,

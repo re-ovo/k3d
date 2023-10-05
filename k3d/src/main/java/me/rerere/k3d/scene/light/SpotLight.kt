@@ -3,9 +3,7 @@ package me.rerere.k3d.scene.light
 import me.rerere.k3d.util.Color
 import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.rotation.toRadian
-import me.rerere.k3d.util.system.dependsOn
 import me.rerere.k3d.util.system.dirtyFloatValue
-import me.rerere.k3d.util.system.dirtyValue
 
 class SpotLight(
     intensity: Float = 1f,
@@ -18,7 +16,12 @@ class SpotLight(
     var penumbra by dirtyFloatValue(penumbra)
     val target = target.copy()
 
-    init {
-        this.dependsOn(target)
+    override fun isDirty(): Boolean {
+        return super.isDirty() || target.isDirty()
+    }
+
+    override fun clearDirty() {
+        super.clearDirty()
+        target.clearDirty()
     }
 }

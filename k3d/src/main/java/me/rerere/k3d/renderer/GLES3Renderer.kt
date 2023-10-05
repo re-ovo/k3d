@@ -33,10 +33,7 @@ import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.ceilPowerOf2
 import me.rerere.k3d.util.system.DirtyQueue
 import me.rerere.k3d.util.system.Disposable
-import me.rerere.k3d.util.system.currentFrameDirty
-import me.rerere.k3d.util.system.dependsOn
 import me.rerere.k3d.util.system.fastForeach
-import me.rerere.k3d.util.system.withoutMarkDirty
 import java.nio.ByteBuffer
 import java.util.IdentityHashMap
 import kotlin.math.ceil
@@ -49,7 +46,8 @@ import kotlin.math.sqrt
  */
 class GLES3Renderer : Renderer {
     private val shaderProcessor = ShaderProcessor()
-    private val resourceManager = GL3ResourceManager(shaderProcessor)
+    private val dirtyQueue = DirtyQueue()
+    private val resourceManager = GL3ResourceManager(shaderProcessor, dirtyQueue)
 
     override var viewportSize: ViewportSize = ViewportSize(0, 0)
 
@@ -70,12 +68,11 @@ class GLES3Renderer : Renderer {
     private val cameraPositionUniform = Uniform.Vec3f(Vec3(0f, 0f, 0f))
 
     override fun render(scene: Scene, camera: Camera) {
-        // update dirty actors
-        DirtyQueue.frameStart()
+        dirtyQueue.ensureDirtyUpdated(camera)
 
         this.render0(scene, camera)
 
-        DirtyQueue.frameEnd()
+        dirtyQueue.clean()
     }
 
     private fun render0(scene: Scene, camera: Camera) {
@@ -90,6 +87,8 @@ class GLES3Renderer : Renderer {
         GLES20.glEnable(GLES20.GL_DEPTH_TEST)
 
         scene.traverse { actor ->
+            dirtyQueue.ensureDirtyUpdated(actor)
+
             if (actor is Primitive) {
                 when (actor.material.alphaMode) {
                     AlphaMode.OPAQUE -> _opaqueActors.add(actor)
@@ -199,7 +198,7 @@ class GLES3Renderer : Renderer {
         resourceManager.useUniform(
             actor.material.program,
             cameraPositionUniform.apply {
-                value.withoutMarkDirty {
+                value.apply {
                     x = camera.position.x
                     y = camera.position.y
                     z = camera.position.z
@@ -210,7 +209,10 @@ class GLES3Renderer : Renderer {
     }
 }
 
-internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) : Disposable {
+internal class GL3ResourceManager(
+    private val shaderProcessor: ShaderProcessor,
+    private val dirtyQueue: DirtyQueue,
+) : Disposable {
     // program(shaders) related resources
     private val programs = IdentityHashMap<ShaderProgramSource, Int>()
 
@@ -226,7 +228,7 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
     private val boneTextures = IdentityHashMap<Skeleton, Texture.DataTexture>()
 
     inline fun useProgram(program: ShaderProgramSource, scope: ShaderProgramSource.() -> Unit) {
-        if (program.currentFrameDirty) {
+        this.dirtyQueue.whenDirty(program) {
             deleteProgram(program)
             println("Update program: $program due to dirty")
         }
@@ -491,17 +493,12 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
                 TextureWrap.CLAMP_TO_EDGE,
                 TextureFilter.LINEAR,
                 TextureFilter.LINEAR
-            ).also { texture ->
-                // Mark texture dirty when skeleton dirty
-                // Skeleton depends on bone node
-                // So when bone node dirty, the texture will be marked dirty
-                texture.dependsOn(skeleton)
-            }
+            )
             println("[K3D:Resource] create bone texture: $bitMapSize x $bitMapSize (${skeleton.bones.size} bones)")
         }
 
         val texture = boneTextures[skeleton] ?: return
-        if(skeleton.currentFrameDirty) {
+        dirtyQueue.whenDirty(skeleton) {
             val buffer = texture.data.asFloatBuffer()
             val boneMatrices = FloatArray(skeleton.bones.size * 16)
             buffer.get(boneMatrices)
@@ -513,6 +510,8 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
             }
             buffer.rewind()
             buffer.put(boneMatrices)
+
+            texture.markDirtyNew()
         }
 
         useTexture(
@@ -630,61 +629,61 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
     }
 
     fun updateTextureBuffer(texture: Texture) {
-        if (!texture.currentFrameDirty) return
+        this.dirtyQueue.whenDirty(texture) {
+            // println("[K3D:Resource] update texture buffer: $texture")
 
-        // println("[K3D:Resource] update texture buffer: $texture")
+            val textureId = textureBuffers[texture] ?: return
+            val target = when (texture) {
+                is Texture.Texture2D -> GLES30.GL_TEXTURE_2D
+                is Texture.TextureCube -> GLES30.GL_TEXTURE_CUBE_MAP
+                is Texture.DataTexture -> GLES30.GL_TEXTURE_2D
+            }
 
-        val textureId = textureBuffers[texture] ?: return
-        val target = when (texture) {
-            is Texture.Texture2D -> GLES30.GL_TEXTURE_2D
-            is Texture.TextureCube -> GLES30.GL_TEXTURE_CUBE_MAP
-            is Texture.DataTexture -> GLES30.GL_TEXTURE_2D
+            GLES30.glBindTexture(target, textureId)
+            when (texture) {
+                is Texture.Texture2D -> {
+                    GLUtils.texSubImage2D(
+                        target,
+                        0,
+                        0,
+                        0,
+                        texture.data,
+                        GLES30.GL_RGBA,
+                        GLES30.GL_UNSIGNED_BYTE
+                    )
+                    GLES20.glGenerateMipmap(target)
+                }
+
+                is Texture.TextureCube -> {
+                    GLUtils.texSubImage2D(
+                        target,
+                        0,
+                        0,
+                        0,
+                        texture.data,
+                        GLES30.GL_RGBA,
+                        GLES30.GL_UNSIGNED_BYTE
+                    )
+                    GLES20.glGenerateMipmap(target)
+                }
+
+                is Texture.DataTexture -> {
+                    GLES20.glTexSubImage2D(
+                        target,
+                        0,
+                        0,
+                        0,
+                        texture.width,
+                        texture.height,
+                        GLES30.GL_RGBA,
+                        GLES30.GL_FLOAT,
+                        texture.data.rewind()
+                    )
+                }
+            }
+
+            GLES30.glBindTexture(target, 0) // unbind texture
         }
-
-        GLES30.glBindTexture(target, textureId)
-        when (texture) {
-            is Texture.Texture2D -> {
-                GLUtils.texSubImage2D(
-                    target,
-                    0,
-                    0,
-                    0,
-                    texture.data,
-                    GLES30.GL_RGBA,
-                    GLES30.GL_UNSIGNED_BYTE
-                )
-                GLES20.glGenerateMipmap(target)
-            }
-
-            is Texture.TextureCube -> {
-                GLUtils.texSubImage2D(
-                    target,
-                    0,
-                    0,
-                    0,
-                    texture.data,
-                    GLES30.GL_RGBA,
-                    GLES30.GL_UNSIGNED_BYTE
-                )
-                GLES20.glGenerateMipmap(target)
-            }
-
-            is Texture.DataTexture -> {
-                GLES20.glTexSubImage2D(
-                    target,
-                    0,
-                    0,
-                    0,
-                    texture.width,
-                    texture.height,
-                    GLES30.GL_RGBA,
-                    GLES30.GL_FLOAT,
-                    texture.data.rewind()
-                )
-            }
-        }
-
-        GLES30.glBindTexture(target, 0) // unbind texture
     }
 
     fun deleteTextureBuffer(texture: Texture) {
@@ -755,7 +754,7 @@ internal class GL3ResourceManager(private val shaderProcessor: ShaderProcessor) 
         val vao = vertexArrays[vertexArray] ?: return
         GLES30.glBindVertexArray(vao)
         vertexArray.getAttributes().forEach { (_, attribute) ->
-            attribute.takeIf { it.currentFrameDirty }?.let { // update attribute buffer if dirty
+            dirtyQueue.whenDirty(attribute) { // update attribute buffer if dirty
                 println("[K3D:Resource] update attribute buffer: $attribute")
                 val vbo = vertexArraysAttributesBuffer[attribute] ?: return@forEach
                 GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vbo)

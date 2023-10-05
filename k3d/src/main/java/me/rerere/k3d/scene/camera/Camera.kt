@@ -15,6 +15,8 @@ private const val MIN_PITCH = -Math.PI.toFloat() / 2
 private const val MAX_PITCH = Math.PI.toFloat() / 2
 
 abstract class Camera : Actor() {
+    private var _dirty = false
+
     var yaw: Float by dirtyFloatValue(0f)
     var pitch: Float by dirtyFloatValue(
         initialValue = 0f,
@@ -27,6 +29,18 @@ abstract class Camera : Actor() {
     val worldMatrixInverse = Matrix4.identity()
     abstract val projectionMatrix: Matrix4
 
+    override fun isDirty(): Boolean {
+        return _dirty
+    }
+
+    override fun markDirtyNew() {
+        _dirty = true
+    }
+
+    override fun clearDirty() {
+        _dirty = false
+    }
+
     override fun updateMatrix() {
         worldMatrix.set(
             translationMatrix(
@@ -36,6 +50,10 @@ abstract class Camera : Actor() {
             ) * rotationMatrix(pitch, yaw, roll)
         )
         worldMatrixInverse.set(worldMatrix.inverse())
+    }
+
+    override fun updateDirty() {
+        updateMatrix()
     }
 
     fun lookAt(target: Vec3) { // default target to -Z

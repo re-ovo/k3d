@@ -21,6 +21,22 @@ class Attribute(
     val count: Int,
     val data: ByteBuffer
 ) : Dirty {
+    private var _dirty = false
+
+    override fun isDirty(): Boolean {
+        return _dirty
+    }
+
+    override fun markDirtyNew() {
+        _dirty = true
+    }
+
+    override fun clearDirty() {
+        _dirty = false
+    }
+
+    override fun updateDirty() {}
+
     override fun toString(): String {
         return "Attribute(itemSize=$itemSize, type=$type, normalized=$normalized, count=$count, data=$data)"
     }

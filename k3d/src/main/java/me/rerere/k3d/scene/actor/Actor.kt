@@ -2,47 +2,42 @@
 
 package me.rerere.k3d.scene.actor
 
-import me.rerere.k3d.util.system.Dirty
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.rotation.Quaternion
 import me.rerere.k3d.util.math.transform.scaleMatrix
 import me.rerere.k3d.util.math.transform.translationMatrix
-import me.rerere.k3d.util.system.DirtyUpdate
-import me.rerere.k3d.util.system.dependsOn
-import me.rerere.k3d.util.system.dependsRemove
-import me.rerere.k3d.util.system.dirtyValueNullable
+import me.rerere.k3d.util.system.Dirty
 import java.util.UUID
 
-abstract class Actor : Dirty, DirtyUpdate {
+abstract class Actor : Dirty {
     private val _id = UUID.randomUUID()
     var name: String = ""
 
-    var parent: Actor? by dirtyValueNullable(
-        initialValue = null,
-        setter = { old, new ->
-            if(old != null) {
-                this.dependsRemove(old)
-            }
-            if(new != null) {
-                this.dependsOn(new)
-            }
-            new
-        }
-    )
+    var parent: Actor? = null
 
     val position = Vec3(0f, 0f, 0f)
     val rotation = Quaternion(0f, 0f, 0f, 1f)
     val scale = Vec3(1f, 1f, 1f)
 
-    init {
-        this.dependsOn(position)
-        this.dependsOn(rotation)
-        this.dependsOn(scale)
+    override fun updateDirty() {
+        if(this.rotation.isDirty()) this.rotation.updateDirty()
+
+        this.updateMatrix()
     }
 
-    override fun updateDirty() {
-        this.updateMatrix()
+    override fun isDirty(): Boolean {
+        return position.isDirty() || rotation.isDirty() || scale.isDirty()
+    }
+
+    override fun clearDirty() {
+        position.clearDirty()
+        rotation.clearDirty()
+        scale.clearDirty()
+    }
+
+    override fun markDirtyNew() {
+        error("Actor is not a dirty value")
     }
 
     private var _localMatrix = Matrix4.identity()
@@ -57,12 +52,6 @@ abstract class Actor : Dirty, DirtyUpdate {
         _localMatrix = scaleMatrix(scale).applyMatrix4(rotation.toMatrix4())
             .applyMatrix4(translationMatrix(position))
         _worldMatrix = parent?.worldMatrix?.times(_localMatrix) ?: _localMatrix
-
-//        if (this is ActorGroup) {
-//            getChildren().forEach {
-//                it.updateMatrix()
-//            }
-//        }
     }
 
     /**

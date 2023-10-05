@@ -6,13 +6,25 @@ import me.rerere.k3d.util.system.dirtyValue
 import kotlin.math.sqrt
 
 class Vec3(
-    x: Float = 0.0f,
-    y: Float = 0.0f,
-    z: Float = 0.0f
+    x: Float = 0.0f, y: Float = 0.0f, z: Float = 0.0f
 ) : Dirty {
+    private var _dirty = false
+
     var x by dirtyFloatValue(x)
     var y by dirtyFloatValue(y)
     var z by dirtyFloatValue(z)
+
+    override fun isDirty(): Boolean = _dirty
+
+    override fun updateDirty() {}
+
+    override fun markDirtyNew() {
+        _dirty = true
+    }
+
+    override fun clearDirty() {
+        _dirty = false
+    }
 
     fun set(x: Float, y: Float, z: Float): Vec3 {
         this.x = x
@@ -70,9 +82,7 @@ class Vec3(
 
     fun cross(other: Vec3): Vec3 {
         return Vec3(
-            y * other.z - z * other.y,
-            z * other.x - x * other.z,
-            x * other.y - y * other.x
+            y * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x
         )
     }
 

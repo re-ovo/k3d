@@ -1,13 +1,12 @@
 package me.rerere.k3d.scene.actor
 
 import me.rerere.k3d.renderer.resource.DrawMode
-import me.rerere.k3d.renderer.shader.BuiltInAttributeName
 import me.rerere.k3d.renderer.shader.BuiltInMarcoDefinition
 import me.rerere.k3d.scene.geometry.BufferGeometry
 import me.rerere.k3d.scene.material.ShaderMaterial
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.system.Dirty
-import me.rerere.k3d.util.system.dependsOn
+import me.rerere.k3d.util.system.fastForeach
 
 /**
  * A mesh is a primitive represents a polygon mesh.
@@ -37,10 +36,18 @@ class Skeleton(val bones: List<Bone>): Dirty {
         val inverseBindMatrix: Matrix4
     )
 
-    init {
-        // mark dirty when any bone is dirty
-        bones.forEach {
-            this.dependsOn(it.node)
+    override fun isDirty(): Boolean {
+        bones.fastForeach {
+            if(it.node.isDirty()) return true
         }
+        return false
     }
+
+    override fun markDirtyNew() {
+        error("Skeleton is not allowed to mark dirty")
+    }
+
+    override fun updateDirty() {}
+
+    override fun clearDirty() {}
 }

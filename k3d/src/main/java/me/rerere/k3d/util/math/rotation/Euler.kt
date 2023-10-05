@@ -25,9 +25,23 @@ class Euler(
     y: Float = 0f,
     z: Float = 0f,
 ): Dirty {
+    private var _dirty = true
+
     var x: Float by dirtyFloatValue(x)
     var y: Float by dirtyFloatValue(y)
     var z: Float by dirtyFloatValue(z)
+
+    override fun isDirty(): Boolean = _dirty
+
+    override fun markDirtyNew() {
+        _dirty = true
+    }
+
+    override fun clearDirty() {
+        _dirty = false
+    }
+
+    override fun updateDirty() {}
 
     fun set(x: Float, y: Float, z: Float) {
         this.x = x

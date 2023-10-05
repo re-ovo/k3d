@@ -2,29 +2,44 @@ package me.rerere.k3d.renderer.shader
 
 import me.rerere.k3d.util.system.Dirty
 import me.rerere.k3d.util.system.dirtyValue
-import me.rerere.k3d.util.system.markDirty
 
 class ShaderProgramSource(
     vertexShader: String,
     fragmentShader: String,
     marcoDefinitions: Set<MarcoDefinition> = emptySet()
 ) : Dirty {
+    private var _dirty = false
+
     var vertexShader: String by dirtyValue(vertexShader)
     var fragmentShader: String by dirtyValue(fragmentShader)
 
     private val _marcoDefinitions: MutableSet<MarcoDefinition> = marcoDefinitions.toMutableSet()
     val marcoDefinitions: Set<MarcoDefinition> = _marcoDefinitions
 
+    override fun isDirty(): Boolean {
+        return _dirty
+    }
+
+    override fun updateDirty() {}
+
+    override fun markDirtyNew() {
+        _dirty = true
+    }
+
+    override fun clearDirty() {
+        _dirty = false
+    }
+
     fun addMarcoDefinition(name: String, value: String? = null) {
         _marcoDefinitions.add(MarcoDefinition(name, value))
-        markDirty()
+        markDirtyNew()
     }
 
     fun removeMarcoDefinition(name: String) {
         _marcoDefinitions.removeIf {
             it.name == name
         }
-        markDirty()
+        markDirtyNew()
     }
 
     init {
