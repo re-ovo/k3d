@@ -193,10 +193,12 @@ class Quaternion(
         val zz = z * z
         val zw = z * w
         this._matrix = Matrix4(
+            floatArrayOf(
             1f - 2f * (yy + zz), 2f * (xy - zw), 2f * (xz + yw), 0f,
             2f * (xy + zw), 1f - 2f * (xx + zz), 2f * (yz - xw), 0f,
             2f * (xz - yw), 2f * (yz + xw), 1f - 2f * (xx + yy), 0f,
             0f, 0f, 0f, 1f
+            )
         )
     }
 

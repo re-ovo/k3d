@@ -36,10 +36,12 @@ internal fun Matrix4.clean(): Matrix4 {
 
 internal fun translationMatrix(x: Float, y: Float, z: Float): Matrix4 {
     return Matrix4(
-        1f, 0f, 0f, x,
-        0f, 1f, 0f, y,
-        0f, 0f, 1f, z,
-        0f, 0f, 0f, 1f
+        floatArrayOf(
+            1f, 0f, 0f, x,
+            0f, 1f, 0f, y,
+            0f, 0f, 1f, z,
+            0f, 0f, 0f, 1f
+        )
     )
 }
 
@@ -53,10 +55,12 @@ internal fun parseTranslationMatrix(matrix4: Matrix4): Vec3 {
 
 internal fun scaleMatrix(x: Float, y: Float, z: Float): Matrix4 {
     return Matrix4(
-        x, 0f, 0f, 0f,
-        0f, y, 0f, 0f,
-        0f, 0f, z, 0f,
-        0f, 0f, 0f, 1f
+        floatArrayOf(
+            x, 0f, 0f, 0f,
+            0f, y, 0f, 0f,
+            0f, 0f, z, 0f,
+            0f, 0f, 0f, 1f
+        )
     )
 }
 
@@ -103,10 +107,12 @@ internal fun rotationMatrix(x: Float, y: Float, z: Float): Matrix4 {
     val cosZ = cos(z)
     val sinZ = sin(z)
     return Matrix4(
-        cosY * cosZ, sinX * sinY * cosZ - cosX * sinZ, cosX * sinY * cosZ + sinX * sinZ, 0f,
-        cosY * sinZ, sinX * sinY * sinZ + cosX * cosZ, cosX * sinY * sinZ - sinX * cosZ, 0f,
-        -sinY, sinX * cosY, cosX * cosY, 0f,
-        0f, 0f, 0f, 1f
+        floatArrayOf(
+            cosY * cosZ, sinX * sinY * cosZ - cosX * sinZ, cosX * sinY * cosZ + sinX * sinZ, 0f,
+            cosY * sinZ, sinX * sinY * sinZ + cosX * cosZ, cosX * sinY * sinZ - sinX * cosZ, 0f,
+            -sinY, sinX * cosY, cosX * cosY, 0f,
+            0f, 0f, 0f, 1f
+        )
     )
 }
 

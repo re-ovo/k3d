@@ -503,9 +503,11 @@ internal class GL3ResourceManager(
             val boneMatrices = FloatArray(skeleton.bones.size * 16)
             buffer.get(boneMatrices)
             skeleton.bones.forEachIndexed { index, bone ->
-                val matrix = (bone.node.worldMatrix * bone.inverseBindMatrix).transpose()
-                matrix.data.forEachIndexed { i, v ->
-                    boneMatrices[index * 16 + i] = v
+                if(bone.node.isDirty()) {
+                    val matrix = (bone.node.worldMatrix * bone.inverseBindMatrix).transpose()
+                    matrix.data.forEachIndexed { i, v ->
+                        boneMatrices[index * 16 + i] = v
+                    }
                 }
             }
             buffer.rewind()

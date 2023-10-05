@@ -17,9 +17,11 @@ internal fun perspectiveMatrix(
     val c = -(far + near) / (far - near)
     val d = -2 * far * near / (far - near)
     return Matrix4(
-        x, 0f, a, 0f,
-        0f, y, b, 0f,
-        0f, 0f, c, d,
-        0f, 0f, -1f, 0f
+        floatArrayOf(
+            x, 0f, a, 0f,
+            0f, y, b, 0f,
+            0f, 0f, c, d,
+            0f, 0f, -1f, 0f
+        )
     )
 }
