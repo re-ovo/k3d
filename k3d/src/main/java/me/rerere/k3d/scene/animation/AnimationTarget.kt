@@ -5,23 +5,56 @@ import me.rerere.k3d.scene.actor.Actor
 sealed interface AnimationTarget {
     val node: Actor
 
-    fun update(data: FloatArray)
+    fun update(
+        a: Pair<Float, FloatArray>,
+        b: Pair<Float, FloatArray>,
+        time: Float,
+        interpolation: Interpolation,
+    )
 
     class Position(override val node: Actor) : AnimationTarget {
-        override fun update(data: FloatArray) {
-            node.position.set(data[0], data[1], data[2])
+        override fun update(
+            a: Pair<Float, FloatArray>,
+            b: Pair<Float, FloatArray>,
+            time: Float,
+            interpolation: Interpolation
+        ) {
+            val x = interpolation.interpolate(time, a.first, b.first, a.second[0], b.second[0])
+            val y = interpolation.interpolate(time, a.first, b.first, a.second[1], b.second[1])
+            val z = interpolation.interpolate(time, a.first, b.first, a.second[2], b.second[2])
+
+            node.position.set(x, y, z)
         }
     }
 
     class Rotation(override val node: Actor) : AnimationTarget {
-        override fun update(data: FloatArray) {
-            node.rotation.set(data[0], data[1], data[2], data[3])
+        override fun update(
+            a: Pair<Float, FloatArray>,
+            b: Pair<Float, FloatArray>,
+            time: Float,
+            interpolation: Interpolation
+        ) {
+            val x = interpolation.interpolate(time, a.first, b.first, a.second[0], b.second[0])
+            val y = interpolation.interpolate(time, a.first, b.first, a.second[1], b.second[1])
+            val z = interpolation.interpolate(time, a.first, b.first, a.second[2], b.second[2])
+            val w = interpolation.interpolate(time, a.first, b.first, a.second[3], b.second[3])
+
+            node.rotation.set(x, y, z, w)
         }
     }
 
     class Scale(override val node: Actor) : AnimationTarget {
-        override fun update(data: FloatArray) {
-            node.scale.set(data[0], data[1], data[2])
+        override fun update(
+            a: Pair<Float, FloatArray>,
+            b: Pair<Float, FloatArray>,
+            time: Float,
+            interpolation: Interpolation
+        ) {
+            val x = interpolation.interpolate(time, a.first, b.first, a.second[0], b.second[0])
+            val y = interpolation.interpolate(time, a.first, b.first, a.second[1], b.second[1])
+            val z = interpolation.interpolate(time, a.first, b.first, a.second[2], b.second[2])
+
+            node.scale.set(x, y, z)
         }
     }
 }

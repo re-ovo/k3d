@@ -1,7 +1,7 @@
 package me.rerere.k3d.scene.animation
 
 interface Interpolation {
-    fun interpolate(t: Float, t0: Float, t1: Float, v0: FloatArray, v1: FloatArray): FloatArray
+    fun interpolate(t: Float, t0: Float, t1: Float, v0: Float, v1: Float): Float
 
     companion object {
         @JvmStatic
@@ -17,16 +17,15 @@ interface Interpolation {
 }
 
 object LinearInterpolation : Interpolation {
-    override fun interpolate(t: Float, t0: Float, t1: Float, v0: FloatArray, v1: FloatArray): FloatArray {
-        val a = (t - t0) / (t1 - t0)
-        return v0.mapIndexed { index, v ->
-            v * (1 - a) + v1[index] * a
-        }.toFloatArray()
+    override fun interpolate(t: Float, t0: Float, t1: Float, v0: Float, v1: Float): Float {
+        if (t <= t0) return v0
+        if (t >= t1) return v1
+        return v0 + (v1 - v0) * ((t - t0) / (t1 - t0))
     }
 }
 
 object StepInterpolation : Interpolation {
-    override fun interpolate(t: Float, t0: Float, t1: Float, v0: FloatArray, v1: FloatArray): FloatArray {
-        return v0
+    override fun interpolate(t: Float, t0: Float, t1: Float, v0: Float, v1: Float): Float {
+        return if (t >= t1) v1 else v0
     }
 }

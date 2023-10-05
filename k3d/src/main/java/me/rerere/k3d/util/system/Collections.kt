@@ -21,3 +21,9 @@ inline fun <T> List<T>.fastForeach(action: (T) -> Unit) {
         action(this[i])
     }
 }
+
+inline fun <T> List<T>.fastForEachIndexed(action: (index: Int, T) -> Unit) {
+    for (i in 0 until this.size) { // avoid iterator creation
+        action(i, this[i])
+    }
+}
