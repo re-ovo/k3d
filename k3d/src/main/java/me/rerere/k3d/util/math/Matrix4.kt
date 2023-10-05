@@ -117,6 +117,14 @@ class Matrix4(val data: FloatArray) {
         this.data[row * 4 + col] = value
     }
 
+    operator fun get(index: Int): Float {
+        return this.data[index]
+    }
+
+    operator fun set(index: Int, value: Float) {
+        this.data[index] = value
+    }
+
     operator fun times(other: Matrix4): Matrix4 {
         val result = FloatArray(16)
 
