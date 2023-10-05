@@ -1,9 +1,23 @@
 package me.rerere.k3d.util.math
 
-import java.util.Arrays
-
 /**
  * Represents a 4x4 matrix in 3D space.
+ *
+ * This matrix is in row-major order to facilitate human understanding. However, when passing to
+ * OpenGL, it should be converted to column-major order (OpenGL uses column-major order).
+ *
+ * This matrix implements operator overloading, you can use `+`, `*` and `[]` to access the matrix.
+ * These overloaded operators are matrix-invariant by default, so it will create a new matrix as
+ * the result. You should try to avoid using these operators in render loop or any other performance
+ * critical code.
+ *
+ * To avoid memory allocation, you can use the following methods:
+ *  - [multiplyMatrices]: multiply two matrices(a * b) and store the result in this matrix
+ *  - [multiply]: multiply self with another matrix (self * other) and store the result in this matrix
+ *  - [preMultiply]: multiply other with self (other * self) and store the result in this matrix
+ *  - [multiplyToArray]: multiply self with another matrix and store the result in an array (already in column major).
+ *
+ * The `*=` operator is also overloaded, which is equivalent to [multiply]
  */
 class Matrix4(val data: FloatArray) {
     init {
@@ -71,6 +85,30 @@ class Matrix4(val data: FloatArray) {
         System.arraycopy(other.data, 0, this.data, 0, 16)
     }
 
+    fun setToIdentity(): Matrix4 {
+        this.data[0] = 1f
+        this.data[1] = 0f
+        this.data[2] = 0f
+        this.data[3] = 0f
+
+        this.data[4] = 0f
+        this.data[5] = 1f
+        this.data[6] = 0f
+        this.data[7] = 0f
+
+        this.data[8] = 0f
+        this.data[9] = 0f
+        this.data[10] = 1f
+        this.data[11] = 0f
+
+        this.data[12] = 0f
+        this.data[13] = 0f
+        this.data[14] = 0f
+        this.data[15] = 1f
+
+        return this
+    }
+
     operator fun get(row: Int, col: Int): Float {
         return this.data[row * 4 + col]
     }
@@ -81,34 +119,42 @@ class Matrix4(val data: FloatArray) {
 
     operator fun times(other: Matrix4): Matrix4 {
         val result = FloatArray(16)
-        for (i in 0..3) {
-            for (j in 0..3) {
-                result[i * 4 + j] = 0f
-                for (k in 0..3) {
-                    result[i * 4 + j] += this.data[i * 4 + k] * other.data[k * 4 + j]
-                }
-            }
-        }
 
-        result[0] = this.data[0] * other.data[0] + this.data[1] * other.data[4] + this.data[2] * other.data[8] + this.data[3] * other.data[12]
-        result[1] = this.data[0] * other.data[1] + this.data[1] * other.data[5] + this.data[2] * other.data[9] + this.data[3] * other.data[13]
-        result[2] = this.data[0] * other.data[2] + this.data[1] * other.data[6] + this.data[2] * other.data[10] + this.data[3] * other.data[14]
-        result[3] = this.data[0] * other.data[3] + this.data[1] * other.data[7] + this.data[2] * other.data[11] + this.data[3] * other.data[15]
+        result[0] =
+            this.data[0] * other.data[0] + this.data[1] * other.data[4] + this.data[2] * other.data[8] + this.data[3] * other.data[12]
+        result[1] =
+            this.data[0] * other.data[1] + this.data[1] * other.data[5] + this.data[2] * other.data[9] + this.data[3] * other.data[13]
+        result[2] =
+            this.data[0] * other.data[2] + this.data[1] * other.data[6] + this.data[2] * other.data[10] + this.data[3] * other.data[14]
+        result[3] =
+            this.data[0] * other.data[3] + this.data[1] * other.data[7] + this.data[2] * other.data[11] + this.data[3] * other.data[15]
 
-        result[4] = this.data[4] * other.data[0] + this.data[5] * other.data[4] + this.data[6] * other.data[8] + this.data[7] * other.data[12]
-        result[5] = this.data[4] * other.data[1] + this.data[5] * other.data[5] + this.data[6] * other.data[9] + this.data[7] * other.data[13]
-        result[6] = this.data[4] * other.data[2] + this.data[5] * other.data[6] + this.data[6] * other.data[10] + this.data[7] * other.data[14]
-        result[7] = this.data[4] * other.data[3] + this.data[5] * other.data[7] + this.data[6] * other.data[11] + this.data[7] * other.data[15]
+        result[4] =
+            this.data[4] * other.data[0] + this.data[5] * other.data[4] + this.data[6] * other.data[8] + this.data[7] * other.data[12]
+        result[5] =
+            this.data[4] * other.data[1] + this.data[5] * other.data[5] + this.data[6] * other.data[9] + this.data[7] * other.data[13]
+        result[6] =
+            this.data[4] * other.data[2] + this.data[5] * other.data[6] + this.data[6] * other.data[10] + this.data[7] * other.data[14]
+        result[7] =
+            this.data[4] * other.data[3] + this.data[5] * other.data[7] + this.data[6] * other.data[11] + this.data[7] * other.data[15]
 
-        result[8] = this.data[8] * other.data[0] + this.data[9] * other.data[4] + this.data[10] * other.data[8] + this.data[11] * other.data[12]
-        result[9] = this.data[8] * other.data[1] + this.data[9] * other.data[5] + this.data[10] * other.data[9] + this.data[11] * other.data[13]
-        result[10] = this.data[8] * other.data[2] + this.data[9] * other.data[6] + this.data[10] * other.data[10] + this.data[11] * other.data[14]
-        result[11] = this.data[8] * other.data[3] + this.data[9] * other.data[7] + this.data[10] * other.data[11] + this.data[11] * other.data[15]
+        result[8] =
+            this.data[8] * other.data[0] + this.data[9] * other.data[4] + this.data[10] * other.data[8] + this.data[11] * other.data[12]
+        result[9] =
+            this.data[8] * other.data[1] + this.data[9] * other.data[5] + this.data[10] * other.data[9] + this.data[11] * other.data[13]
+        result[10] =
+            this.data[8] * other.data[2] + this.data[9] * other.data[6] + this.data[10] * other.data[10] + this.data[11] * other.data[14]
+        result[11] =
+            this.data[8] * other.data[3] + this.data[9] * other.data[7] + this.data[10] * other.data[11] + this.data[11] * other.data[15]
 
-        result[12] = this.data[12] * other.data[0] + this.data[13] * other.data[4] + this.data[14] * other.data[8] + this.data[15] * other.data[12]
-        result[13] = this.data[12] * other.data[1] + this.data[13] * other.data[5] + this.data[14] * other.data[9] + this.data[15] * other.data[13]
-        result[14] = this.data[12] * other.data[2] + this.data[13] * other.data[6] + this.data[14] * other.data[10] + this.data[15] * other.data[14]
-        result[15] = this.data[12] * other.data[3] + this.data[13] * other.data[7] + this.data[14] * other.data[11] + this.data[15] * other.data[15]
+        result[12] =
+            this.data[12] * other.data[0] + this.data[13] * other.data[4] + this.data[14] * other.data[8] + this.data[15] * other.data[12]
+        result[13] =
+            this.data[12] * other.data[1] + this.data[13] * other.data[5] + this.data[14] * other.data[9] + this.data[15] * other.data[13]
+        result[14] =
+            this.data[12] * other.data[2] + this.data[13] * other.data[6] + this.data[14] * other.data[10] + this.data[15] * other.data[14]
+        result[15] =
+            this.data[12] * other.data[3] + this.data[13] * other.data[7] + this.data[14] * other.data[11] + this.data[15] * other.data[15]
 
         return Matrix4(result)
     }
@@ -140,18 +186,125 @@ class Matrix4(val data: FloatArray) {
         return Matrix4(result)
     }
 
-    fun applyMatrix4(other: Matrix4): Matrix4 {
-        val result = FloatArray(16)
-        for (i in 0..3) {
-            for (j in 0..3) {
-                result[i * 4 + j] = 0f
-                for (k in 0..3) {
-                    result[i * 4 + j] += other.data[i * 4 + k] * this.data[k * 4 + j]
-                }
-            }
-        }
-        System.arraycopy(result, 0, this.data, 0, 16)
+    fun multiply(other: Matrix4) = multiplyMatrices(this, other)
+
+    fun preMultiply(other: Matrix4) = multiplyMatrices(other, this)
+
+    operator fun timesAssign(other: Matrix4) {
+        this.multiply(other)
+    }
+
+    /**
+     * Multiply the two matrices [a] and [b] and store the result in this matrix
+     *
+     * @param a The first matrix
+     * @param b The second matrix
+     */
+    fun multiplyMatrices(a: Matrix4, b: Matrix4): Matrix4 {
+        val result0 =
+            a.data[0] * b.data[0] + a.data[1] * b.data[4] + a.data[2] * b.data[8] + a.data[3] * b.data[12]
+        val result1 =
+            a.data[0] * b.data[1] + a.data[1] * b.data[5] + a.data[2] * b.data[9] + a.data[3] * b.data[13]
+        val result2 =
+            a.data[0] * b.data[2] + a.data[1] * b.data[6] + a.data[2] * b.data[10] + a.data[3] * b.data[14]
+        val result3 =
+            a.data[0] * b.data[3] + a.data[1] * b.data[7] + a.data[2] * b.data[11] + a.data[3] * b.data[15]
+
+        val result4 =
+            a.data[4] * b.data[0] + a.data[5] * b.data[4] + a.data[6] * b.data[8] + a.data[7] * b.data[12]
+        val result5 =
+            a.data[4] * b.data[1] + a.data[5] * b.data[5] + a.data[6] * b.data[9] + a.data[7] * b.data[13]
+        val result6 =
+            a.data[4] * b.data[2] + a.data[5] * b.data[6] + a.data[6] * b.data[10] + a.data[7] * b.data[14]
+        val result7 =
+            a.data[4] * b.data[3] + a.data[5] * b.data[7] + a.data[6] * b.data[11] + a.data[7] * b.data[15]
+
+        val result8 =
+            a.data[8] * b.data[0] + a.data[9] * b.data[4] + a.data[10] * b.data[8] + a.data[11] * b.data[12]
+        val result9 =
+            a.data[8] * b.data[1] + a.data[9] * b.data[5] + a.data[10] * b.data[9] + a.data[11] * b.data[13]
+        val result10 =
+            a.data[8] * b.data[2] + a.data[9] * b.data[6] + a.data[10] * b.data[10] + a.data[11] * b.data[14]
+        val result11 =
+            a.data[8] * b.data[3] + a.data[9] * b.data[7] + a.data[10] * b.data[11] + a.data[11] * b.data[15]
+
+        val result12 =
+            a.data[12] * b.data[0] + a.data[13] * b.data[4] + a.data[14] * b.data[8] + a.data[15] * b.data[12]
+        val result13 =
+            a.data[12] * b.data[1] + a.data[13] * b.data[5] + a.data[14] * b.data[9] + a.data[15] * b.data[13]
+        val result14 =
+            a.data[12] * b.data[2] + a.data[13] * b.data[6] + a.data[14] * b.data[10] + a.data[15] * b.data[14]
+        val result15 =
+            a.data[12] * b.data[3] + a.data[13] * b.data[7] + a.data[14] * b.data[11] + a.data[15] * b.data[15]
+
+        this.data[0] = result0
+        this.data[1] = result1
+        this.data[2] = result2
+        this.data[3] = result3
+
+        this.data[4] = result4
+        this.data[5] = result5
+        this.data[6] = result6
+        this.data[7] = result7
+
+        this.data[8] = result8
+        this.data[9] = result9
+        this.data[10] = result10
+        this.data[11] = result11
+
+        this.data[12] = result12
+        this.data[13] = result13
+        this.data[14] = result14
+        this.data[15] = result15
+
         return this
+    }
+
+    /**
+     * Multiply this matrix with [other] and store the result in [result] array
+     *
+     * This method is used to avoid memory allocation. Note it's already in column major
+     *
+     * @param other The matrix to multiply
+     * @param result The array to store the result
+     * @param offset The offset of the array
+     */
+    fun multiplyToArray(other: Matrix4, result: FloatArray, offset: Int) {
+        result[offset + 0] =
+            this.data[0] * other.data[0] + this.data[1] * other.data[4] + this.data[2] * other.data[8] + this.data[3] * other.data[12]
+        result[offset + 4] =
+            this.data[0] * other.data[1] + this.data[1] * other.data[5] + this.data[2] * other.data[9] + this.data[3] * other.data[13]
+        result[offset + 8] =
+            this.data[0] * other.data[2] + this.data[1] * other.data[6] + this.data[2] * other.data[10] + this.data[3] * other.data[14]
+        result[offset + 12] =
+            this.data[0] * other.data[3] + this.data[1] * other.data[7] + this.data[2] * other.data[11] + this.data[3] * other.data[15]
+
+        result[offset + 1] =
+            this.data[4] * other.data[0] + this.data[5] * other.data[4] + this.data[6] * other.data[8] + this.data[7] * other.data[12]
+        result[offset + 5] =
+            this.data[4] * other.data[1] + this.data[5] * other.data[5] + this.data[6] * other.data[9] + this.data[7] * other.data[13]
+        result[offset + 9] =
+            this.data[4] * other.data[2] + this.data[5] * other.data[6] + this.data[6] * other.data[10] + this.data[7] * other.data[14]
+        result[offset + 13] =
+            this.data[4] * other.data[3] + this.data[5] * other.data[7] + this.data[6] * other.data[11] + this.data[7] * other.data[15]
+
+        result[offset + 2] =
+            this.data[8] * other.data[0] + this.data[9] * other.data[4] + this.data[10] * other.data[8] + this.data[11] * other.data[12]
+        result[offset + 6] =
+            this.data[8] * other.data[1] + this.data[9] * other.data[5] + this.data[10] * other.data[9] + this.data[11] * other.data[13]
+        result[offset + 10] =
+            this.data[8] * other.data[2] + this.data[9] * other.data[6] + this.data[10] * other.data[10] + this.data[11] * other.data[14]
+        result[offset + 14] =
+            this.data[8] * other.data[3] + this.data[9] * other.data[7] + this.data[10] * other.data[11] + this.data[11] * other.data[15]
+
+        result[offset + 3] =
+            this.data[12] * other.data[0] + this.data[13] * other.data[4] + this.data[14] * other.data[8] + this.data[15] * other.data[12]
+        result[offset + 7] =
+            this.data[12] * other.data[1] + this.data[13] * other.data[5] + this.data[14] * other.data[9] + this.data[15] * other.data[13]
+        result[offset + 11] =
+            this.data[12] * other.data[2] + this.data[13] * other.data[6] + this.data[14] * other.data[10] + this.data[15] * other.data[14]
+        result[offset + 15] =
+            this.data[12] * other.data[3] + this.data[13] * other.data[7] + this.data[14] * other.data[11] + this.data[15] * other.data[15]
     }
 
     fun transpose(): Matrix4 {

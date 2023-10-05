@@ -476,10 +476,12 @@ internal class GL3ResourceManager(
         if (!boneTextures.containsKey(skeleton)) {
             val boneMatrices = FloatArray(bitMapSize * bitMapSize * 4)
             skeleton.bones.forEachIndexed { index, bone ->
-                val matrix = (bone.node.worldMatrix * bone.inverseBindMatrix).transpose()
-                matrix.data.forEachIndexed { i, v ->
-                    boneMatrices[index * 16 + i] = v
-                }
+//                val matrix = (bone.node.worldMatrix * bone.inverseBindMatrix).transpose()
+//                matrix.data.forEachIndexed { i, v ->
+//                    boneMatrices[index * 16 + i] = v
+//                }
+                val offset = index * 16
+                bone.node.worldMatrix.multiplyToArray(bone.inverseBindMatrix, boneMatrices, offset)
             }
             val buffer = ByteBuffer.allocateDirect(boneMatrices.size * 4).apply {
                 order(java.nio.ByteOrder.nativeOrder())
@@ -503,10 +505,8 @@ internal class GL3ResourceManager(
             val boneMatrices = FloatArray(skeleton.bones.size * 16)
             buffer.get(boneMatrices)
             skeleton.bones.forEachIndexed { index, bone ->
-                val matrix = (bone.node.worldMatrix * bone.inverseBindMatrix).transpose()
-                matrix.data.forEachIndexed { i, v ->
-                    boneMatrices[index * 16 + i] = v
-                }
+                val offset = index * 16
+                bone.node.worldMatrix.multiplyToArray(bone.inverseBindMatrix, boneMatrices, offset)
             }
             buffer.rewind()
             buffer.put(boneMatrices)

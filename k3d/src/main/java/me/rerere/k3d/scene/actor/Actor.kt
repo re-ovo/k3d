@@ -5,6 +5,9 @@ package me.rerere.k3d.scene.actor
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.rotation.Quaternion
+import me.rerere.k3d.util.math.transform.applyRotation
+import me.rerere.k3d.util.math.transform.applyScale
+import me.rerere.k3d.util.math.transform.applyTranslation
 import me.rerere.k3d.util.math.transform.scaleMatrix
 import me.rerere.k3d.util.math.transform.translationMatrix
 import me.rerere.k3d.util.system.Dirty
@@ -49,9 +52,14 @@ abstract class Actor : Dirty {
         get() = _worldMatrix
 
     open fun updateMatrix() {
-        _localMatrix = scaleMatrix(scale).applyMatrix4(rotation.toMatrix4())
-            .applyMatrix4(translationMatrix(position))
-        _worldMatrix = parent?.worldMatrix?.times(_localMatrix) ?: _localMatrix
+        _localMatrix.setToIdentity()
+            .applyTranslation(position.x, position.y, position.z)
+            .applyRotation(rotation)
+            .applyScale(scale.x, scale.y, scale.z)
+
+        _worldMatrix = parent?.let {
+            _worldMatrix.multiplyMatrices(it.worldMatrix, _localMatrix)
+        } ?: localMatrix
     }
 
     /**
