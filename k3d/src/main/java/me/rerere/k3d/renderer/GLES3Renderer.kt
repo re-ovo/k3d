@@ -33,6 +33,7 @@ import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.ceilPowerOf2
 import me.rerere.k3d.util.system.DirtyQueue
 import me.rerere.k3d.util.system.Disposable
+import me.rerere.k3d.util.system.fastForEachIndexed
 import me.rerere.k3d.util.system.fastForeach
 import java.nio.ByteBuffer
 import java.util.IdentityHashMap
@@ -395,7 +396,7 @@ internal class GL3ResourceManager(
             GLES30.glUniform1i(it, _pointLights.size)
         }
         if (_pointLights.isNotEmpty()) {
-            _pointLights.forEachIndexed { index, t ->
+            _pointLights.fastForEachIndexed { index, t ->
                 require(index < 4) { "Point light count must be less than 4" }
 
                 uniformLocationOf(programId, "pointLight[$index].position") {
@@ -429,7 +430,7 @@ internal class GL3ResourceManager(
             GLES30.glUniform1i(it, _spotLights.size)
         }
         if (_spotLights.isNotEmpty()) {
-            _spotLights.forEachIndexed { index, t ->
+            _spotLights.fastForEachIndexed { index, t ->
                 require(index < 4) { "Spot light count must be less than 4" }
 
                 uniformLocationOf(programId, "spotLight[$index].position") {
