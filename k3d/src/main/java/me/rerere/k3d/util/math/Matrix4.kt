@@ -497,6 +497,133 @@ class Matrix4(val data: FloatArray) {
 
         return Matrix4(inv)
     }
+    
+    fun inverseOf(other: Matrix4): Matrix4 {
+        this[0] = other[5] * other[10] * other[15] -
+                other[5] * other[11] * other[14] -
+                other[9] * other[6] * other[15] +
+                other[9] * other[7] * other[14] +
+                other[13] * other[6] * other[11] -
+                other[13] * other[7] * other[10]
+
+        this[4] = -other[4] * other[10] * other[15] +
+                other[4] * other[11] * other[14] +
+                other[8] * other[6] * other[15] -
+                other[8] * other[7] * other[14] -
+                other[12] * other[6] * other[11] +
+                other[12] * other[7] * other[10]
+
+        this[8] = other[4] * other[9] * other[15] -
+                other[4] * other[11] * other[13] -
+                other[8] * other[5] * other[15] +
+                other[8] * other[7] * other[13] +
+                other[12] * other[5] * other[11] -
+                other[12] * other[7] * other[9]
+
+        this[12] = -other[4] * other[9] * other[14] +
+                other[4] * other[10] * other[13] +
+                other[8] * other[5] * other[14] -
+                other[8] * other[6] * other[13] -
+                other[12] * other[5] * other[10] +
+                other[12] * other[6] * other[9]
+
+        this[1] = -other[1] * other[10] * other[15] +
+                other[1] * other[11] * other[14] +
+                other[9] * other[2] * other[15] -
+                other[9] * other[3] * other[14] -
+                other[13] * other[2] * other[11] +
+                other[13] * other[3] * other[10]
+
+        this[5] = other[0] * other[10] * other[15] -
+                other[0] * other[11] * other[14] -
+                other[8] * other[2] * other[15] +
+                other[8] * other[3] * other[14] +
+                other[12] * other[2] * other[11] -
+                other[12] * other[3] * other[10]
+
+        this[9] = -other[0] * other[9] * other[15] +
+                other[0] * other[11] * other[13] +
+                other[8] * other[1] * other[15] -
+                other[8] * other[3] * other[13] -
+                other[12] * other[1] * other[11] +
+                other[12] * other[3] * other[9]
+
+        this[13] = other[0] * other[9] * other[14] -
+                other[0] * other[10] * other[13] -
+                other[8] * other[1] * other[14] +
+                other[8] * other[2] * other[13] +
+                other[12] * other[1] * other[10] -
+                other[12] * other[2] * other[9]
+
+        this[2] = other[1] * other[6] * other[15] -
+                other[1] * other[7] * other[14] -
+                other[5] * other[2] * other[15] +
+                other[5] * other[3] * other[14] +
+                other[13] * other[2] * other[7] -
+                other[13] * other[3] * other[6]
+
+        this[6] = -other[0] * other[6] * other[15] +
+                other[0] * other[7] * other[14] +
+                other[4] * other[2] * other[15] -
+                other[4] * other[3] * other[14] -
+                other[12] * other[2] * other[7] +
+                other[12] * other[3] * other[6]
+
+        this[10] = other[0] * other[5] * other[15] -
+                other[0] * other[7] * other[13] -
+                other[4] * other[1] * other[15] +
+                other[4] * other[3] * other[13] +
+                other[12] * other[1] * other[7] -
+                other[12] * other[3] * other[5]
+
+        this[14] = -other[0] * other[5] * other[14] +
+                other[0] * other[6] * other[13] +
+                other[4] * other[1] * other[14] -
+                other[4] * other[2] * other[13] -
+                other[12] * other[1] * other[6] +
+                other[12] * other[2] * other[5]
+
+        this[3] = -other[1] * other[6] * other[11] +
+                other[1] * other[7] * other[10] +
+                other[5] * other[2] * other[11] -
+                other[5] * other[3] * other[10] -
+                other[9] * other[2] * other[7] +
+                other[9] * other[3] * other[6]
+
+        this[7] = other[0] * other[6] * other[11] -
+                other[0] * other[7] * other[10] -
+                other[4] * other[2] * other[11] +
+                other[4] * other[3] * other[10] +
+                other[8] * other[2] * other[7] -
+                other[8] * other[3] * other[6]
+
+        this[11] = -other[0] * other[5] * other[11] +
+                other[0] * other[7] * other[9] +
+                other[4] * other[1] * other[11] -
+                other[4] * other[3] * other[9] -
+                other[8] * other[1] * other[7] +
+                other[8] * other[3] * other[5]
+
+        this[15] = other[0] * other[5] * other[10] -
+                other[0] * other[6] * other[9] -
+                other[4] * other[1] * other[10] +
+                other[4] * other[2] * other[9] +
+                other[8] * other[1] * other[6] -
+                other[8] * other[2] * other[5]
+
+        val det = other[0] * this[0] + other[1] * this[4] + other[2] * this[8] + other[3] * this[12]
+
+        if (det == 0f) {
+            throw IllegalStateException("Matrix is singular and cannot be inverted")
+        }
+
+        val invDet = 1.0f / det
+        for (i in 0..15) {
+            this[i] *= invDet
+        }
+
+        return this
+    }
 
     fun copy(): Matrix4 {
         return Matrix4(this.data.copyOf(16))

@@ -3,6 +3,9 @@ package me.rerere.k3d.scene.camera
 import me.rerere.k3d.scene.actor.Actor
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.math.Vec3
+import me.rerere.k3d.util.math.transform.applyEulerRotation
+import me.rerere.k3d.util.math.transform.applyRotation
+import me.rerere.k3d.util.math.transform.applyTranslation
 import me.rerere.k3d.util.math.transform.rotationMatrix
 import me.rerere.k3d.util.math.transform.translationMatrix
 import me.rerere.k3d.util.system.dirtyFloatValue
@@ -42,14 +45,11 @@ abstract class Camera : Actor() {
     }
 
     override fun updateMatrix() {
-        worldMatrix.set(
-            translationMatrix(
-                position.x,
-                position.y,
-                position.z
-            ) * rotationMatrix(pitch, yaw, roll)
-        )
-        worldMatrixInverse.set(worldMatrix.inverse())
+        worldMatrix
+            .setToIdentity()
+            .applyTranslation(position.x, position.y, position.z)
+            .applyEulerRotation(pitch, yaw, roll)
+        worldMatrixInverse.inverseOf(worldMatrix)
     }
 
     override fun updateDirty() {
