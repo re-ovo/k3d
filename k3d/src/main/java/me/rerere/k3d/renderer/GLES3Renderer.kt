@@ -17,6 +17,7 @@ import me.rerere.k3d.renderer.shader.createShader
 import me.rerere.k3d.renderer.shader.genBuffer
 import me.rerere.k3d.renderer.shader.genTexture
 import me.rerere.k3d.renderer.shader.genVertexArray
+import me.rerere.k3d.scene.actor.Actor
 import me.rerere.k3d.scene.actor.Primitive
 import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.actor.Skeleton
@@ -90,19 +91,7 @@ class GLES3Renderer : Renderer {
 
         GLES20.glEnable(GLES20.GL_DEPTH_TEST)
 
-        scene.traverse { actor ->
-            dirtyQueue.ensureDirtyUpdated(actor)
-
-            if (actor is Primitive) {
-                when (actor.material.alphaMode) {
-                    AlphaMode.OPAQUE -> _opaqueActors.add(actor)
-                    AlphaMode.BLEND -> _transparentActors.add(actor)
-                    AlphaMode.MASK -> _transparentActors.add(actor).also {
-                        error("AlphaMode.MASK is not supported yet")
-                    }
-                }
-            }
-        }
+        scene.traverse(handleTraverse)
 
         // render opaque actors
         _opaqueActors.fastForeach { actor ->
@@ -119,6 +108,22 @@ class GLES3Renderer : Renderer {
         _opaqueActors.clear()
         _transparentActors.clear()
     }
+
+    private fun _handleTraverse(actor: Actor) {
+        dirtyQueue.ensureDirtyUpdated(actor)
+
+        if (actor is Primitive) {
+            when (actor.material.alphaMode) {
+                AlphaMode.OPAQUE -> _opaqueActors.add(actor)
+                AlphaMode.BLEND -> _transparentActors.add(actor)
+                AlphaMode.MASK -> _transparentActors.add(actor).also {
+                    error("AlphaMode.MASK is not supported yet")
+                }
+            }
+        }
+    }
+
+    private val handleTraverse = ::_handleTraverse // avoid lambda allocation
 
     private fun renderPrimitive(actor: Primitive, camera: Camera, scene: Scene) {
         if (actor.material.doubleSided) {
