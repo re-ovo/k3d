@@ -266,10 +266,6 @@ class GltfLoader(private val context: Context) {
             val group = ActorGroup().apply {
                 name = gltfNode.name
 
-                require(gltfNode.weights == null) {
-                    "node.weights is not supported yet"
-                }
-
                 // Load rotation/scale/translation from matrix
                 gltfNode.matrix?.let {
                     setModelMatrix(Matrix4.fromColumnMajor(it))
