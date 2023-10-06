@@ -303,10 +303,6 @@ class GltfLoader(private val context: Context) {
             val gltfMesh = gltf.meshes[meshIndex]
             val group = ActorGroup().apply {
                 name = gltfMesh.name
-
-                require(gltfMesh.weights == null) {
-                    "mesh.weights is not supported yet: ${gltfMesh.weights}"
-                }
             }
             gltfMesh.primitives.forEach { primitive ->
                 // Attributes
