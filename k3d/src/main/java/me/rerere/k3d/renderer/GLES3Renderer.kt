@@ -33,6 +33,7 @@ import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.ceilPowerOf2
 import me.rerere.k3d.util.system.DirtyQueue
 import me.rerere.k3d.util.system.Disposable
+import me.rerere.k3d.util.system.fastFilterIsInstanceTo
 import me.rerere.k3d.util.system.fastForEachIndexed
 import me.rerere.k3d.util.system.fastForeach
 import java.nio.ByteBuffer
@@ -337,10 +338,14 @@ internal class GL3ResourceManager(
         if (scene.lights.isEmpty()) return
         val programId = getProgram(program) ?: return
 
-        scene.lights.filterIsInstanceTo(_ambientLights)
-        scene.lights.filterIsInstanceTo(_directionalLights)
-        scene.lights.filterIsInstanceTo(_pointLights)
-        scene.lights.filterIsInstanceTo(_spotLights)
+        scene.lights.fastForeach { light ->
+            when (light) {
+                is AmbientLight -> _ambientLights.add(light)
+                is DirectionalLight -> _directionalLights.add(light)
+                is PointLight -> _pointLights.add(light)
+                is SpotLight -> _spotLights.add(light)
+            }
+        }
 
         // ambient light
         if (_ambientLights.isNotEmpty()) {
@@ -399,7 +404,7 @@ internal class GL3ResourceManager(
             _pointLights.fastForEachIndexed { index, t ->
                 require(index < 4) { "Point light count must be less than 4" }
 
-                uniformLocationOf(programId, "pointLight[$index].position") {
+                uniformLocationOfStructArray(programId, "pointLight", index, "position") {
                     GLES30.glUniform3f(
                         it,
                         t.position.x,
@@ -407,19 +412,19 @@ internal class GL3ResourceManager(
                         t.position.z
                     )
                 }
-                uniformLocationOf(programId, "pointLight[$index].color") {
+                uniformLocationOfStructArray(programId, "pointLight", index, "color") {
                     GLES30.glUniform3f(it, t.color.r, t.color.g, t.color.b)
                 }
-                uniformLocationOf(programId, "pointLight[$index].intensity") {
+                uniformLocationOfStructArray(programId, "pointLight", index,"intensity") {
                     GLES30.glUniform1f(it, t.intensity)
                 }
-                uniformLocationOf(programId, "pointLight[$index].constant") {
+                uniformLocationOfStructArray(programId, "pointLight", index,"constant") {
                     GLES30.glUniform1f(it, t.constant)
                 }
-                uniformLocationOf(programId, "pointLight[$index].linear") {
+                uniformLocationOfStructArray(programId, "pointLight", index,"linear") {
                     GLES30.glUniform1f(it, t.linear)
                 }
-                uniformLocationOf(programId, "pointLight[$index].quadratic") {
+                uniformLocationOfStructArray(programId, "pointLight", index,"quadratic") {
                     GLES30.glUniform1f(it, t.quadratic)
                 }
             }
@@ -433,7 +438,7 @@ internal class GL3ResourceManager(
             _spotLights.fastForEachIndexed { index, t ->
                 require(index < 4) { "Spot light count must be less than 4" }
 
-                uniformLocationOf(programId, "spotLight[$index].position") {
+                uniformLocationOfStructArray(programId, "spotLight", index,"position") {
                     GLES30.glUniform3f(
                         it,
                         t.position.x,
@@ -441,19 +446,19 @@ internal class GL3ResourceManager(
                         t.position.z
                     )
                 }
-                uniformLocationOf(programId, "spotLight[$index].target") {
+                uniformLocationOfStructArray(programId, "spotLight", index,"target") {
                     GLES30.glUniform3f(it, t.target.x, t.target.y, t.target.z)
                 }
-                uniformLocationOf(programId, "spotLight[$index].color") {
+                uniformLocationOfStructArray(programId, "spotLight", index,"color") {
                     GLES30.glUniform3f(it, t.color.r, t.color.g, t.color.b)
                 }
-                uniformLocationOf(programId, "spotLight[$index].intensity") {
+                uniformLocationOfStructArray(programId, "spotLight", index,"intensity") {
                     GLES30.glUniform1f(it, t.intensity)
                 }
-                uniformLocationOf(programId, "spotLight[$index].angle") {
+                uniformLocationOfStructArray(programId, "spotLight", index,"angle") {
                     GLES30.glUniform1f(it, t.angle)
                 }
-                uniformLocationOf(programId, "spotLight[$index].penumbra") {
+                uniformLocationOfStructArray(programId, "spotLight", index,"penumbra") {
                     GLES30.glUniform1f(it, t.penumbra)
                 }
             }
@@ -535,6 +540,23 @@ internal class GL3ResourceManager(
         if (location != -1) {
             scope(location)
         }
+    }
+
+    private val structArrayCache = hashMapOf<String, MutableMap<String, MutableMap<Int, String>>>()
+
+    private inline fun uniformLocationOfStructArray(
+        programId: Int,
+        struct: String,
+        index: Int,
+        name: String,
+        scope: (Int) -> Unit
+    ) {
+        val structCache = structArrayCache.getOrPut(struct) { hashMapOf() }
+        val nameCache = structCache.getOrPut(name) { hashMapOf() }
+        val location = nameCache.getOrPut(index) {
+            "${struct}[$index].$name"
+        }
+        uniformLocationOf(programId, location, scope)
     }
 
     fun createProgram(program: ShaderProgramSource): Result<Int> = runCatching {

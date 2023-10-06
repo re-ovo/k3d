@@ -27,3 +27,13 @@ inline fun <T> List<T>.fastForEachIndexed(action: (index: Int, T) -> Unit) {
         action(i, this[i])
     }
 }
+
+inline fun <reified R, C : MutableList<in R>> List<*>.fastFilterIsInstanceTo(destination: C): C {
+    for (i in 0 until this.size) { // avoid iterator creation
+        val element = this[i]
+        if (element is R) {
+            destination.add(element)
+        }
+    }
+    return destination
+}
