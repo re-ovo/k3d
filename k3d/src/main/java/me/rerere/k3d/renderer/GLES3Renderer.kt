@@ -37,6 +37,8 @@ import me.rerere.k3d.util.system.fastFilterIsInstanceTo
 import me.rerere.k3d.util.system.fastForEachIndexed
 import me.rerere.k3d.util.system.fastForeach
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.FloatBuffer
 import java.util.IdentityHashMap
 import kotlin.math.ceil
 import kotlin.math.sqrt
@@ -481,20 +483,12 @@ internal class GL3ResourceManager(
 
         if (!boneTextures.containsKey(skeleton)) {
             val boneMatrices = FloatArray(bitMapSize * bitMapSize * 4)
-            skeleton.bones.forEachIndexed { index, bone ->
-//                val matrix = (bone.node.worldMatrix * bone.inverseBindMatrix).transpose()
-//                matrix.data.forEachIndexed { i, v ->
-//                    boneMatrices[index * 16 + i] = v
-//                }
+            skeleton.bones.fastForEachIndexed { index, bone ->
                 val offset = index * 16
                 bone.node.worldMatrix.multiplyToArray(bone.inverseBindMatrix, boneMatrices, offset)
             }
-            val buffer = ByteBuffer.allocateDirect(boneMatrices.size * 4).apply {
-                order(java.nio.ByteOrder.nativeOrder())
-                asFloatBuffer().put(boneMatrices)
-            }
             boneTextures[skeleton] = Texture.DataTexture(
-                buffer,
+                FloatBuffer.wrap(boneMatrices),
                 bitMapSize,
                 bitMapSize,
                 TextureWrap.CLAMP_TO_EDGE,
@@ -507,15 +501,15 @@ internal class GL3ResourceManager(
 
         val texture = boneTextures[skeleton] ?: return
         dirtyQueue.whenDirty(skeleton) {
-            val buffer = texture.data.asFloatBuffer()
-            val boneMatrices = FloatArray(skeleton.bones.size * 16)
-            buffer.get(boneMatrices)
-            skeleton.bones.forEachIndexed { index, bone ->
+            val buffer = (texture.data as FloatBuffer).apply {
+                rewind()
+            }
+            skeleton.bones.fastForEachIndexed { index, bone ->
                 val offset = index * 16
-                bone.node.worldMatrix.multiplyToArray(bone.inverseBindMatrix, boneMatrices, offset)
+                buffer.position(offset)
+                bone.node.worldMatrix.multiplyToFloatBuffer(bone.inverseBindMatrix, buffer)
             }
             buffer.rewind()
-            buffer.put(boneMatrices)
 
             texture.markDirtyNew()
         }

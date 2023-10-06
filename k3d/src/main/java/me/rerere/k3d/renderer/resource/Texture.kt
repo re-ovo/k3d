@@ -2,7 +2,7 @@ package me.rerere.k3d.renderer.resource
 
 import android.graphics.Bitmap
 import me.rerere.k3d.util.system.Dirty
-import java.nio.ByteBuffer
+import java.nio.Buffer
 
 sealed class Texture(
     val width: Int,
@@ -49,7 +49,7 @@ sealed class Texture(
     ) : Texture(width, height, wrapS, wrapT, minFilter, magFilter)
 
     class DataTexture(
-        val data: ByteBuffer,
+        val data: Buffer,
         width: Int,
         height: Int,
         wrapS: TextureWrap = TextureWrap.REPEAT,

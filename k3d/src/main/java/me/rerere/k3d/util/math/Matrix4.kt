@@ -1,5 +1,7 @@
 package me.rerere.k3d.util.math
 
+import java.nio.FloatBuffer
+
 /**
  * Represents a 4x4 matrix in 3D space.
  *
@@ -313,6 +315,32 @@ class Matrix4(val data: FloatArray) {
             this.data[12] * other.data[2] + this.data[13] * other.data[6] + this.data[14] * other.data[10] + this.data[15] * other.data[14]
         result[offset + 15] =
             this.data[12] * other.data[3] + this.data[13] * other.data[7] + this.data[14] * other.data[11] + this.data[15] * other.data[15]
+    }
+
+    fun multiplyToFloatBuffer(other: Matrix4, result: FloatBuffer) {
+        result
+            .put(this.data[0] * other.data[0] + this.data[1] * other.data[4] + this.data[2] * other.data[8] + this.data[3] * other.data[12])
+            .put(this.data[4] * other.data[0] + this.data[5] * other.data[4] + this.data[6] * other.data[8] + this.data[7] * other.data[12])
+            .put(this.data[8] * other.data[0] + this.data[9] * other.data[4] + this.data[10] * other.data[8] + this.data[11] * other.data[12])
+            .put(this.data[12] * other.data[0] + this.data[13] * other.data[4] + this.data[14] * other.data[8] + this.data[15] * other.data[12])
+
+        result
+            .put(this.data[0] * other.data[1] + this.data[1] * other.data[5] + this.data[2] * other.data[9] + this.data[3] * other.data[13])
+            .put(this.data[4] * other.data[1] + this.data[5] * other.data[5] + this.data[6] * other.data[9] + this.data[7] * other.data[13])
+            .put( this.data[8] * other.data[1] + this.data[9] * other.data[5] + this.data[10] * other.data[9] + this.data[11] * other.data[13])
+            .put(this.data[12] * other.data[1] + this.data[13] * other.data[5] + this.data[14] * other.data[9] + this.data[15] * other.data[13])
+
+        result
+            .put(this.data[0] * other.data[2] + this.data[1] * other.data[6] + this.data[2] * other.data[10] + this.data[3] * other.data[14])
+            .put(this.data[4] * other.data[2] + this.data[5] * other.data[6] + this.data[6] * other.data[10] + this.data[7] * other.data[14])
+            .put(this.data[8] * other.data[2] + this.data[9] * other.data[6] + this.data[10] * other.data[10] + this.data[11] * other.data[14])
+            .put(this.data[12] * other.data[2] + this.data[13] * other.data[6] + this.data[14] * other.data[10] + this.data[15] * other.data[14])
+
+        result
+            .put(this.data[0] * other.data[3] + this.data[1] * other.data[7] + this.data[2] * other.data[11] + this.data[3] * other.data[15])
+            .put(this.data[4] * other.data[3] + this.data[5] * other.data[7] + this.data[6] * other.data[11] + this.data[7] * other.data[15])
+            .put(this.data[8] * other.data[3] + this.data[9] * other.data[7] + this.data[10] * other.data[11] + this.data[11] * other.data[15])
+            .put(this.data[12] * other.data[3] + this.data[13] * other.data[7] + this.data[14] * other.data[11] + this.data[15] * other.data[15])
     }
 
     fun transpose(): Matrix4 {
