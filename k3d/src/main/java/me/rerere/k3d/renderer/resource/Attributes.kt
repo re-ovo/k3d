@@ -43,18 +43,19 @@ class Attribute(
 }
 
 internal class VertexArray {
-    private val attributes = hashMapOf<String, Attribute>()
+    private val attributes = arrayListOf<Pair<String, Attribute>>()
     private var indices: Attribute? = null
 
     fun setAttribute(name: String, attribute: Attribute) {
-        attributes[name] = attribute
+        attributes.removeIf { it.first == name }
+        attributes.add(name to attribute)
     }
 
     fun getAttribute(name: String): Attribute? {
-        return attributes[name]
+        return attributes.find { it.first == name }?.second
     }
 
-    fun getAttributes(): Set<Map.Entry<String, Attribute>> = attributes.entries
+    fun getAttributes() = attributes
 
     fun setIndices(indices: Attribute) {
         this.indices = indices

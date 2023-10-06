@@ -132,7 +132,7 @@ class GLES3Renderer : Renderer {
             resourceManager.useLights(this, scene)
 
             // Apply uniforms
-            actor.material.uniforms.forEach { (name, uniform) ->
+            actor.material.uniforms.fastForeach { (name, uniform) ->
                 resourceManager.useUniform(actor.material.program, uniform, name)
             }
 
@@ -145,7 +145,7 @@ class GLES3Renderer : Renderer {
             applyCameraUniforms(actor, camera)
 
             // Apply textures
-            actor.material.textures.entries.forEachIndexed { index, mutableEntry ->
+            actor.material.textures.fastForEachIndexed { index, mutableEntry ->
                 val (name, texture) = mutableEntry
                 resourceManager.useTexture(
                     actor.material.program,
@@ -718,7 +718,7 @@ internal class GL3ResourceManager(
             vertexArrays[vertexArray] = vao
 
             GLES30.glBindVertexArray(vao)
-            vertexArray.getAttributes().forEach { (name, attribute) ->
+            vertexArray.getAttributes().fastForeach { (name, attribute) ->
                 // Set attribute
                 val location = GLES30.glGetAttribLocation(programId, name)
                 if (location != -1) {
@@ -770,10 +770,10 @@ internal class GL3ResourceManager(
     fun updateVertexArray(vertexArray: VertexArray) {
         val vao = vertexArrays[vertexArray] ?: return
         GLES30.glBindVertexArray(vao)
-        vertexArray.getAttributes().forEach { (_, attribute) ->
+        vertexArray.getAttributes().fastForeach { (_, attribute) ->
             dirtyQueue.whenDirty(attribute) { // update attribute buffer if dirty
                 println("[K3D:Resource] update attribute buffer: $attribute")
-                val vbo = vertexArraysAttributesBuffer[attribute] ?: return@forEach
+                val vbo = vertexArraysAttributesBuffer[attribute] ?: return@fastForeach
                 GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vbo)
                 attribute.data.rewind()
                 GLES30.glBufferSubData(
@@ -792,8 +792,8 @@ internal class GL3ResourceManager(
         GLES30.glDeleteVertexArrays(1, intArrayOf(vao), 0)
         vertexArrays.remove(vertexArray)
 
-        vertexArray.getAttributes().forEach { (_, attribute) ->
-            val vbo = vertexArraysAttributesBuffer[attribute] ?: return@forEach
+        vertexArray.getAttributes().fastForeach { (_, attribute) ->
+            val vbo = vertexArraysAttributesBuffer[attribute] ?: return@fastForeach
             GLES30.glDeleteBuffers(1, intArrayOf(vbo), 0)
             vertexArraysAttributesBuffer.remove(attribute)
         }

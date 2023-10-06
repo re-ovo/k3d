@@ -27,13 +27,44 @@ import me.rerere.k3d.util.math.Vec4
  */
 open class ShaderMaterial(
     val program: ShaderProgramSource,
-    val uniforms: MutableMap<String, Uniform> = mutableMapOf(),
-    val textures: MutableMap<String, Texture> = mutableMapOf()
+    val uniforms: MutableList<Pair<String, Uniform>> = arrayListOf(),
+    val textures: MutableList<Pair<String, Texture>> = arrayListOf(),
 ) {
     var name = ""
+
     var alphaMode = AlphaMode.OPAQUE
     var alphaCutoff by floatUniformOf(BuiltInUniformName.ALPHA_CUTOFF, 0.5f)
     var doubleSided = false
+
+    fun getUniform(name: String): Uniform? {
+        return uniforms.find { it.first == name }?.second
+    }
+
+    fun setUniform(name: String, uniform: Uniform?) {
+        if (uniform == null) {
+            uniforms.removeIf { it.first == name }
+            program.removeMarcoDefinition("HAS_UNIFORM_$name")
+        } else {
+            uniforms.removeIf { it.first == name }
+            uniforms.add(name to uniform)
+            program.addMarcoDefinition("HAS_UNIFORM_$name")
+        }
+    }
+
+    fun getTexture(name: String): Texture? {
+        return textures.find { it.first == name }?.second
+    }
+
+    fun setTexture(name: String, texture: Texture?) {
+        if (texture == null) {
+            textures.removeIf { it.first == name }
+            program.removeMarcoDefinition("HAS_TEXTURE_$name")
+        } else {
+            textures.removeIf { it.first == name }
+            textures.add(name to texture)
+            program.addMarcoDefinition("HAS_TEXTURE_$name")
+        }
+    }
 
     fun textureOf(name: String): MaterialTextureDelegate {
         return MaterialTextureDelegate(this, name)
@@ -42,8 +73,8 @@ open class ShaderMaterial(
     fun textureOf(type: BuiltInUniformName) = textureOf(type.uniformName)
 
     fun floatUniformOf(name: String, def: Float = 0f): MaterialUniformFloatDelegate {
-        if(!uniforms.containsKey(name)){
-            uniforms[name] = Uniform.Float(def)
+        if(getUniform(name) == null){
+            uniforms += name to Uniform.Float(def)
         }
         return MaterialUniformFloatDelegate(this, name, def)
     }
@@ -52,8 +83,8 @@ open class ShaderMaterial(
         floatUniformOf(type.uniformName, def)
 
     fun intUniformOf(name: String, def: Int = 0): MaterialUniformIntDelegate {
-        if(!uniforms.containsKey(name)){
-            uniforms[name] = Uniform.Int(def)
+        if(getUniform(name) == null){
+            uniforms += name to Uniform.Int(def)
         }
         return MaterialUniformIntDelegate(this, name, def)
     }
@@ -61,8 +92,8 @@ open class ShaderMaterial(
     fun intUniformOf(type: BuiltInUniformName, def: Int = 0) = intUniformOf(type.uniformName, def)
 
     fun vec3UniformOf(name: String, def: Vec3 = Vec3()): MaterialUniformVec3Delegate {
-        if(!uniforms.containsKey(name)){
-            uniforms[name] = Uniform.Vec3f(def)
+        if(getUniform(name) == null){
+            uniforms += name to Uniform.Vec3f(def)
         }
         return MaterialUniformVec3Delegate(this, name, def)
     }
@@ -74,8 +105,8 @@ open class ShaderMaterial(
         name: String,
         def: Matrix4 = Matrix4.identity()
     ): MaterialUniformMat4Delegate {
-        if(!uniforms.containsKey(name)){
-            uniforms[name] = Uniform.Mat4(def, true)
+        if(getUniform(name) == null){
+            uniforms += name to Uniform.Mat4(def, true)
         }
         return MaterialUniformMat4Delegate(this, name, def)
     }
@@ -87,8 +118,8 @@ open class ShaderMaterial(
         name: String,
         def: Color = Color.fromRGBHex("#FFFFFF")
     ): MaterialUniformColor3fDelegate {
-        if(!uniforms.containsKey(name)){
-            uniforms[name] = Uniform.Vec3f(Vec3(def.r, def.g, def.b))
+        if(getUniform(name) == null){
+            uniforms += name to Uniform.Vec3f(Vec3(def.r, def.g, def.b))
         }
         return MaterialUniformColor3fDelegate(this, name, def)
     }
@@ -100,40 +131,12 @@ open class ShaderMaterial(
         name: String,
         def: Color = Color.fromRGBHex("#FFFFFF")
     ): MaterialUniformColor4fDelegate {
-        if(!uniforms.containsKey(name)){
-            uniforms[name] = Uniform.Vec4f(Vec4(def.r, def.g, def.b, def.a))
+        if(getUniform(name) == null){
+            uniforms += name to Uniform.Vec4f(Vec4(def.r, def.g, def.b, def.a))
         }
         return MaterialUniformColor4fDelegate(this, name, def)
     }
 
     fun color4fUniformOf(type: BuiltInUniformName, def: Color = Color.fromRGBHex("#FFFFFF")) =
         color4fUniformOf(type.uniformName, def)
-
-    fun getUniform(name: String): Uniform? {
-        return uniforms[name]
-    }
-
-    fun setUniform(name: String, uniform: Uniform?) {
-        if (uniform == null) {
-            uniforms.remove(name)
-            program.removeMarcoDefinition("HAS_UNIFORM_$name")
-        } else {
-            uniforms[name] = uniform
-            program.addMarcoDefinition("HAS_UNIFORM_$name")
-        }
-    }
-
-    fun getTexture(name: String): Texture? {
-        return textures[name]
-    }
-
-    fun setTexture(name: String, texture: Texture?) {
-        if (texture == null) {
-            textures.remove(name)
-            program.removeMarcoDefinition("HAS_TEXTURE_$name")
-        } else {
-            textures[name] = texture
-            program.addMarcoDefinition("HAS_TEXTURE_$name")
-        }
-    }
 }
