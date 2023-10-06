@@ -160,6 +160,7 @@ class GltfLoader(private val context: Context) {
                         "translation" -> AnimationTarget.Position(node)
                         "rotation" -> AnimationTarget.Rotation(node)
                         "scale" -> AnimationTarget.Scale(node)
+                        "weights" -> AnimationTarget.Weight(node)
                         else -> error("Unsupported animation target path: ${channel.target.path}")
                     }
                     val sampler = animationClip.samplers[channel.sampler]
@@ -194,8 +195,9 @@ class GltfLoader(private val context: Context) {
                         buffer.order(ByteOrder.nativeOrder())
                         buffer.asFloatBuffer().get(output)
                     }
+
                     val frames = buildList {
-                        for (i in 0 until accessorOutput.count) {
+                        for (i in 0 until accessorInput.count) {
                             val start = i * itemSize
                             val end = start + itemSize
                             add(input[i] to output.slice(start until end).toFloatArray())

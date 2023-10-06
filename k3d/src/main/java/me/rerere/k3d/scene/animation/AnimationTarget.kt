@@ -57,4 +57,15 @@ sealed interface AnimationTarget {
             node.scale.set(x, y, z)
         }
     }
+
+    class Weight(override val node: Actor) : AnimationTarget {
+        override fun update(
+            a: Pair<Float, FloatArray>,
+            b: Pair<Float, FloatArray>,
+            time: Float,
+            interpolation: Interpolation
+        ) {
+            // TODO: Support weight animation
+        }
+    }
 }
