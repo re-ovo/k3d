@@ -41,14 +41,17 @@ open class BufferGeometry {
         vao.setIndices(indices)
     }
 
-    fun setIndices(indices: IntArray) {
+    fun setIndices(indices: IntArray, markDirty: Boolean = false) {
         setIndices(
             Attribute(
-            itemSize = 1,
-            normalized = false,
-            count = indices.size,
-            data = indices.toByteBuffer(),
-            type = DataType.INT
-        ))
+                itemSize = 1,
+                normalized = false,
+                count = indices.size,
+                data = indices.toByteBuffer(),
+                type = DataType.UNSIGNED_INT
+            ).apply {
+                if (markDirty) markDirtyNew()
+            }
+        )
     }
 }

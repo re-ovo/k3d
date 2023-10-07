@@ -17,6 +17,7 @@ import me.rerere.k3d.renderer.shader.createShader
 import me.rerere.k3d.renderer.shader.genBuffer
 import me.rerere.k3d.renderer.shader.genTexture
 import me.rerere.k3d.renderer.shader.genVertexArray
+import me.rerere.k3d.renderer.shader.glGetBufferParameteriv
 import me.rerere.k3d.scene.actor.Actor
 import me.rerere.k3d.scene.actor.Primitive
 import me.rerere.k3d.scene.actor.Scene
@@ -773,22 +774,43 @@ internal class GL3ResourceManager(
         }
 
     fun updateVertexArray(vertexArray: VertexArray) {
+        fun updateBufferSmart(target: Int, vbo: Int, buffer: ByteBuffer) {
+            GLES20.glBindBuffer(target, vbo)
+            buffer.rewind()
+
+            val size = buffer.sizeInBytes()
+            val oldSize = glGetBufferParameteriv(target, GLES20.GL_BUFFER_SIZE)
+
+            println("size: $oldSize => $size")
+            GLES20.glBufferData(target, size, buffer, GLES20.GL_STATIC_DRAW)
+//            if (size != oldSize) {
+//                GLES20.glBufferData(target, size, buffer, GLES20.GL_STATIC_DRAW)
+//                println("[K3D:Resource] expand update buffer: $buffer / size: $size/$oldSize")
+//            } else {
+//                GLES20.glBufferSubData(target, 0, size, buffer)
+//            }
+        }
+
         val vao = vertexArrays[vertexArray] ?: return
+
         GLES30.glBindVertexArray(vao)
+
         vertexArray.getAttributes().fastForeach { (_, attribute) ->
             dirtyQueue.whenDirty(attribute) { // update attribute buffer if dirty
                 println("[K3D:Resource] update attribute buffer: $attribute")
-                val vbo = vertexArraysAttributesBuffer[attribute] ?: return@fastForeach
-                GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vbo)
-                attribute.data.rewind()
-                GLES30.glBufferSubData(
-                    GLES30.GL_ARRAY_BUFFER,
-                    0,
-                    attribute.data.sizeInBytes(),
-                    attribute.data,
-                )
+                val vbo = vertexArraysAttributesBuffer[attribute] ?: return@whenDirty
+                updateBufferSmart(GLES30.GL_ARRAY_BUFFER, vbo, attribute.data)
             }
         }
+
+        vertexArray.getIndices()?.let {
+            dirtyQueue.whenDirty(it) {
+                println("[K3D:Resource] update indices buffer: $it")
+                val buffer = vertexArraysIndicesBuffer[vertexArray] ?: return@whenDirty
+                updateBufferSmart(GLES30.GL_ELEMENT_ARRAY_BUFFER, buffer, it.data)
+            }
+        }
+
         GLES30.glBindVertexArray(0)
     }
 

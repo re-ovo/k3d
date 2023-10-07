@@ -78,3 +78,9 @@ fun glGetIntegerv(pname: Int): Int {
     GLES30.glGetIntegerv(pname, result, 0)
     return result[0]
 }
+
+fun glGetBufferParameteriv(target: Int, pname: Int): Int {
+    val result = IntArray(1)
+    GLES30.glGetBufferParameteriv(target, pname, result, 0)
+    return result[0]
+}

@@ -41,15 +41,19 @@ import me.rerere.k3d.renderer.GLES3Renderer
 import me.rerere.k3d.renderer.GLESAutoConfigChooser
 import me.rerere.k3d.renderer.ViewportSize
 import me.rerere.k3d.renderer.shader.glGetIntegerv
+import me.rerere.k3d.scene.actor.Actor
 import me.rerere.k3d.scene.actor.Mesh
 import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.animation.AnimationPlayer
 import me.rerere.k3d.scene.camera.PerspectiveCamera
+import me.rerere.k3d.scene.geometry.CubeGeometry
 import me.rerere.k3d.scene.geometry.PlaneGeometry
+import me.rerere.k3d.scene.geometry.SphereGeometry
 import me.rerere.k3d.scene.light.AmbientLight
 import me.rerere.k3d.scene.light.DirectionalLight
 import me.rerere.k3d.scene.light.PointLight
 import me.rerere.k3d.scene.light.SpotLight
+import me.rerere.k3d.scene.material.BlinnPhongMaterial
 import me.rerere.k3d.scene.material.StandardMaterial
 import me.rerere.k3d.ui.theme.K3dTheme
 import me.rerere.k3d.util.Color
@@ -66,18 +70,7 @@ class MainActivity : ComponentActivity() {
         near = 0.1f
     }
 
-    private val plane = Mesh(
-        geometry = PlaneGeometry(5f, 5f),
-        material = StandardMaterial().apply {
-            baseColor = Color.fromRGBHex("#ff0000")
-            roughness = 0.1f
-            metallic = 0.8f
-        },
-    ).apply {
-        position.set(0f, 0f, 0f)
-    }
-
-    private var model: Scene? = null
+    private var model: Actor? = null
 
     private val ambientLight = AmbientLight(
         color = Color.fromRGBHex("#ffffff"),
@@ -105,12 +98,38 @@ class MainActivity : ComponentActivity() {
         position.set(0f, 5f, 0f)
     }
 
+    val cube = Mesh(
+        geometry = CubeGeometry(),
+        material = StandardMaterial().apply {
+            baseColor = Color.fromRGBHex("#ff0000")
+            roughness = 0.5f
+            metallic = 0.5f
+        }
+    )
+    val sphere = Mesh(
+        geometry = SphereGeometry(
+            radius = 1f,
+            widthSegments = 56,
+            heightSegments = 56
+        ),
+        material = StandardMaterial().apply {
+            baseColor = Color.fromRGBHex("#ff0000")
+            roughness = 0.8f
+            metallic = 0.5f
+        }
+    ).also {
+        model = it
+    }
+
     private val scene = Scene().apply {
         // addChild(plane)
         addChild(ambientLight)
         addChild(directionalLight)
         addChild(pointLight)
         addChild(spotLight)
+
+        // addChild(cube)
+        addChild(sphere)
     }
     private lateinit var controls: OrbitController
     private var animationPlayer: AnimationPlayer? = null
@@ -182,7 +201,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         }
-                        if(loading) {
+                        if (loading) {
                             CircularProgressIndicator()
                         } else {
                             TextButton(
@@ -217,7 +236,7 @@ class MainActivity : ComponentActivity() {
 
                                 controls = OrbitController(
                                     camera,
-                                    Vec3(0f,0f,0f),
+                                    Vec3(0f, 0f, 0f),
                                     this
                                 )
                             }
@@ -234,6 +253,18 @@ class MainActivity : ComponentActivity() {
                             model?.scale?.set(it, it, it)
                         },
                         max = 3f
+                    )
+
+                    K3DFloatController(
+                        label = "Segment",
+                        getter = {
+                            (sphere.geometry as SphereGeometry).widthSegments.toFloat()
+                         },
+                        setter = {
+                            (sphere.geometry as SphereGeometry).widthSegments = it.toInt()
+                            (sphere.geometry as SphereGeometry).heightSegments = it.toInt()
+                        },
+                        max = 64f,
                     )
 
                     K3DFloatController(
@@ -317,15 +348,21 @@ class MainActivity : ComponentActivity() {
             setRenderer(object : Renderer {
                 override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
                     println("Surface created")
-                    println("MAX_VERTEX_UNIFORM_VECTORS: ${
-                        glGetIntegerv(GLES30.GL_MAX_VERTEX_UNIFORM_VECTORS)
-                    }")
-                    println("MAX_FRAGMENT_UNIFORM_VECTORS: ${
-                        glGetIntegerv(GLES30.GL_MAX_FRAGMENT_UNIFORM_VECTORS)
-                    }")
-                    println("MAX_VERTEX_ATTRIBS: ${
-                        glGetIntegerv(GLES30.GL_MAX_VERTEX_ATTRIBS)
-                    }")
+                    println(
+                        "MAX_VERTEX_UNIFORM_VECTORS: ${
+                            glGetIntegerv(GLES30.GL_MAX_VERTEX_UNIFORM_VECTORS)
+                        }"
+                    )
+                    println(
+                        "MAX_FRAGMENT_UNIFORM_VECTORS: ${
+                            glGetIntegerv(GLES30.GL_MAX_FRAGMENT_UNIFORM_VECTORS)
+                        }"
+                    )
+                    println(
+                        "MAX_VERTEX_ATTRIBS: ${
+                            glGetIntegerv(GLES30.GL_MAX_VERTEX_ATTRIBS)
+                        }"
+                    )
                 }
 
                 override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
