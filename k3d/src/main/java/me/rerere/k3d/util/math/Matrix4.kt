@@ -18,6 +18,7 @@ import java.nio.FloatBuffer
  *  - [multiply]: multiply self with another matrix (self * other) and store the result in this matrix
  *  - [preMultiply]: multiply other with self (other * self) and store the result in this matrix
  *  - [multiplyToArray]: multiply self with another matrix and store the result in an array (already in column major).
+ *  - [multiplyToFloatBuffer]: multiply self with another matrix and store the result in a float buffer (already in column major).
  *
  * The `*=` operator is also overloaded, which is equivalent to [multiply]
  */
