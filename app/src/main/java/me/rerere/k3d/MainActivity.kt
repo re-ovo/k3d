@@ -42,10 +42,12 @@ import me.rerere.k3d.renderer.GLESAutoConfigChooser
 import me.rerere.k3d.renderer.ViewportSize
 import me.rerere.k3d.renderer.shader.glGetIntegerv
 import me.rerere.k3d.scene.actor.Actor
+import me.rerere.k3d.scene.actor.Line
 import me.rerere.k3d.scene.actor.Mesh
 import me.rerere.k3d.scene.actor.Scene
 import me.rerere.k3d.scene.animation.AnimationPlayer
 import me.rerere.k3d.scene.camera.PerspectiveCamera
+import me.rerere.k3d.scene.geometry.BufferGeometry
 import me.rerere.k3d.scene.geometry.CubeGeometry
 import me.rerere.k3d.scene.geometry.PlaneGeometry
 import me.rerere.k3d.scene.geometry.SphereGeometry
@@ -54,6 +56,7 @@ import me.rerere.k3d.scene.light.DirectionalLight
 import me.rerere.k3d.scene.light.PointLight
 import me.rerere.k3d.scene.light.SpotLight
 import me.rerere.k3d.scene.material.BlinnPhongMaterial
+import me.rerere.k3d.scene.material.LineBasicMaterial
 import me.rerere.k3d.scene.material.StandardMaterial
 import me.rerere.k3d.ui.theme.K3dTheme
 import me.rerere.k3d.util.Color
@@ -121,6 +124,20 @@ class MainActivity : ComponentActivity() {
         model = it
     }
 
+    val line = Line(
+        geometry = BufferGeometry.fromPoints(
+            listOf(
+                Vec3(0f, 0f, 0f),
+                Vec3(1f, 1f, 1f),
+                Vec3(-1f, 1f, 1f),
+                Vec3(-1f, -1f, 1f),
+                Vec3(1f, -1f, 1f),
+                Vec3(1f, 1f, -1f),
+            )
+        ),
+        material = LineBasicMaterial(),
+    )
+
     private val scene = Scene().apply {
         // addChild(plane)
         addChild(ambientLight)
@@ -129,7 +146,8 @@ class MainActivity : ComponentActivity() {
         addChild(spotLight)
 
         // addChild(cube)
-        addChild(sphere)
+        // addChild(sphere)
+        addChild(line)
     }
     private lateinit var controls: OrbitController
     private var animationPlayer: AnimationPlayer? = null

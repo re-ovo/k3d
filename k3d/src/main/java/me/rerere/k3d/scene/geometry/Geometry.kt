@@ -4,6 +4,7 @@ import me.rerere.k3d.renderer.resource.Attribute
 import me.rerere.k3d.renderer.resource.DataType
 import me.rerere.k3d.renderer.resource.VertexArray
 import me.rerere.k3d.renderer.shader.BuiltInAttributeName
+import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.toByteBuffer
 import java.nio.Buffer
 import java.nio.ByteBuffer
@@ -53,5 +54,28 @@ open class BufferGeometry {
                 if (markDirty) markDirtyNew()
             }
         )
+    }
+
+    companion object {
+        @JvmStatic
+        fun fromPoints(points: List<Vec3>): BufferGeometry {
+            val data = points
+                .flatMap { sequenceOf(it.x, it.y, it.z) }
+                .toFloatArray()
+                .toByteBuffer()
+
+            val geometry = BufferGeometry()
+            geometry.setAttribute(
+                BuiltInAttributeName.POSITION,
+                Attribute(
+                    itemSize = 3,
+                    normalized = false,
+                    count = points.size,
+                    data = data,
+                    type = DataType.FLOAT
+                )
+            )
+            return geometry
+        }
     }
 }
