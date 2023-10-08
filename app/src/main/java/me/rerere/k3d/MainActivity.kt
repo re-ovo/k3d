@@ -262,7 +262,7 @@ class MainActivity : ComponentActivity() {
                          },
                         setter = {
                             (sphere.geometry as SphereGeometry).widthSegments = it.toInt()
-                            (sphere.geometry as SphereGeometry).heightSegments = it.toInt()
+                            (sphere.geometry as SphereGeometry).heightSegments = it.toInt() / 2
                         },
                         max = 64f,
                     )

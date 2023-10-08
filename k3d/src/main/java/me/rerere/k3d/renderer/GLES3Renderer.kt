@@ -781,14 +781,12 @@ internal class GL3ResourceManager(
             val size = buffer.sizeInBytes()
             val oldSize = glGetBufferParameteriv(target, GLES20.GL_BUFFER_SIZE)
 
-            println("size: $oldSize => $size")
             GLES20.glBufferData(target, size, buffer, GLES20.GL_STATIC_DRAW)
-//            if (size != oldSize) {
-//                GLES20.glBufferData(target, size, buffer, GLES20.GL_STATIC_DRAW)
-//                println("[K3D:Resource] expand update buffer: $buffer / size: $size/$oldSize")
-//            } else {
-//                GLES20.glBufferSubData(target, 0, size, buffer)
-//            }
+            if (size != oldSize) {
+                GLES20.glBufferData(target, size, buffer, GLES20.GL_DYNAMIC_DRAW)
+            } else {
+                GLES20.glBufferSubData(target, 0, size, buffer)
+            }
         }
 
         val vao = vertexArrays[vertexArray] ?: return

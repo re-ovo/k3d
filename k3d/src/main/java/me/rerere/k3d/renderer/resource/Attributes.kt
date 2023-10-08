@@ -18,8 +18,8 @@ class Attribute(
     val itemSize: Int,
     val type: DataType,
     val normalized: Boolean,
-    val count: Int,
-    val data: ByteBuffer
+    var count: Int,
+    var data: ByteBuffer
 ) : Dirty {
     private var _dirty = false
 

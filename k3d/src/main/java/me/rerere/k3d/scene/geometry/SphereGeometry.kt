@@ -66,26 +66,33 @@ class SphereGeometry(
             grid.add(row)
         }
 
-        // TODO: 别创建新的attribute，因为内存地址变了，导致没法更新buffer
-        this.setAttribute(BuiltInAttributeName.POSITION, Attribute(
+        val positionAttribute = getAttribute(BuiltInAttributeName.POSITION)?.apply {
+            data = positions.toByteBuffer()
+            count = vertexCount
+
+            markDirtyNew()
+        } ?: Attribute(
             itemSize = 3,
             type = DataType.FLOAT,
             normalized = false,
             data = positions.toByteBuffer(),
             count = vertexCount
-        ).apply {
-            markDirtyNew()
-        })
+        )
+        this.setAttribute(BuiltInAttributeName.POSITION, positionAttribute)
 
-        this.setAttribute(BuiltInAttributeName.NORMAL, Attribute(
+        val normalAttribute = getAttribute(BuiltInAttributeName.NORMAL)?.apply {
+            data = normals.toByteBuffer()
+            count = vertexCount
+
+            markDirtyNew()
+        } ?: Attribute(
             itemSize = 3,
             type = DataType.FLOAT,
             normalized = false,
             data = normals.toByteBuffer(),
             count = vertexCount
-        ).apply {
-            markDirtyNew()
-        })
+        )
+        this.setAttribute(BuiltInAttributeName.NORMAL, normalAttribute)
 
         val indices = arrayListOf<Int>()
         for (iy in 0 until heightSegments) {
@@ -108,6 +115,12 @@ class SphereGeometry(
                 }
             }
         }
-        this.setIndices(indices.toIntArray(), markDirty = true)
+        getIndices()?.let {
+            it.data = indices.toIntArray().toByteBuffer()
+            it.count = indices.size
+            it.markDirtyNew()
+        } ?: run {
+            setIndices(indices.toIntArray())
+        }
     }
 }
