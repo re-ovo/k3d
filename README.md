@@ -7,15 +7,13 @@ Android developers to easily achieve various effects without touching the underl
 > Still working on it and it's not ready for testing or use. But I am welcome to any suggestions or
 > contributions.
 
-> K3D处于早期开发中，当前仅实现最核心部分代码，你可以点击下面的链接查看开发TODO
-
 ## Roadmap/TODO
 
 Check [TODO.md](todo.md) for more information.
 
 ## Getting Started
 
-Check the official [wiki](https://k3d.rerere.me) for more information.
+Check the official [documentation](https://k3d.rerere.me) for more information.
 
 ## Who is using K3D
 
