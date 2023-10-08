@@ -43,16 +43,3 @@ dependencies {
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)
 }
-
-publishing {
-    publications {
-        register<MavenPublication>("release") {
-            groupId = "me.rerere"
-            artifactId = "k3d"
-            version = "1.0.0"
-            afterEvaluate {
-                from(components["release"])
-            }
-        }
-    }
-}
