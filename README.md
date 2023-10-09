@@ -14,11 +14,25 @@ Check [TODO.md](todo.md) for more information.
 ## Getting Started
 
 ```kotlin
-// Add the snapshot repository to your settings.gradle.kts
-maven("https://s01.oss.sonatype.org/content/repositories/snapshots")
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
 
-// Add the dependency to your build.gradle.kts
-implementation("me.rerere:k3d:1.0.0-SNAPSHOT")
+        // Add the snapshot repository to your settings.gradle.kts
+        maven("https://s01.oss.sonatype.org/content/repositories/snapshots")
+    }
+}
+```
+
+```kotlin
+// build.gradle.kts (app)
+dependencies {
+    // Add the dependency to your build.gradle.kts
+    implementation("me.rerere:k3d:1.0.0-SNAPSHOT")
+}
 ```
 
 Check the official [documentation](https://k3d.rerere.me) for more information.
