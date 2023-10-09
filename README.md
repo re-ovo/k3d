@@ -45,9 +45,9 @@ Check the official [documentation](https://k3d.rerere.me) for more information.
 
 ## Screenshots
 
-|            PBR Material             |                 Animation                  |                   Skeleton                   |
-|:-----------------------------------:|:------------------------------------------:|:--------------------------------------------:|
-| ![PBR Material](/docs/img/shoe.png) | ![Animation](docs/img/plane_animation.mp4) | ![Skeleton](docs/img/skeleton_animation.mp4) |
+|            PBR Material             |            Animation             |             Skeleton              |
+|:-----------------------------------:|:--------------------------------:|:---------------------------------:|
+| ![PBR Material](/docs/img/shoe.png) | ![Animation](docs/img/plane.gif) | ![Skeleton](docs/img/junkrat.gif) |
 
 ## Contributing
 
