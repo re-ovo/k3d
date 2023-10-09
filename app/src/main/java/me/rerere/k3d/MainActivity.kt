@@ -13,20 +13,29 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
@@ -147,7 +156,7 @@ class MainActivity : ComponentActivity() {
 
         // addChild(cube)
         // addChild(sphere)
-        addChild(line)
+        // addChild(line)
     }
     private lateinit var controls: OrbitController
     private var animationPlayer: AnimationPlayer? = null
@@ -165,71 +174,29 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun Home() {
+        val scope = rememberCoroutineScope()
+        var openSheet by rememberSaveable {
+            mutableStateOf(false)
+        }
+        SettingUI(openSheet, onDismissRequest = {
+            openSheet = false
+        })
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = { Text("K3D Demo") },
                     actions = {
-                        var showLoaderMenu by remember {
-                            mutableStateOf(false)
-                        }
-                        val modelList = remember {
-                            mutableStateListOf<String>()
-                        }
-                        var loading by remember {
-                            mutableStateOf(false)
-                        }
-                        LaunchedEffect(Unit) {
-                            modelList.clear()
-                            assets.list("")?.forEach {
-                                if (it.endsWith(".gltf") || it.endsWith(".glb")) {
-                                    modelList.add(it)
+                        IconButton(
+                            onClick = {
+                                scope.launch {
+                                    openSheet = true
                                 }
                             }
-                        }
-                        DropdownMenu(
-                            expanded = showLoaderMenu,
-                            onDismissRequest = { showLoaderMenu = false }
                         ) {
-                            modelList.forEach {
-                                DropdownMenuItem(
-                                    text = { Text(text = it) },
-                                    onClick = {
-                                        lifecycleScope.launch(Dispatchers.IO) {
-                                            loading = true
-                                            showLoaderMenu = false
-
-                                            val result = GltfLoader(this@MainActivity).load(
-                                                inputStream = assets.open(it)
-                                            )
-                                            //result.defaultScene.scale.set(0.1f, 0.1f, 0.1f)
-                                            // result.defaultScene.position.set(1f,1f, 0f)
-                                            scene.addChild(result.defaultScene)
-                                            model = result.defaultScene
-
-                                            result.animations.getOrNull(0)?.let {
-                                                animationPlayer = AnimationPlayer(
-                                                    it
-                                                ).also { it.play() }
-                                            }
-
-                                            loading = false
-                                        }
-                                    }
-                                )
-                            }
+                            Icon(Icons.Outlined.Settings, null)
                         }
-                        if (loading) {
-                            CircularProgressIndicator()
-                        } else {
-                            TextButton(
-                                onClick = {
-                                    showLoaderMenu = true
-                                }
-                            ) {
-                                Text("Load")
-                            }
-                        }
+
+                        ModelPicker()
                     }
                 )
             }
@@ -262,7 +229,81 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.matchParentSize()
                     )
                 }
+            }
+        }
+    }
 
+    @Composable
+    private fun ModelPicker() {
+        var showLoaderMenu by remember {
+            mutableStateOf(false)
+        }
+        val modelList = remember {
+            mutableStateListOf<String>()
+        }
+        var loading by remember {
+            mutableStateOf(false)
+        }
+        LaunchedEffect(Unit) {
+            modelList.clear()
+            assets.list("")?.forEach {
+                if (it.endsWith(".gltf") || it.endsWith(".glb")) {
+                    modelList.add(it)
+                }
+            }
+        }
+        DropdownMenu(
+            expanded = showLoaderMenu,
+            onDismissRequest = { showLoaderMenu = false }
+        ) {
+            modelList.forEach {
+                DropdownMenuItem(
+                    text = { Text(text = it) },
+                    onClick = {
+                        lifecycleScope.launch(Dispatchers.IO) {
+                            loading = true
+                            showLoaderMenu = false
+
+                            val result = GltfLoader(this@MainActivity).load(
+                                inputStream = assets.open(it)
+                            )
+                            //result.defaultScene.scale.set(0.1f, 0.1f, 0.1f)
+                            // result.defaultScene.position.set(1f,1f, 0f)
+                            scene.addChild(result.defaultScene)
+                            model = result.defaultScene
+
+                            result.animations.getOrNull(0)?.let {
+                                animationPlayer = AnimationPlayer(
+                                    it
+                                ).also { it.play() }
+                            }
+
+                            loading = false
+                        }
+                    }
+                )
+            }
+        }
+        if (loading) {
+            CircularProgressIndicator()
+        } else {
+            TextButton(
+                onClick = {
+                    showLoaderMenu = true
+                }
+            ) {
+                Text("Models")
+            }
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    private fun SettingUI(show: Boolean, onDismissRequest: () -> Unit) {
+        if (show) {
+            ModalBottomSheet(
+                onDismissRequest = onDismissRequest,
+            ) {
                 K3DController {
                     K3DFloatController(
                         label = "Scale",
@@ -277,7 +318,7 @@ class MainActivity : ComponentActivity() {
                         label = "Segment",
                         getter = {
                             (sphere.geometry as SphereGeometry).widthSegments.toFloat()
-                         },
+                        },
                         setter = {
                             (sphere.geometry as SphereGeometry).widthSegments = it.toInt()
                             (sphere.geometry as SphereGeometry).heightSegments = it.toInt() / 2
