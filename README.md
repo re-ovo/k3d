@@ -43,6 +43,12 @@ Check the official [documentation](https://k3d.rerere.me) for more information.
 
 > Using K3D? Please let me know and I'll add your project to the list.
 
+## Screenshots
+
+|            PBR Material             |                 Animation                  |                   Skeleton                   |
+|:-----------------------------------:|:------------------------------------------:|:--------------------------------------------:|
+| ![PBR Material](/docs/img/shoe.png) | ![Animation](docs/img/plane_animation.mp4) | ![Skeleton](docs/img/skeleton_animation.mp4) |
+
 ## Contributing
 
 If you want to contribute to K3D, please read the [CONTRIBUTING.md](docs/contribution.md) first.
