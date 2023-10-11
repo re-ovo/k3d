@@ -38,6 +38,7 @@ android {
 }
 
 dependencies {
+    implementation("org.plumelib:hashmap-util:0.0.1")
     implementation(libs.core.ktx)
     implementation(libs.appcompat)
     implementation(libs.material)

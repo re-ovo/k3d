@@ -2,6 +2,7 @@
 
 package me.rerere.k3d.util.system
 
+import org.plumelib.util.WeakIdentityHashMap
 import java.util.Collections
 import java.util.IdentityHashMap
 import java.util.Queue
@@ -32,3 +33,7 @@ inline fun <reified R, C : MutableList<in R>> List<*>.fastFilterIsInstanceTo(des
     }
     return destination
 }
+
+fun <K, V> weakIdentityHashMap(): MutableMap<K, V> = WeakIdentityHashMap()
+
+fun <E> weakIdentityHashSet(): MutableSet<E> = Collections.newSetFromMap(WeakIdentityHashMap())
