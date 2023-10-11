@@ -35,6 +35,8 @@ dependencies {
 }
 ```
 
+Check the [app/MainActivity.kt](app/src/main/java/me/rerere/k3d/MainActivity.kt) for basic usage.
+
 Check the official [documentation](https://k3d.rerere.me) for more information.
 
 ## Who is using K3D
