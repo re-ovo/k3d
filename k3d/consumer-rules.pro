@@ -1,0 +1,1 @@
+-keep class me.rerere.k3d.** { *; }
