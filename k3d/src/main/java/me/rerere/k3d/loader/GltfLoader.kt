@@ -1,6 +1,5 @@
 package me.rerere.k3d.loader
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.google.gson.JsonObject
@@ -52,7 +51,7 @@ private const val GLB_VERSION = 0x02000000 // 2.0
  * - [KHR_materials_pbrSpecularGlossiness](https://github.com/KhronosGroup/glTF/tree/main/extensions/2.0/Archived/KHR_materials_pbrSpecularGlossiness): support `diffuseTexture` only
  */
 @OptIn(ExperimentalStdlibApi::class)
-class GltfLoader(private val context: Context) {
+class GltfLoader {
     fun load(inputStream: InputStream): GltfLoadResult {
         return DataInputStream(inputStream).use {
             readGlb(it)

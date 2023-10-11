@@ -264,7 +264,7 @@ class MainActivity : ComponentActivity() {
                             loading = true
                             showLoaderMenu = false
 
-                            val result = GltfLoader(this@MainActivity).load(
+                            val result = GltfLoader().load(
                                 inputStream = assets.open(it)
                             )
                             //result.defaultScene.scale.set(0.1f, 0.1f, 0.1f)
