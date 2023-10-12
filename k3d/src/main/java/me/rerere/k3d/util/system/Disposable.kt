@@ -9,7 +9,7 @@ fun Disposable.alsoDispose(disposable: Disposable) {
 }
 
 object AutoDispose {
-    private val tree = ObjectTree()
+    internal val tree = ObjectTree()
 
     fun register(parent: Disposable, child: Disposable) {
         tree.register(parent, child)

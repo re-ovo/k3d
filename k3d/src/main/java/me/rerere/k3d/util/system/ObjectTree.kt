@@ -15,12 +15,14 @@ internal class ObjectTree {
             "Cannot register a disposable to itself"
         }
 
-        val parentNode: Node = getParentNode(parent).findOrCreateChildNode(parent)
-        val childNode: Node = getParentNode(child).moveChildToAnotherParent(child, parentNode)
+        synchronized(rootNode) {
+            val parentNode: Node = getParentNode(parent).findOrCreateChildNode(parent)
+            val childNode: Node = getParentNode(child).moveChildToAnotherParent(child, parentNode)
 
-        object2ParentNode[child] = parentNode
+            object2ParentNode[child] = parentNode
 
-        require(childNode.value == child)
+            require(childNode.value == child)
+        }
     }
 
     private fun getParentNode(disposable: Disposable): Node {
@@ -41,9 +43,12 @@ internal class ObjectTree {
     }
 
     private fun disposeNode(node: Node) {
-        node.value.dispose()
-        object2ParentNode.remove(node.value)
-        node.children.values.forEach(::disposeNode)
+        synchronized(rootNode) {
+            node.value.dispose()
+            object2ParentNode.remove(node.value)
+
+            node.children.values.forEach(::disposeNode)
+        }
     }
 }
 
@@ -67,9 +72,9 @@ internal class Node(val value: Disposable) {
     }
 }
 
-internal fun ObjectTree.dump() {
+fun dumpDisposeTree() {
     println("ObjectTree dump:")
-    dumpNode(rootNode, 0)
+    dumpNode(AutoDispose.tree.rootNode, 0)
 }
 
 internal fun dumpNode(node: Node, depth: Int) {

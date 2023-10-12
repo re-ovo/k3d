@@ -71,6 +71,8 @@ import me.rerere.k3d.ui.theme.K3dTheme
 import me.rerere.k3d.util.Color
 import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.rotation.toRadian
+import me.rerere.k3d.util.system.AutoDispose
+import me.rerere.k3d.util.system.dumpDisposeTree
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -271,6 +273,10 @@ class MainActivity : ComponentActivity() {
                             // result.defaultScene.position.set(1f,1f, 0f)
                             scene.addChild(result.defaultScene)
                             model = result.defaultScene
+
+                            dumpDisposeTree()
+                            AutoDispose.dispose(scene)
+                            dumpDisposeTree()
 
                             result.animations.getOrNull(0)?.let {
                                 animationPlayer = AnimationPlayer(
