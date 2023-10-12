@@ -857,6 +857,9 @@ internal class GL3ResourceManager(
             GLES30.glDeleteTextures(1, intArrayOf(it), 0)
         }
         textureBuffers.clear()
+
+        // bone texture
+        boneTextures.clear()
     }
 }
 

@@ -10,18 +10,28 @@ import me.rerere.k3d.util.math.transform.applyScale
 import me.rerere.k3d.util.math.transform.applyTranslation
 import me.rerere.k3d.util.math.transform.scaleMatrix
 import me.rerere.k3d.util.math.transform.translationMatrix
+import me.rerere.k3d.util.system.AutoDispose
 import me.rerere.k3d.util.system.Dirty
+import me.rerere.k3d.util.system.Disposable
 import java.util.UUID
 
-abstract class Actor : Dirty {
+abstract class Actor : Dirty, Disposable {
     private val _id = UUID.randomUUID()
     var name: String = ""
 
     var parent: Actor? = null
+        set(value) {
+            value?.let {
+                AutoDispose.register(it, this)
+            }
+            field = value
+        }
 
     val position = Vec3(0f, 0f, 0f)
     val rotation = Quaternion(0f, 0f, 0f, 1f)
     val scale = Vec3(1f, 1f, 1f)
+
+    override fun dispose() {}
 
     override fun updateDirty() {
         if(this.rotation.isDirty()) this.rotation.updateDirty()

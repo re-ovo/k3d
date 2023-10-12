@@ -5,11 +5,12 @@ import me.rerere.k3d.renderer.resource.DataType
 import me.rerere.k3d.renderer.resource.VertexArray
 import me.rerere.k3d.renderer.shader.BuiltInAttributeName
 import me.rerere.k3d.util.math.Vec3
+import me.rerere.k3d.util.system.Disposable
 import me.rerere.k3d.util.toByteBuffer
 import java.nio.Buffer
 import java.nio.ByteBuffer
 
-open class BufferGeometry {
+open class BufferGeometry : Disposable {
     internal val vao = VertexArray()
 
     val drawCount: Int
@@ -55,6 +56,8 @@ open class BufferGeometry {
             }
         )
     }
+
+    override fun dispose() {}
 
     companion object {
         @JvmStatic

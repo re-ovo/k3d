@@ -8,6 +8,7 @@ import me.rerere.k3d.util.Color
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.Vec4
+import me.rerere.k3d.util.system.Disposable
 
 /**
  * The material of a [Primitive][me.rerere.k3d.scene.actor.Primitive]
@@ -29,7 +30,7 @@ open class ShaderMaterial(
     val program: ShaderProgramSource,
     val uniforms: MutableList<Pair<String, Uniform>> = arrayListOf(),
     val textures: MutableList<Pair<String, Texture>> = arrayListOf(),
-) {
+) : Disposable {
     var name = ""
 
     var alphaMode = AlphaMode.OPAQUE
@@ -139,4 +140,6 @@ open class ShaderMaterial(
 
     fun color4fUniformOf(type: BuiltInUniformName, def: Color = Color.fromRGBHex("#FFFFFF")) =
         color4fUniformOf(type.uniformName, def)
+
+    override fun dispose() {}
 }

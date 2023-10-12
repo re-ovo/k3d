@@ -10,6 +10,8 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 internal fun <E> identitySetOf(): MutableSet<E> = Collections.newSetFromMap(IdentityHashMap())
 
+internal fun <K, V> identityMapOf(): MutableMap<K, V> = IdentityHashMap()
+
 internal fun <T> concurrentQueueOf(): Queue<T> = ConcurrentLinkedQueue()
 
 inline fun <T> List<T>.fastForeach(action: (T) -> Unit) {

@@ -6,6 +6,8 @@ import me.rerere.k3d.scene.geometry.BufferGeometry
 import me.rerere.k3d.scene.material.ShaderMaterial
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.system.Dirty
+import me.rerere.k3d.util.system.Disposable
+import me.rerere.k3d.util.system.alsoDispose
 import me.rerere.k3d.util.system.fastForeach
 
 /**
@@ -20,6 +22,7 @@ open class Mesh(
     geometry: BufferGeometry,
     material: ShaderMaterial,
 ) : Primitive(geometry, material, DrawMode.TRIANGLES)
+
 class SkinMesh(
     geometry: BufferGeometry,
     material: ShaderMaterial,
@@ -27,10 +30,12 @@ class SkinMesh(
 ) : Mesh(geometry, material) {
     init {
         material.program.addMarcoDefinition(BuiltInMarcoDefinition.USE_SKIN.marcoDefinition)
+
+        alsoDispose(skeleton)
     }
 }
 
-class Skeleton(val bones: List<Bone>): Dirty {
+class Skeleton(val bones: List<Bone>): Dirty, Disposable {
     class Bone(
         val node: Actor,
         val inverseBindMatrix: Matrix4
@@ -50,4 +55,6 @@ class Skeleton(val bones: List<Bone>): Dirty {
     override fun updateDirty() {}
 
     override fun clearDirty() {}
+
+    override fun dispose() {}
 }
