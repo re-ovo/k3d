@@ -8,7 +8,10 @@ import me.rerere.k3d.util.Color
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.Vec4
+import me.rerere.k3d.util.system.AutoDispose
 import me.rerere.k3d.util.system.Disposable
+import me.rerere.k3d.util.system.alsoDispose
+import me.rerere.k3d.util.system.disposeAll
 
 /**
  * The material of a [Primitive][me.rerere.k3d.scene.actor.Primitive]
@@ -58,12 +61,21 @@ open class ShaderMaterial(
 
     fun setTexture(name: String, texture: Texture?) {
         if (texture == null) {
-            textures.removeIf { it.first == name }
+            textures.removeIf {
+                (it.first == name).also { removed ->
+                    if (removed) {
+                        it.second.disposeAll() // dispose the texture
+                    }
+                }
+            }
             program.removeMarcoDefinition("HAS_TEXTURE_$name")
         } else {
-            textures.removeIf { it.first == name }
+            setTexture(name, null) // remove old texture
+
             textures.add(name to texture)
             program.addMarcoDefinition("HAS_TEXTURE_$name")
+
+            alsoDispose(texture) // bind texture to this material
         }
     }
 

@@ -2,6 +2,7 @@ package me.rerere.k3d.renderer.resource
 
 import android.graphics.Bitmap
 import me.rerere.k3d.util.system.Dirty
+import me.rerere.k3d.util.system.Disposable
 import java.nio.Buffer
 
 sealed class Texture(
@@ -11,8 +12,10 @@ sealed class Texture(
     val wrapT: TextureWrap,
     val minFilter: TextureFilter,
     val magFilter: TextureFilter,
-): Dirty {
+): Dirty, Disposable {
     private var _dirty = false
+
+    override fun dispose() {}
 
     override fun isDirty(): Boolean {
         return _dirty

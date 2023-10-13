@@ -34,6 +34,15 @@ fun Disposable.alsoDispose(disposable: Disposable) {
 }
 
 /**
+ * Dispose a Disposable
+ *
+ * Equivalent to [AutoDispose.dispose]
+ */
+fun Disposable.disposeAll() {
+    AutoDispose.dispose(this)
+}
+
+/**
  * Disposable Manager
  */
 object AutoDispose {

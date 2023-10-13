@@ -1,6 +1,7 @@
 package me.rerere.k3d.renderer.resource
 
 import me.rerere.k3d.util.system.Dirty
+import me.rerere.k3d.util.system.Disposable
 import java.nio.ByteBuffer
 
 /**
@@ -42,7 +43,7 @@ class Attribute(
     }
 }
 
-internal class VertexArray {
+internal class VertexArray : Disposable {
     private val attributes = arrayListOf<Pair<String, Attribute>>()
     private var indices: Attribute? = null
 
@@ -64,4 +65,6 @@ internal class VertexArray {
     fun getIndices(): Attribute? {
         return indices
     }
+
+    override fun dispose() {}
 }
