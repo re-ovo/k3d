@@ -596,6 +596,9 @@ internal class GL3ResourceManager(
 
         val textureId = genTexture().getOrThrow()
         textureBuffers[texture] = textureId
+        texture.externalDispose {
+            deleteTextureBuffer(texture)
+        }
 
         println("[K3D:Resource] create texture buffer: $textureId")
 
@@ -656,7 +659,7 @@ internal class GL3ResourceManager(
         textureId
     }
 
-    fun updateTextureBuffer(texture: Texture) {
+    private fun updateTextureBuffer(texture: Texture) {
         this.dirtyQueue.whenDirty(texture) {
             // println("[K3D:Resource] update texture buffer: $texture")
 
@@ -727,6 +730,9 @@ internal class GL3ResourceManager(
             val programId = programs[program] ?: throw IllegalStateException("Program not found")
             val vao = genVertexArray().getOrThrow()
             vertexArrays[vertexArray] = vao
+            vertexArray.externalDispose {
+                deleteVertexArray(vertexArray)
+            }
 
             GLES30.glBindVertexArray(vao)
             vertexArray.getAttributes().fastForeach { (name, attribute) ->
