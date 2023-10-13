@@ -35,11 +35,10 @@ import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.ceilPowerOf2
 import me.rerere.k3d.util.system.DirtyQueue
 import me.rerere.k3d.util.system.Disposable
-import me.rerere.k3d.util.system.fastFilterIsInstanceTo
+import me.rerere.k3d.util.system.externalDispose
 import me.rerere.k3d.util.system.fastForEachIndexed
 import me.rerere.k3d.util.system.fastForeach
 import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.util.IdentityHashMap
 import kotlin.math.ceil
@@ -569,10 +568,16 @@ internal class GL3ResourceManager(
                 .getOrThrow()
         val programId = createProgram(vertexShader, fragmentShader)
             .getOrThrow()
+
         // println(programProcessResult.vertexShader)
         // println(programProcessResult.fragmentShader)
         // println("ID: $programId")
+
         programs[program] = programId
+        program.externalDispose {
+            deleteProgram(program)
+        }
+
         programId
     }
 

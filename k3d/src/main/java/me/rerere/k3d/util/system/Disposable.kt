@@ -29,8 +29,19 @@ interface Disposable {
  * @param disposable the child Disposable
  * @receiver the parent Disposable
  */
-fun Disposable.alsoDispose(disposable: Disposable) {
+fun Disposable.bindChildDisposable(disposable: Disposable) {
     AutoDispose.register(this, disposable)
+}
+
+/**
+ * Register a dispose block as a child of this Disposable
+ */
+fun Disposable.externalDispose(block: () -> Unit) {
+    bindChildDisposable(object : Disposable {
+        override fun dispose() {
+            block()
+        }
+    })
 }
 
 /**

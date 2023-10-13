@@ -6,7 +6,7 @@ import me.rerere.k3d.renderer.shader.BuiltInUniformName
 import me.rerere.k3d.scene.geometry.BufferGeometry
 import me.rerere.k3d.scene.material.ShaderMaterial
 import me.rerere.k3d.util.computeTangent
-import me.rerere.k3d.util.system.alsoDispose
+import me.rerere.k3d.util.system.bindChildDisposable
 
 /**
  * A primitive is a renderable object, which contains a geometry and a material
@@ -32,8 +32,8 @@ abstract class Primitive(
     val mode: DrawMode = DrawMode.TRIANGLES,
 ) : Actor() {
     init {
-        alsoDispose(geometry)
-        alsoDispose(material)
+        bindChildDisposable(geometry)
+        bindChildDisposable(material)
 
         // Compute tangent if not found
         if (geometry.getAttribute(BuiltInAttributeName.TANGENT.attributeName) == null) {

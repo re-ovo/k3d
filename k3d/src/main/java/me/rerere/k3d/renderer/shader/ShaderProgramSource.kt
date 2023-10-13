@@ -1,13 +1,14 @@
 package me.rerere.k3d.renderer.shader
 
 import me.rerere.k3d.util.system.Dirty
+import me.rerere.k3d.util.system.Disposable
 import me.rerere.k3d.util.system.dirtyValue
 
 class ShaderProgramSource(
     vertexShader: String,
     fragmentShader: String,
     marcoDefinitions: Set<MarcoDefinition> = emptySet()
-) : Dirty {
+) : Dirty, Disposable {
     private var _dirty = false
 
     var vertexShader: String by dirtyValue(vertexShader)
@@ -47,6 +48,8 @@ class ShaderProgramSource(
             "Shader source cannot be blank"
         }
     }
+
+    override fun dispose() {}
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

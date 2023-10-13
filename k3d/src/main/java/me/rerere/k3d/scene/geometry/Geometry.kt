@@ -6,16 +6,14 @@ import me.rerere.k3d.renderer.resource.VertexArray
 import me.rerere.k3d.renderer.shader.BuiltInAttributeName
 import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.system.Disposable
-import me.rerere.k3d.util.system.alsoDispose
+import me.rerere.k3d.util.system.bindChildDisposable
 import me.rerere.k3d.util.toByteBuffer
-import java.nio.Buffer
-import java.nio.ByteBuffer
 
 open class BufferGeometry : Disposable {
     internal val vao = VertexArray()
 
     init {
-        alsoDispose(vao)
+        bindChildDisposable(vao)
     }
 
     val drawCount: Int

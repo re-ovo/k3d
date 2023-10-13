@@ -8,9 +8,8 @@ import me.rerere.k3d.util.Color
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.Vec4
-import me.rerere.k3d.util.system.AutoDispose
 import me.rerere.k3d.util.system.Disposable
-import me.rerere.k3d.util.system.alsoDispose
+import me.rerere.k3d.util.system.bindChildDisposable
 import me.rerere.k3d.util.system.disposeAll
 
 /**
@@ -39,6 +38,10 @@ open class ShaderMaterial(
     var alphaMode = AlphaMode.OPAQUE
     var alphaCutoff by floatUniformOf(BuiltInUniformName.ALPHA_CUTOFF, 0.5f)
     var doubleSided = false
+
+    init {
+        bindChildDisposable(program)
+    }
 
     fun getUniform(name: String): Uniform? {
         return uniforms.find { it.first == name }?.second
@@ -75,7 +78,7 @@ open class ShaderMaterial(
             textures.add(name to texture)
             program.addMarcoDefinition("HAS_TEXTURE_$name")
 
-            alsoDispose(texture) // bind texture to this material
+            bindChildDisposable(texture) // bind texture to this material
         }
     }
 

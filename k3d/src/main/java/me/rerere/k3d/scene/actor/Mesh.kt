@@ -7,7 +7,7 @@ import me.rerere.k3d.scene.material.ShaderMaterial
 import me.rerere.k3d.util.math.Matrix4
 import me.rerere.k3d.util.system.Dirty
 import me.rerere.k3d.util.system.Disposable
-import me.rerere.k3d.util.system.alsoDispose
+import me.rerere.k3d.util.system.bindChildDisposable
 import me.rerere.k3d.util.system.fastForeach
 
 /**
@@ -31,7 +31,7 @@ class SkinMesh(
     init {
         material.program.addMarcoDefinition(BuiltInMarcoDefinition.USE_SKIN.marcoDefinition)
 
-        alsoDispose(skeleton)
+        bindChildDisposable(skeleton)
     }
 }
 
