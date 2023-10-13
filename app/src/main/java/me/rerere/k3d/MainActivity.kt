@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -72,6 +73,7 @@ import me.rerere.k3d.util.Color
 import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.rotation.toRadian
 import me.rerere.k3d.util.system.AutoDispose
+import me.rerere.k3d.util.system.disposeAll
 import me.rerere.k3d.util.system.dumpDisposeTree
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
@@ -198,6 +200,22 @@ class MainActivity : ComponentActivity() {
                             Icon(Icons.Outlined.Settings, null)
                         }
 
+                        IconButton(
+                            onClick = {
+                                model?.let {
+                                    scene.removeChild(it)
+                                    model = null
+                                    println("Removed")
+                                    render.dumpResource()
+                                    scene.disposeAll()
+                                    println("disposed scene")
+                                    render.dumpResource()
+                                }
+                            }
+                        ) {
+                            Icon(Icons.Outlined.Clear, null)
+                        }
+
                         ModelPicker()
                     }
                 )
@@ -274,8 +292,6 @@ class MainActivity : ComponentActivity() {
                             scene.addChild(result.defaultScene)
                             model = result.defaultScene
 
-                            dumpDisposeTree()
-                            AutoDispose.dispose(scene)
                             dumpDisposeTree()
 
                             result.animations.getOrNull(0)?.let {

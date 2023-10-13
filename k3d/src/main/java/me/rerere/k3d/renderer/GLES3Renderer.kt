@@ -216,6 +216,10 @@ class GLES3Renderer : Renderer {
             BuiltInUniformName.CAMERA_POSITION.uniformName
         )
     }
+
+    fun dumpResource() {
+        resourceManager.dump()
+    }
 }
 
 internal class GL3ResourceManager(
@@ -235,6 +239,15 @@ internal class GL3ResourceManager(
 
     // bone matrix texture
     private val boneTextures = IdentityHashMap<Skeleton, Texture.DataTexture>()
+
+    internal fun dump() {
+        println("Programs: ${programs.size}")
+        println("Vertex Arrays: ${vertexArrays.size}")
+        println("Vertex Arrays Attributes Buffer: ${vertexArraysAttributesBuffer.size}")
+        println("Vertex Arrays Indices Buffer: ${vertexArraysIndicesBuffer.size}")
+        println("Texture Buffers: ${textureBuffers.size}")
+        println("Bone Textures: ${boneTextures.size}")
+    }
 
     inline fun useProgram(program: ShaderProgramSource, scope: ShaderProgramSource.() -> Unit) {
         this.dirtyQueue.whenDirty(program) {
@@ -501,6 +514,10 @@ internal class GL3ResourceManager(
                 TextureFilter.LINEAR,
                 TextureFilter.LINEAR
             )
+            skeleton.externalDispose {
+                deleteTextureBuffer(boneTextures[skeleton]!!)
+                boneTextures.remove(skeleton)
+            }
             println("[K3D:Resource] create bone texture: $bitMapSize x $bitMapSize (${skeleton.bones.size} bones)")
         }
 
