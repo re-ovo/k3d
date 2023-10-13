@@ -14,6 +14,7 @@
 ## 高优先级
 
 - [ ] Dirty/EventBus/Dispose系统改进和实现
+- [ ] Light支持放在场景任意节点，反正renderer会遍历所有节点
 - [ ] Animation
 - [ ] GLTF Loader支持路径加载(文件夹模式), 目前只支持二进制glb
 - [ ] Shader GLSL预处理: 支持Renderer添加宏定义
