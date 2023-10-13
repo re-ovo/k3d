@@ -45,6 +45,13 @@ fun Disposable.externalDispose(block: () -> Unit) {
 }
 
 /**
+ * Check if a Disposable is disposed
+ */
+fun Disposable.isDisposed(): Boolean {
+    return AutoDispose.isDisposed(this)
+}
+
+/**
  * Dispose a Disposable
  *
  * Equivalent to [AutoDispose.dispose]
@@ -66,6 +73,16 @@ object AutoDispose {
      */
     fun register(parent: Disposable, child: Disposable) {
         tree.register(parent, child)
+    }
+
+    /**
+     * Check if a Disposable is disposed
+     *
+     * @param obj the Disposable to check
+     * @return true if the Disposable is disposed
+     */
+    fun isDisposed(obj: Disposable): Boolean {
+        return tree.isDisposed(obj)
     }
 
     /**

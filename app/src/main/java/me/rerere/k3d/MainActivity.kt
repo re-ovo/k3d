@@ -24,11 +24,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -59,20 +57,17 @@ import me.rerere.k3d.scene.animation.AnimationPlayer
 import me.rerere.k3d.scene.camera.PerspectiveCamera
 import me.rerere.k3d.scene.geometry.BufferGeometry
 import me.rerere.k3d.scene.geometry.CubeGeometry
-import me.rerere.k3d.scene.geometry.PlaneGeometry
 import me.rerere.k3d.scene.geometry.SphereGeometry
 import me.rerere.k3d.scene.light.AmbientLight
 import me.rerere.k3d.scene.light.DirectionalLight
 import me.rerere.k3d.scene.light.PointLight
 import me.rerere.k3d.scene.light.SpotLight
-import me.rerere.k3d.scene.material.BlinnPhongMaterial
 import me.rerere.k3d.scene.material.LineBasicMaterial
 import me.rerere.k3d.scene.material.StandardMaterial
 import me.rerere.k3d.ui.theme.K3dTheme
 import me.rerere.k3d.util.Color
 import me.rerere.k3d.util.math.Vec3
 import me.rerere.k3d.util.math.rotation.toRadian
-import me.rerere.k3d.util.system.AutoDispose
 import me.rerere.k3d.util.system.disposeAll
 import me.rerere.k3d.util.system.dumpDisposeTree
 import javax.microedition.khronos.egl.EGLConfig
@@ -203,13 +198,15 @@ class MainActivity : ComponentActivity() {
                         IconButton(
                             onClick = {
                                 model?.let {
-                                    scene.removeChild(it)
-                                    model = null
-                                    println("Removed")
-                                    render.dumpResource()
-                                    scene.disposeAll()
-                                    println("disposed scene")
-                                    render.dumpResource()
+                                    render.runOnRenderThread {
+                                        scene.removeChild(it)
+                                        model = null
+                                        println("Removed")
+                                        render.dumpResource()
+                                        scene.disposeAll()
+                                        println("disposed scene")
+                                        render.dumpResource()
+                                    }
                                 }
                             }
                         ) {

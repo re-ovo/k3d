@@ -9,6 +9,7 @@ private val ROOT_DISPOSABLE = object : Disposable {
 internal class ObjectTree {
     val rootNode = Node(ROOT_DISPOSABLE)
     private val object2ParentNode = identityMapOf<Disposable, Node>()
+    private val disposedObjects = weakIdentityHashSet<Disposable>()
 
     fun register(parent: Disposable, child: Disposable) {
         require(parent !== child) {
@@ -20,8 +21,15 @@ internal class ObjectTree {
             val childNode: Node = getParentNode(child).moveChildToAnotherParent(child, parentNode)
 
             object2ParentNode[child] = parentNode
+            disposedObjects.remove(child)
 
             require(childNode.value == child)
+        }
+    }
+
+    fun isDisposed(obj: Disposable): Boolean {
+        return synchronized(rootNode) {
+            disposedObjects.contains(obj)
         }
     }
 
@@ -36,23 +44,30 @@ internal class ObjectTree {
     fun disposeAll(obj: Disposable) {
         val parentNode = getParentNode(obj)
         val node = parentNode.findChild(obj) ?: run {
-            obj.dispose() // Dispose it if it's not exists in tree node
+            synchronized(rootNode) {
+                obj.dispose() // Dispose it if it's not exists in tree node
+                disposedObjects += obj
+            }
             return
         }
 
-        parentNode.children.remove(obj)
-
-        disposeNode(node)
+        synchronized(rootNode) {
+            parentNode.children.remove(obj)
+            disposeNode(node)
+        }
     }
 
     private fun disposeNode(node: Node) {
         synchronized(rootNode) {
             node.value.dispose()
             object2ParentNode.remove(node.value)
+            disposedObjects += node.value
 
             node.children.values.forEach(::disposeNode)
         }
     }
+
+    internal fun getTreeLock(): Any = rootNode
 }
 
 internal class Node(val value: Disposable) {
@@ -77,7 +92,9 @@ internal class Node(val value: Disposable) {
 
 fun dumpDisposeTree() {
     println("ObjectTree dump:")
-    dumpNode(AutoDispose.tree.rootNode, 0)
+    synchronized(AutoDispose.tree.getTreeLock()) {
+        dumpNode(AutoDispose.tree.rootNode, 0)
+    }
 }
 
 internal fun dumpNode(node: Node, depth: Int) {

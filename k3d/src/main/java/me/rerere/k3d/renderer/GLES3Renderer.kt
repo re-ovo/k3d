@@ -41,6 +41,7 @@ import me.rerere.k3d.util.system.fastForeach
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
 import java.util.IdentityHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.math.ceil
 import kotlin.math.sqrt
 
@@ -53,6 +54,7 @@ class GLES3Renderer : Renderer {
     private val shaderProcessor = ShaderProcessor()
     private val dirtyQueue = DirtyQueue()
     private val resourceManager = GL3ResourceManager(shaderProcessor, dirtyQueue)
+    private val taskQueue = ConcurrentLinkedQueue<() -> Unit>()
 
     override var viewportSize: ViewportSize = ViewportSize(0, 0)
 
@@ -67,16 +69,32 @@ class GLES3Renderer : Renderer {
         viewportSize = ViewportSize(width, height)
     }
 
+    override fun runOnRenderThread(block: () -> Unit) {
+        taskQueue.add(block)
+    }
+
+    private fun executeTaskQueue() {
+        while (taskQueue.isNotEmpty()) {
+            taskQueue.poll()?.invoke()
+        }
+    }
+
     private val worldMatrixUniform = Uniform.Mat4(Matrix4.identity(), true)
     private val viewMatrixUniform = Uniform.Mat4(Matrix4.identity(), true)
     private val projectionMatrixUniform = Uniform.Mat4(Matrix4.identity(), true)
     private val cameraPositionUniform = Uniform.Vec3f(Vec3(0f, 0f, 0f))
 
     override fun render(scene: Scene, camera: Camera) {
+        // Update all logic
+        executeTaskQueue()
+
+        // Update dirty queue
         dirtyQueue.ensureDirtyUpdated(camera)
 
+        // Render
         this.render0(scene, camera)
 
+        // Clean dirty queue
         dirtyQueue.clean()
     }
 
@@ -435,16 +453,16 @@ internal class GL3ResourceManager(
                 uniformLocationOfStructArray(programId, "pointLight", index, "color") {
                     GLES30.glUniform3f(it, t.color.r, t.color.g, t.color.b)
                 }
-                uniformLocationOfStructArray(programId, "pointLight", index,"intensity") {
+                uniformLocationOfStructArray(programId, "pointLight", index, "intensity") {
                     GLES30.glUniform1f(it, t.intensity)
                 }
-                uniformLocationOfStructArray(programId, "pointLight", index,"constant") {
+                uniformLocationOfStructArray(programId, "pointLight", index, "constant") {
                     GLES30.glUniform1f(it, t.constant)
                 }
-                uniformLocationOfStructArray(programId, "pointLight", index,"linear") {
+                uniformLocationOfStructArray(programId, "pointLight", index, "linear") {
                     GLES30.glUniform1f(it, t.linear)
                 }
-                uniformLocationOfStructArray(programId, "pointLight", index,"quadratic") {
+                uniformLocationOfStructArray(programId, "pointLight", index, "quadratic") {
                     GLES30.glUniform1f(it, t.quadratic)
                 }
             }
@@ -458,7 +476,7 @@ internal class GL3ResourceManager(
             _spotLights.fastForEachIndexed { index, t ->
                 require(index < 4) { "Spot light count must be less than 4" }
 
-                uniformLocationOfStructArray(programId, "spotLight", index,"position") {
+                uniformLocationOfStructArray(programId, "spotLight", index, "position") {
                     GLES30.glUniform3f(
                         it,
                         t.position.x,
@@ -466,19 +484,19 @@ internal class GL3ResourceManager(
                         t.position.z
                     )
                 }
-                uniformLocationOfStructArray(programId, "spotLight", index,"target") {
+                uniformLocationOfStructArray(programId, "spotLight", index, "target") {
                     GLES30.glUniform3f(it, t.target.x, t.target.y, t.target.z)
                 }
-                uniformLocationOfStructArray(programId, "spotLight", index,"color") {
+                uniformLocationOfStructArray(programId, "spotLight", index, "color") {
                     GLES30.glUniform3f(it, t.color.r, t.color.g, t.color.b)
                 }
-                uniformLocationOfStructArray(programId, "spotLight", index,"intensity") {
+                uniformLocationOfStructArray(programId, "spotLight", index, "intensity") {
                     GLES30.glUniform1f(it, t.intensity)
                 }
-                uniformLocationOfStructArray(programId, "spotLight", index,"angle") {
+                uniformLocationOfStructArray(programId, "spotLight", index, "angle") {
                     GLES30.glUniform1f(it, t.angle)
                 }
-                uniformLocationOfStructArray(programId, "spotLight", index,"penumbra") {
+                uniformLocationOfStructArray(programId, "spotLight", index, "penumbra") {
                     GLES30.glUniform1f(it, t.penumbra)
                 }
             }
