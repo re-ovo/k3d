@@ -35,7 +35,10 @@ internal class ObjectTree {
 
     fun disposeAll(obj: Disposable) {
         val parentNode = getParentNode(obj)
-        val node = parentNode.findChild(obj) ?: return
+        val node = parentNode.findChild(obj) ?: run {
+            obj.dispose() // Dispose it if it's not exists in tree node
+            return
+        }
 
         parentNode.children.remove(obj)
 
