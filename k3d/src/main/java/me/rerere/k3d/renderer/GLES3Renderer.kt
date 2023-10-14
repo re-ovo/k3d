@@ -27,6 +27,7 @@ import me.rerere.k3d.scene.actor.traverse
 import me.rerere.k3d.scene.camera.Camera
 import me.rerere.k3d.scene.light.AmbientLight
 import me.rerere.k3d.scene.light.DirectionalLight
+import me.rerere.k3d.scene.light.Light
 import me.rerere.k3d.scene.light.PointLight
 import me.rerere.k3d.scene.light.SpotLight
 import me.rerere.k3d.scene.material.AlphaMode
@@ -60,6 +61,11 @@ class GLES3Renderer : Renderer {
 
     private val _opaqueActors = arrayListOf<Primitive>()
     private val _transparentActors = arrayListOf<Primitive>()
+
+    private val _ambientLights = arrayListOf<AmbientLight>()
+    private val _directionalLights = arrayListOf<DirectionalLight>()
+    private val _pointLights = arrayListOf<PointLight>()
+    private val _spotLights = arrayListOf<SpotLight>()
 
     override fun dispose() {
         this.resourceManager.dispose()
@@ -125,6 +131,11 @@ class GLES3Renderer : Renderer {
 
         _opaqueActors.clear()
         _transparentActors.clear()
+
+        _ambientLights.clear()
+        _directionalLights.clear()
+        _pointLights.clear()
+        _spotLights.clear()
     }
 
     private fun _handleTraverse(actor: Actor) {
@@ -137,6 +148,13 @@ class GLES3Renderer : Renderer {
                 AlphaMode.MASK -> _transparentActors.add(actor).also {
                     error("AlphaMode.MASK is not supported yet")
                 }
+            }
+        } else if(actor is Light) {
+            when (actor) {
+                is AmbientLight -> _ambientLights.add(actor)
+                is DirectionalLight -> _directionalLights.add(actor)
+                is PointLight -> _pointLights.add(actor)
+                is SpotLight -> _spotLights.add(actor)
             }
         }
     }
@@ -152,7 +170,7 @@ class GLES3Renderer : Renderer {
 
         resourceManager.useProgram(actor.material.program) {
             // Apply Lights
-            resourceManager.useLights(this, scene)
+            resourceManager.useLights(this)
 
             // Apply uniforms
             actor.material.uniforms.fastForeach { (name, uniform) ->
@@ -233,6 +251,127 @@ class GLES3Renderer : Renderer {
             },
             BuiltInUniformName.CAMERA_POSITION.uniformName
         )
+    }
+
+    private fun GL3ResourceManager.useLights(program: ShaderProgramSource) {
+        val programId = getProgram(program) ?: return
+
+        // ambient light
+        if (_ambientLights.isNotEmpty()) {
+            val theLight = _ambientLights[0]
+            uniformLocationOf(programId, "ambientLight.position") {
+                GLES30.glUniform3f(
+                    it,
+                    theLight.position.x,
+                    theLight.position.y,
+                    theLight.position.z
+                )
+            }
+            uniformLocationOf(programId, "ambientLight.color") {
+                GLES30.glUniform3f(it, theLight.color.r, theLight.color.g, theLight.color.b)
+            }
+            uniformLocationOf(programId, "ambientLight.intensity") {
+                GLES30.glUniform1f(it, theLight.intensity)
+            }
+        } else {
+            uniformLocationOf(programId, "ambientLight.intensity") {
+                GLES30.glUniform1f(it, 0f)
+            }
+        }
+
+        // directional light
+        if (_directionalLights.isNotEmpty()) {
+            val theLight = _directionalLights[0]
+            uniformLocationOf(programId, "directionalLight.position") {
+                GLES30.glUniform3f(
+                    it,
+                    theLight.position.x,
+                    theLight.position.y,
+                    theLight.position.z
+                )
+            }
+            uniformLocationOf(programId, "directionalLight.target") {
+                GLES30.glUniform3f(it, theLight.target.x, theLight.target.y, theLight.target.z)
+            }
+            uniformLocationOf(programId, "directionalLight.color") {
+                GLES30.glUniform3f(it, theLight.color.r, theLight.color.g, theLight.color.b)
+            }
+            uniformLocationOf(programId, "directionalLight.intensity") {
+                GLES30.glUniform1f(it, theLight.intensity)
+            }
+        } else {
+            uniformLocationOf(programId, "directionalLight.intensity") {
+                GLES30.glUniform1f(it, 0f)
+            }
+        }
+
+        // point light
+        uniformLocationOf(programId, "pointLightCount") {
+            GLES30.glUniform1i(it, _pointLights.size)
+        }
+        if (_pointLights.isNotEmpty()) {
+            _pointLights.fastForEachIndexed { index, t ->
+                require(index < 4) { "Point light count must be less than 4" }
+
+                uniformLocationOfStructArray(programId, "pointLight", index, "position") {
+                    GLES30.glUniform3f(
+                        it,
+                        t.position.x,
+                        t.position.y,
+                        t.position.z
+                    )
+                }
+                uniformLocationOfStructArray(programId, "pointLight", index, "color") {
+                    GLES30.glUniform3f(it, t.color.r, t.color.g, t.color.b)
+                }
+                uniformLocationOfStructArray(programId, "pointLight", index, "intensity") {
+                    GLES30.glUniform1f(it, t.intensity)
+                }
+                uniformLocationOfStructArray(programId, "pointLight", index, "constant") {
+                    GLES30.glUniform1f(it, t.constant)
+                }
+                uniformLocationOfStructArray(programId, "pointLight", index, "linear") {
+                    GLES30.glUniform1f(it, t.linear)
+                }
+                uniformLocationOfStructArray(programId, "pointLight", index, "quadratic") {
+                    GLES30.glUniform1f(it, t.quadratic)
+                }
+            }
+        }
+
+        // spot light
+        uniformLocationOf(programId, "spotLightCount") {
+            GLES30.glUniform1i(it, _spotLights.size)
+        }
+        if (_spotLights.isNotEmpty()) {
+            _spotLights.fastForEachIndexed { index, t ->
+                require(index < 4) { "Spot light count must be less than 4" }
+
+                uniformLocationOfStructArray(programId, "spotLight", index, "position") {
+                    GLES30.glUniform3f(
+                        it,
+                        t.position.x,
+                        t.position.y,
+                        t.position.z
+                    )
+                }
+                uniformLocationOfStructArray(programId, "spotLight", index, "target") {
+                    GLES30.glUniform3f(it, t.target.x, t.target.y, t.target.z)
+                }
+                uniformLocationOfStructArray(programId, "spotLight", index, "color") {
+                    GLES30.glUniform3f(it, t.color.r, t.color.g, t.color.b)
+                }
+                uniformLocationOfStructArray(programId, "spotLight", index, "intensity") {
+                    GLES30.glUniform1f(it, t.intensity)
+                }
+                uniformLocationOfStructArray(programId, "spotLight", index, "angle") {
+                    GLES30.glUniform1f(it, t.angle)
+                }
+                uniformLocationOfStructArray(programId, "spotLight", index, "penumbra") {
+                    GLES30.glUniform1f(it, t.penumbra)
+                }
+            }
+        }
     }
 
     fun dumpResource() {
@@ -367,147 +506,6 @@ internal class GL3ResourceManager(
         }
     }
 
-    private val _ambientLights = arrayListOf<AmbientLight>()
-    private val _directionalLights = arrayListOf<DirectionalLight>()
-    private val _pointLights = arrayListOf<PointLight>()
-    private val _spotLights = arrayListOf<SpotLight>()
-
-    fun useLights(program: ShaderProgramSource, scene: Scene) {
-        if (scene.lights.isEmpty()) return
-        val programId = getProgram(program) ?: return
-
-        scene.lights.fastForeach { light ->
-            when (light) {
-                is AmbientLight -> _ambientLights.add(light)
-                is DirectionalLight -> _directionalLights.add(light)
-                is PointLight -> _pointLights.add(light)
-                is SpotLight -> _spotLights.add(light)
-            }
-        }
-
-        // ambient light
-        if (_ambientLights.isNotEmpty()) {
-            val theLight = _ambientLights[0]
-            uniformLocationOf(programId, "ambientLight.position") {
-                GLES30.glUniform3f(
-                    it,
-                    theLight.position.x,
-                    theLight.position.y,
-                    theLight.position.z
-                )
-            }
-            uniformLocationOf(programId, "ambientLight.color") {
-                GLES30.glUniform3f(it, theLight.color.r, theLight.color.g, theLight.color.b)
-            }
-            uniformLocationOf(programId, "ambientLight.intensity") {
-                GLES30.glUniform1f(it, theLight.intensity)
-            }
-        } else {
-            uniformLocationOf(programId, "ambientLight.intensity") {
-                GLES30.glUniform1f(it, 0f)
-            }
-        }
-
-        // directional light
-        if (_directionalLights.isNotEmpty()) {
-            val theLight = _directionalLights[0]
-            uniformLocationOf(programId, "directionalLight.position") {
-                GLES30.glUniform3f(
-                    it,
-                    theLight.position.x,
-                    theLight.position.y,
-                    theLight.position.z
-                )
-            }
-            uniformLocationOf(programId, "directionalLight.target") {
-                GLES30.glUniform3f(it, theLight.target.x, theLight.target.y, theLight.target.z)
-            }
-            uniformLocationOf(programId, "directionalLight.color") {
-                GLES30.glUniform3f(it, theLight.color.r, theLight.color.g, theLight.color.b)
-            }
-            uniformLocationOf(programId, "directionalLight.intensity") {
-                GLES30.glUniform1f(it, theLight.intensity)
-            }
-        } else {
-            uniformLocationOf(programId, "directionalLight.intensity") {
-                GLES30.glUniform1f(it, 0f)
-            }
-        }
-
-        // point light
-        uniformLocationOf(programId, "pointLightCount") {
-            GLES30.glUniform1i(it, _pointLights.size)
-        }
-        if (_pointLights.isNotEmpty()) {
-            _pointLights.fastForEachIndexed { index, t ->
-                require(index < 4) { "Point light count must be less than 4" }
-
-                uniformLocationOfStructArray(programId, "pointLight", index, "position") {
-                    GLES30.glUniform3f(
-                        it,
-                        t.position.x,
-                        t.position.y,
-                        t.position.z
-                    )
-                }
-                uniformLocationOfStructArray(programId, "pointLight", index, "color") {
-                    GLES30.glUniform3f(it, t.color.r, t.color.g, t.color.b)
-                }
-                uniformLocationOfStructArray(programId, "pointLight", index, "intensity") {
-                    GLES30.glUniform1f(it, t.intensity)
-                }
-                uniformLocationOfStructArray(programId, "pointLight", index, "constant") {
-                    GLES30.glUniform1f(it, t.constant)
-                }
-                uniformLocationOfStructArray(programId, "pointLight", index, "linear") {
-                    GLES30.glUniform1f(it, t.linear)
-                }
-                uniformLocationOfStructArray(programId, "pointLight", index, "quadratic") {
-                    GLES30.glUniform1f(it, t.quadratic)
-                }
-            }
-        }
-
-        // spot light
-        uniformLocationOf(programId, "spotLightCount") {
-            GLES30.glUniform1i(it, _spotLights.size)
-        }
-        if (_spotLights.isNotEmpty()) {
-            _spotLights.fastForEachIndexed { index, t ->
-                require(index < 4) { "Spot light count must be less than 4" }
-
-                uniformLocationOfStructArray(programId, "spotLight", index, "position") {
-                    GLES30.glUniform3f(
-                        it,
-                        t.position.x,
-                        t.position.y,
-                        t.position.z
-                    )
-                }
-                uniformLocationOfStructArray(programId, "spotLight", index, "target") {
-                    GLES30.glUniform3f(it, t.target.x, t.target.y, t.target.z)
-                }
-                uniformLocationOfStructArray(programId, "spotLight", index, "color") {
-                    GLES30.glUniform3f(it, t.color.r, t.color.g, t.color.b)
-                }
-                uniformLocationOfStructArray(programId, "spotLight", index, "intensity") {
-                    GLES30.glUniform1f(it, t.intensity)
-                }
-                uniformLocationOfStructArray(programId, "spotLight", index, "angle") {
-                    GLES30.glUniform1f(it, t.angle)
-                }
-                uniformLocationOfStructArray(programId, "spotLight", index, "penumbra") {
-                    GLES30.glUniform1f(it, t.penumbra)
-                }
-            }
-        }
-
-        _ambientLights.clear()
-        _directionalLights.clear()
-        _pointLights.clear()
-        _spotLights.clear()
-    }
-
     fun useSkinBones(shaderProgramSource: ShaderProgramSource, actor: SkinMesh) {
         val programId = getProgram(shaderProgramSource) ?: return
         val skeleton = actor.skeleton
@@ -569,7 +567,7 @@ internal class GL3ResourceManager(
         }
     }
 
-    private inline fun uniformLocationOf(programId: Int, name: String, scope: (Int) -> Unit) {
+    internal inline fun uniformLocationOf(programId: Int, name: String, scope: (Int) -> Unit) {
         val location = GLES20.glGetUniformLocation(programId, name)
         if (location != -1) {
             scope(location)
@@ -578,7 +576,7 @@ internal class GL3ResourceManager(
 
     private val structArrayCache = hashMapOf<String, MutableMap<String, MutableMap<Int, String>>>()
 
-    private inline fun uniformLocationOfStructArray(
+    internal inline fun uniformLocationOfStructArray(
         programId: Int,
         struct: String,
         index: Int,

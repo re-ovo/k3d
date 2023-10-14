@@ -73,6 +73,28 @@ internal fun genTexture(): Result<Int> {
     return Result.success(texture[0])
 }
 
+/**
+ * Create FBO (framebuffer)
+ *
+ * @return FBO id
+ */
+fun glGenFramebuffers(): Result<Int> {
+    val framebuffer = IntArray(1)
+    GLES30.glGenFramebuffers(1, framebuffer, 0)
+    return Result.success(framebuffer[0])
+}
+
+/**
+ * Delete FBO (framebuffer)
+ *
+ * @param framebuffer FBO id
+ */
+fun glDeleteFramebuffers(framebuffer: Int) {
+    val framebufferArray = IntArray(1)
+    framebufferArray[0] = framebuffer
+    GLES30.glDeleteFramebuffers(1, framebufferArray, 0)
+}
+
 fun glGetIntegerv(pname: Int): Int {
     val result = IntArray(1)
     GLES30.glGetIntegerv(pname, result, 0)
