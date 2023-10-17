@@ -223,29 +223,30 @@ class MainActivity : ComponentActivity() {
                     .fillMaxSize()
                     .padding(it)
             ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxSize()
-                ) {
-                    AndroidView(
-                        factory = { ctx ->
-                            K3DView(ctx).apply {
-                                layoutParams = ViewGroup.LayoutParams(
-                                    ViewGroup.LayoutParams.MATCH_PARENT,
-                                    ViewGroup.LayoutParams.MATCH_PARENT
-                                )
-
-                                controls = OrbitController(
-                                    camera,
-                                    Vec3(0f, 0f, 0f),
-                                    this
-                                )
-                            }
-                        },
-                        modifier = Modifier.matchParentSize()
-                    )
-                }
+                K3DDslExample()
+//                Box(
+//                    modifier = Modifier
+//                        .weight(1f)
+//                        .fillMaxSize()
+//                ) {
+//                    AndroidView(
+//                        factory = { ctx ->
+//                            K3DView(ctx).apply {
+//                                layoutParams = ViewGroup.LayoutParams(
+//                                    ViewGroup.LayoutParams.MATCH_PARENT,
+//                                    ViewGroup.LayoutParams.MATCH_PARENT
+//                                )
+//
+//                                controls = OrbitController(
+//                                    camera,
+//                                    Vec3(0f, 0f, 0f),
+//                                    this
+//                                )
+//                            }
+//                        },
+//                        modifier = Modifier.matchParentSize()
+//                    )
+//                }
             }
         }
     }

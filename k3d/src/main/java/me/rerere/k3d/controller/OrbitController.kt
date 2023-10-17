@@ -17,7 +17,7 @@ import kotlin.math.sin
 class OrbitController(
     val camera: Camera,
     val target: Vec3,
-    val element: View,
+    var elementHeight: Float,
 ) {
     var distanceRange: ClosedFloatingPointRange<Float> = 0.1f..100f
 
@@ -42,8 +42,8 @@ class OrbitController(
     }
 
     private fun handleDrag(rotate: ControllerEvent.Rotate) {
-        val dx = rotate.deltaX / element.height.toFloat()
-        val dy = rotate.deltaY / element.height.toFloat()
+        val dx = rotate.deltaX / elementHeight
+        val dy = rotate.deltaY / elementHeight
 
         val newYaw = camera.yaw - dx * 5f
         val newPitch = camera.pitch - dy * 5f
@@ -74,8 +74,8 @@ class OrbitController(
     }
 
     private fun handlePan(event: ControllerEvent.Pan) {
-        val dx = event.deltaX / element.height.toFloat()
-        val dy = -event.deltaY / element.height.toFloat()
+        val dx = event.deltaX / elementHeight
+        val dy = -event.deltaY / elementHeight
 
         val direction = Vec3(
             cos(camera.pitch) * sin(camera.yaw),
