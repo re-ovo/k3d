@@ -13,16 +13,16 @@
 
 ## 高优先级
 
-- [ ] Dirty/EventBus/Dispose系统改进和实现
-- [ ] Light支持放在场景任意节点，反正renderer会遍历所有节点
-- [ ] Animation
+- [x] Dirty/EventBus/Dispose系统改进和实现
+- [x] Light支持放在场景任意节点，反正renderer会遍历所有节点
+- [x] Animation
 - [ ] GLTF Loader支持路径加载(文件夹模式), 目前只支持二进制glb
 - [ ] Shader GLSL预处理: 支持Renderer添加宏定义
 - [ ] Shadow Map / Multi Pass / Post Processing
 
 ## 低优先级
 
-- [ ] 内置形状(Cube, Plane, etc), 内置Primitive(Mesh, Line, Point)
+- [x] 内置形状(Cube, Plane, etc), 内置Primitive(Mesh, Line, Point)
 - [ ] Morph Target
 - [ ] 内存优化，尽可能减少copy，支持调用`Primitive#gpuOnly`，将数据从CPU拷贝到GPU后自动释放CPU内存
 - [ ] 优化渲染流程, 尽可能减少状态切换
