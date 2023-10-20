@@ -7,6 +7,13 @@ Android developers to easily achieve various effects without touching the underl
 > Still working on it and it's not ready for testing or use. But I am welcome to any suggestions or
 > contributions.
 
+## Why K3D
+
+K3D provides a solution for developers with lightweight 3D needs. Compared with using the game
+engine directly, it is more lightweight, focused and rendering. It is written in pure kotlin and is
+easy to interoperate with native applications. It is simple, provides a declarative API, and only
+requires a few lines of code to complete the scene construction.
+
 ## Features
 
 - glTF 2.0 Loader
