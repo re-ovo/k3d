@@ -17,7 +17,7 @@ Android developers to easily achieve various effects without touching the underl
 - Camera (Perspective, Orthographic)
 - Light (Directional, Point, Spot, Ambient)
 - Skeleton
-- [Declarative API](app/src/main/java/me/rerere/k3d/DslExample.kt)
+- [Declarative API](app/src/main/java/me/rerere/k3d/DslExample.kt) for Jetpack Compose
 - Shadow/Post Processing/Multi Pass Rendering (WIP)
 - IBL/Cube Map/Env Map (WIP)
 - Skybox (WIP)
