@@ -72,6 +72,12 @@ Check the official [documentation](https://k3d.rerere.me) for more information.
 
 If you want to contribute to K3D, please read the [CONTRIBUTING.md](docs/contribution.md) first.
 
+## Credits
+
+- [three.js](https://threejs.org/): K3D is inspired by three.js
+- [react-three-fiber](https://github.com/pmndrs/react-three-fiber): The declarative API is inspired
+  by react-three-fiber
+
 ## License
 
 ```
