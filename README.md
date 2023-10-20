@@ -7,6 +7,21 @@ Android developers to easily achieve various effects without touching the underl
 > Still working on it and it's not ready for testing or use. But I am welcome to any suggestions or
 > contributions.
 
+## Features
+
+- glTF 2.0 Loader
+- GLES 3.0 based renderer
+- Animation
+- Material(BlinnPhong, CookTorrance)
+- Geometry(Sphere, Plane, Cube)
+- Camera (Perspective, Orthographic)
+- Light (Directional, Point, Spot, Ambient)
+- Skeleton
+- [Declarative API](app/src/main/java/me/rerere/k3d/DslExample.kt)
+- Shadow/Post Processing/Multi Pass Rendering (WIP)
+- IBL/Cube Map/Env Map (WIP)
+- Skybox (WIP)
+
 ## Roadmap/TODO
 
 Check [TODO.md](todo.md) for more information.
