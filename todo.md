@@ -19,6 +19,7 @@
 - [ ] GLTF Loader支持路径加载(文件夹模式), 目前只支持二进制glb
 - [ ] Shader GLSL预处理: 支持Renderer添加宏定义
 - [ ] Shadow Map / Multi Pass / Post Processing
+- [ ] 使用ReferenceQueue实现自动释放
 
 ## 低优先级
 
